@@ -27,6 +27,49 @@
 	[role='menuitem']:focus-visible {
 		@apply outline-none ring-2 ring-blue-600/35 ring-offset-1 ring-offset-white dark:ring-blue-400/35 dark:ring-offset-black;
 	}
+
+	/* Scrollbars: Firefox + Chromium/WebKit (con track como nativo). */
+	* {
+		scrollbar-width: auto;
+		scrollbar-color: #94a3b8 #e2e8f0;
+	}
+
+	.dark * {
+		scrollbar-color: #71717a #27272a;
+	}
+
+	*::-webkit-scrollbar {
+		width: 14px;
+		height: 14px;
+	}
+
+	*::-webkit-scrollbar-track {
+		background: #e2e8f0;
+	}
+
+	*::-webkit-scrollbar-thumb {
+		background-color: #94a3b8;
+		border-radius: 9999px;
+		border: 3px solid #e2e8f0;
+		background-clip: padding-box;
+	}
+
+	*::-webkit-scrollbar-thumb:hover {
+		background-color: #64748b;
+	}
+
+	.dark *::-webkit-scrollbar-track {
+		background: #27272a;
+	}
+
+	.dark *::-webkit-scrollbar-thumb {
+		background-color: #71717a;
+		border-color: #27272a;
+	}
+
+	.dark *::-webkit-scrollbar-thumb:hover {
+		background-color: #a1a1aa;
+	}
 }
 
 /* Damero del stage (patrón; colores fijos + .dark). */

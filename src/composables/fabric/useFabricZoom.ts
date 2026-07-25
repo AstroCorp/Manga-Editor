@@ -1,9 +1,5 @@
-import {
-	computed,
-	nextTick,
-	onBeforeUnmount,
-	watch,
-} from 'vue';
+import { computed, nextTick, watch } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import {
 	ZOOM_WHEEL_FACTOR,
@@ -148,23 +144,12 @@ export const useFabricZoom = ({
 		},
 	);
 
-	const bindWheel = () => {
-		rootEl.value?.addEventListener('wheel', onWheel, { passive: false });
-	};
-
-	const unbindWheel = () => {
-		rootEl.value?.removeEventListener('wheel', onWheel);
-	};
-
-	onBeforeUnmount(() => {
-		unbindWheel();
-	});
+	// rootEl reactivo: se reengancha solo; cleanup al desmontar.
+	useEventListener(rootEl, 'wheel', onWheel, { passive: false });
 
 	return {
 		stageStyle,
 		scaleStyle,
 		resetZoomView,
-		bindWheel,
-		unbindWheel,
 	};
 };

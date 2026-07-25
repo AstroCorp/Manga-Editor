@@ -20,8 +20,11 @@ const rootEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
 const { fabricCanvas, init, hydratePage } = useFabricCanvas(canvasEl);
-const { stageStyle, scaleStyle, resetZoomView, bindWheel, unbindWheel } =
-	useFabricZoom({ fabricCanvas, rootEl, pageSize });
+const { stageStyle, scaleStyle, resetZoomView } = useFabricZoom({
+	fabricCanvas,
+	rootEl,
+	pageSize,
+});
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
 const { cancelStroke, syncInteractionMode } = usePanelStroke({ fabricCanvas });
 const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
@@ -62,7 +65,6 @@ onMounted(() => {
 
 	init(page.width, page.height);
 	applyActivePage();
-	bindWheel();
 
 	editorStore.registerCanvas({
 		cancelStroke,
@@ -73,7 +75,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-	unbindWheel();
 	editorStore.unregisterCanvas();
 });
 

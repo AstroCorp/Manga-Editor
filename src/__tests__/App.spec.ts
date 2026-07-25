@@ -27,8 +27,6 @@ vi.mock('@/composables/fabric/useFabricZoom', () => {
 					transform: 'scale(0.75)',
 				}),
 				resetZoomView: vi.fn(),
-				bindWheel: vi.fn(),
-				unbindWheel: vi.fn(),
 			};
 		},
 	};
@@ -98,6 +96,7 @@ describe('App', () => {
 			true,
 		);
 		expect(wrapper.find('[aria-label="Zoom"]').exists()).toBe(true);
+		expect(wrapper.find('[aria-label="Theme"]').exists()).toBe(true);
 
 		wrapper.unmount();
 	});

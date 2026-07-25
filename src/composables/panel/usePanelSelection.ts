@@ -1,4 +1,5 @@
-import { onBeforeUnmount, watch, type ShallowRef } from 'vue';
+import { watch, type ShallowRef } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import type { Canvas, FabricObject } from 'fabric';
 import {
 	getPanelId,
@@ -102,11 +103,11 @@ export const usePanelSelection = ({
 		const nextWidth = clampStrokeWidth(width);
 
 		mangaStore.setShapeStrokeWidth(panelId, nextWidth);
-		
+
 		active.set('strokeWidth', nextWidth);
 
 		editorStore.setSelectedStrokeWidth(nextWidth);
-
+		
 		canvas.requestRenderAll();
 
 		return true;
@@ -161,21 +162,7 @@ export const usePanelSelection = ({
 		{ immediate: true },
 	);
 
-	if (typeof window !== 'undefined') {
-		window.addEventListener('keydown', onKeyDown);
-	}
-
-	onBeforeUnmount(() => {
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('keydown', onKeyDown);
-		}
-
-		const canvas = fabricCanvas.value;
-
-		if (canvas) {
-			unbindSelectionEvents(canvas);
-		}
-	});
+	useEventListener(window, 'keydown', onKeyDown);
 
 	return {
 		removeActive,
