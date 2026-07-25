@@ -1,7 +1,6 @@
 import type { Canvas } from 'fabric';
 import { Polygon } from 'fabric';
 import { PANEL_FILL, PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
-import { isGuide } from '@/lib/fabric/isGuide';
 import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
@@ -38,15 +37,14 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 	return polygon;
 };
 
-/** Quita contenido de página (no guías) y pinta shapes desde el dominio. */
+/** Vacía el canvas y pinta shapes desde el dominio (sin guías; refreshGuides las repone). */
 export const hydrateCanvasFromPage = (canvas: Canvas, page: Page): void => {
 	canvas.setDimensions({ width: page.width, height: page.height });
 
+	// Incluye draft/rubber (línea azul discontinua): no deben sobrevivir un cambio de página.
 	canvas
 		.getObjects()
-		.filter((object) => {
-			return !isGuide(object);
-		})
+		.slice()
 		.forEach((object) => {
 			canvas.remove(object);
 		});

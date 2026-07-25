@@ -42,16 +42,17 @@ export const useFabricZoom = ({
 		};
 	});
 
-	const syncCanvasOffset = async () => {
-		await nextTick();
-		fabricCanvas.value?.calcOffset();
+	const syncCanvasOffset = () => {
+		void nextTick(() => {
+			fabricCanvas.value?.calcOffset();
+		});
 	};
 
 	const adjustScrollAfterZoom = (oldPercent: number, nextPercent: number) => {
 		const root = rootEl.value;
 
 		if (!root || oldPercent <= 0 || oldPercent === nextPercent) {
-			void syncCanvasOffset();
+			syncCanvasOffset();
 
 			return;
 		}
@@ -72,7 +73,7 @@ export const useFabricZoom = ({
 			root.scrollTop = centerY * ratio - root.clientHeight / 2;
 		}
 
-		void syncCanvasOffset();
+		syncCanvasOffset();
 	};
 
 	const resetZoomView = () => {
@@ -129,7 +130,7 @@ export const useFabricZoom = ({
 		if (typeof oldPercent === 'number') {
 			adjustScrollAfterZoom(oldPercent, percent);
 		} else {
-			void syncCanvasOffset();
+			syncCanvasOffset();
 		}
 	});
 
@@ -139,7 +140,7 @@ export const useFabricZoom = ({
 		},
 		(canvas) => {
 			if (canvas) {
-				void syncCanvasOffset();
+				syncCanvasOffset();
 			}
 		},
 	);

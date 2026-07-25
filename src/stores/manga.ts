@@ -84,7 +84,6 @@ export const useMangaStore = defineStore('manga', () => {
 	const clearActivePage = () => {
 		getActivePage().clearShapes();
 		contentResetEpoch.value += 1;
-		touchPages();
 	};
 
 	const addPage = () => {
@@ -176,32 +175,20 @@ export const useMangaStore = defineStore('manga', () => {
 	};
 
 	const addShape = (shape: Shape) => {
+		// Page reasigna shapes[]; la proxy de Pinia actualiza el strip.
 		getActivePage().addShape(shape);
-		touchPages();
 	};
 
 	const removeShape = (shapeId: string) => {
-		if (!getActivePage().removeShape(shapeId)) {
-			return;
-		}
-
-		touchPages();
+		getActivePage().removeShape(shapeId);
 	};
 
 	const setShapeStrokeWidth = (shapeId: string, width: number) => {
-		if (!getActivePage().setShapeStrokeWidth(shapeId, width)) {
-			return;
-		}
-
-		touchPages();
+		getActivePage().setShapeStrokeWidth(shapeId, width);
 	};
 
 	const setShapeImage = (shapeId: string, image: ShapeImage | null) => {
-		if (!getActivePage().setShapeImage(shapeId, image)) {
-			return;
-		}
-
-		touchPages();
+		getActivePage().setShapeImage(shapeId, image);
 	};
 
 	// Cambiar geometría invalida el dibujo (la rejilla ya no encaja).
@@ -222,7 +209,6 @@ export const useMangaStore = defineStore('manga', () => {
 
 	const setActivePageStrokeWidth = (width: number) => {
 		getActivePage().setStrokeWidth(width);
-		touchPages();
 	};
 
 	return {

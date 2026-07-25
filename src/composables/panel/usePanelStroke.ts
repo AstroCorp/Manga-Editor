@@ -426,10 +426,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		}
 	});
 
-	// Si cambia el layout, el path en coords de rejilla ya no encaja.
-	watch(layout, () => {
-		cancelStroke();
-	});
+	// Cambio de geometría: contentResetEpoch → applyActivePage → cancelStroke.
 
 	onBeforeUnmount(() => {
 		if (rubberFrameId !== null) {

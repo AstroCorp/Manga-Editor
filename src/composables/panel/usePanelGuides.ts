@@ -51,8 +51,8 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 		canvas.requestRenderAll();
 	};
 
-	// Toggle o cambio de layout → refrescar puntos.
-	watch([showGridGuides, layout], () => {
+	// Toggle de guías. Cambio de geometría: applyActivePage → refreshGuides.
+	watch(showGridGuides, () => {
 		refreshGuides();
 	});
 
