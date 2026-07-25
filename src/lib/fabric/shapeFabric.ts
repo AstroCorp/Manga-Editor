@@ -1,8 +1,12 @@
+/**
+ * Panel de dominio → Polygon Fabric (bloqueado en posición).
+ */
 import { Polygon } from 'fabric';
 import { PANEL_FILL, PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
-import type { PanelPolygon, PanelShape } from '@/types/fabric';
+import type { Shape } from '@/models/Shape';
+import type { PanelPolygon } from '@/types/fabric';
 
-export const shapeToPolygon = (shape: PanelShape): PanelPolygon => {
+export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 	const polygon = new Polygon(
 		shape.points.map((point) => {
 			return { x: point.x, y: point.y };

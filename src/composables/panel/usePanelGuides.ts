@@ -3,6 +3,7 @@ import { watch, type ShallowRef } from 'vue';
 import type { Canvas } from 'fabric';
 import { createGridGuideImage } from '@/lib/fabric/createGridGuide';
 import { isGridGuide } from '@/lib/fabric/isGuide';
+import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
 
 type GuidesDeps = {
@@ -11,7 +12,9 @@ type GuidesDeps = {
 
 export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 	const editorStore = useEditorStore();
-	const { showGridGuides, layout } = storeToRefs(editorStore);
+	const mangaStore = useMangaStore();
+	const { showGridGuides } = storeToRefs(editorStore);
+	const { layout } = storeToRefs(mangaStore);
 
 	const clearGuides = () => {
 		const canvas = fabricCanvas.value;
@@ -20,7 +23,7 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 			return;
 		}
 
-		// Solo ocultamos la rejilla, no el trazo en curso o el que está en curso.
+		// Solo ocultamos los puntos de la rejilla, las líneas en curso, trazo previo y formas se quedan.
 		canvas
 			.getObjects()
 			.filter((object) => isGridGuide(object))
@@ -31,7 +34,7 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 
 	const refreshGuides = () => {
 		const canvas = fabricCanvas.value;
-		
+
 		if (!canvas) {
 			return;
 		}
@@ -40,7 +43,7 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 
 		if (showGridGuides.value) {
 			const guide = createGridGuideImage(layout.value);
-			
+
 			canvas.add(guide);
 			canvas.sendObjectToBack(guide);
 		}

@@ -1,0 +1,117 @@
+import { computed, ref, triggerRef } from 'vue';
+import { defineStore } from 'pinia';
+import { Page } from '@/models/Page';
+import type { Shape } from '@/models/Shape';
+import type { PageLayoutMetrics } from '@/types/geometry';
+import type { PageMargins } from '@/types/page';
+
+export const useMangaStore = defineStore('manga', () => {
+	const title = ref('Untitled');
+	const firstPage = Page.createBlank(1);
+	const pages = ref<Page[]>([firstPage]);
+	const activePageId = ref(firstPage.id);
+
+	/** Pinia no detecta mutaciones internas de Page; forzamos reactividad. */
+	const touchPages = () => {
+		triggerRef(pages);
+	};
+
+	const findPage = (pageId: string) => {
+		return pages.value.find((page) => {
+			return page.id === pageId;
+		});
+	};
+
+	const getActivePage = () => {
+		return findPage(activePageId.value);
+	};
+
+	const activePage = computed(() => {
+		return getActivePage() ?? null;
+	});
+
+	const layout = computed((): PageLayoutMetrics => {
+		const page = getActivePage() ?? firstPage;
+
+		return {
+			width: page.width,
+			height: page.height,
+			cols: page.gridCols,
+			rows: page.gridRows,
+			margins: {
+				marginTop: page.marginTop,
+				marginRight: page.marginRight,
+				marginBottom: page.marginBottom,
+				marginLeft: page.marginLeft,
+			},
+		};
+	});
+
+	const pageWidth = computed(() => {
+		return (getActivePage() ?? firstPage).width;
+	});
+
+	const pageHeight = computed(() => {
+		return (getActivePage() ?? firstPage).height;
+	});
+
+	const strokeWidth = computed(() => {
+		return (getActivePage() ?? firstPage).strokeWidth;
+	});
+
+	const shapes = computed(() => {
+		return getActivePage()?.shapes ?? [];
+	});
+
+	const addShape = (shape: Shape) => {
+		const page = getActivePage();
+
+		if (!page) {
+			return;
+		}
+
+		page.addShape(shape);
+
+		touchPages();
+	};
+
+	const setActiveMargins = (margins: PageMargins) => {
+		const page = getActivePage();
+
+		if (!page) {
+			return;
+		}
+
+		page.setMargins(margins);
+
+		touchPages();
+	};
+
+	const setActiveStrokeWidth = (width: number) => {
+		const page = getActivePage();
+		
+		if (!page) {
+			return;
+		}
+
+		page.setStrokeWidth(width);
+
+		touchPages();
+	};
+
+	return {
+		title,
+		pages,
+		activePageId,
+		activePage,
+		layout,
+		pageWidth,
+		pageHeight,
+		strokeWidth,
+		shapes,
+		addShape,
+		setActiveMargins,
+		setActiveStrokeWidth,
+		touchPages,
+	};
+});

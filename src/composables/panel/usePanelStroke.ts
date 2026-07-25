@@ -18,15 +18,17 @@ import {
 	DRAFT_STROKE_COLOR,
 	GUIDE_STROKE_COLOR,
 } from '@/lib/fabric/fabricColors';
-import { createId } from '@/lib/id';
+import { Shape } from '@/models/Shape';
+import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
 import type { GridPoint } from '@/types/geometry';
-import type { PanelShape } from '@/types/fabric';
 import type { GuidedPolyline, StrokeDeps } from '@/types/stroke';
 
 export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 	const editorStore = useEditorStore();
-	const { showGridGuides, layout, strokeWidth, panels } = storeToRefs(editorStore);
+	const mangaStore = useMangaStore();
+	const { showGridGuides } = storeToRefs(editorStore);
+	const { layout, strokeWidth, shapes } = storeToRefs(mangaStore);
 
 	// path = puntos de rejilla ya clicados (fuente de verdad del trazo).
 	const path = shallowRef<GridPoint[]>([]);
@@ -130,8 +132,8 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 
 	/** Polígonos ya cerrados (para no cruzarlos / no dibujar dentro). */
 	const existingPolygons = () => {
-		return panels.value
-			.map((panel) => panel.points)
+		return shapes.value
+			.map((shape) => shape.points)
 			.filter((points) => points.length >= 3);
 	};
 
@@ -300,14 +302,10 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 
 		path.value = [];
 
-		const shape: PanelShape = {
-			id: createId(),
-			points,
-			strokeWidth: strokeWidth.value,
-		};
+		// Shape de dominio → store (Page) + Polygon Fabric.
+		const shape = Shape.create(points, strokeWidth.value);
 
-		// Persistimos en store y añadimos al canvas.
-		editorStore.addPanel(shape);
+		mangaStore.addShape(shape);
 
 		const panel = shapeToPolygon(shape);
 

@@ -2,12 +2,12 @@ import { onBeforeUnmount, shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
 import { storeToRefs } from 'pinia';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
-import { useEditorStore } from '@/stores/editor';
+import { useMangaStore } from '@/stores/manga';
 
 export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 	const fabricCanvas = shallowRef<Canvas | null>(null);
-	const editorStore = useEditorStore();
-	const { pageWidth, pageHeight } = storeToRefs(editorStore);
+	const mangaStore = useMangaStore();
+	const { pageWidth, pageHeight } = storeToRefs(mangaStore);
 
 	const dispose = () => {
 		fabricCanvas.value?.dispose();
