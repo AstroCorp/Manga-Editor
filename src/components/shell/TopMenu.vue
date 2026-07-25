@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import GuideToggle from '@/components/toolbar/GuideToggle.vue';
+</script>
+
 <template>
 	<header
 		class="relative z-30 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/90"
@@ -7,5 +11,9 @@
 		>
 			Manga Editor
 		</p>
+
+		<div class="flex items-center gap-2">
+			<GuideToggle />
+		</div>
 	</header>
 </template>

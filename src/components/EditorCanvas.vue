@@ -1,29 +1,32 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
+import { usePanelGuides } from '@/composables/panel/usePanelGuides';
 
 const ZOOM = 0.75;
 
 const canvasEl = ref<HTMLCanvasElement | null>(null);
-const { init, PAGE_WIDTH, PAGE_HEIGHT } = useFabricCanvas(canvasEl);
+const { fabricCanvas, init, pageWidth, pageHeight } = useFabricCanvas(canvasEl);
+const { refreshGuides } = usePanelGuides({ fabricCanvas });
 
 const stageStyle = computed(() => {
 	return {
-		width: `${PAGE_WIDTH * ZOOM}px`,
-		height: `${PAGE_HEIGHT * ZOOM}px`,
+		width: `${pageWidth.value * ZOOM}px`,
+		height: `${pageHeight.value * ZOOM}px`,
 	};
 });
 
 const scaleStyle = computed(() => {
 	return {
-		width: `${PAGE_WIDTH}px`,
-		height: `${PAGE_HEIGHT}px`,
+		width: `${pageWidth.value}px`,
+		height: `${pageHeight.value}px`,
 		transform: `scale(${ZOOM})`,
 	};
 });
 
 onMounted(() => {
 	init();
+	refreshGuides();
 });
 </script>
 

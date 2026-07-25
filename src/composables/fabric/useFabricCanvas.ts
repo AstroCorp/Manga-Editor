@@ -1,14 +1,12 @@
-/**
- * Ciclo de vida del Canvas Fabric: init / dispose.
- */
 import { onBeforeUnmount, shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
-
-const PAGE_WIDTH = 1753;
-const PAGE_HEIGHT = 2480;
+import { storeToRefs } from 'pinia';
+import { useEditorStore } from '@/stores/editor';
 
 export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 	const fabricCanvas = shallowRef<Canvas | null>(null);
+	const editorStore = useEditorStore();
+	const { pageWidth, pageHeight } = storeToRefs(editorStore);
 
 	const dispose = () => {
 		fabricCanvas.value?.dispose();
@@ -18,19 +16,18 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 	const init = () => {
 		dispose();
 
-		const el = canvasEl.value;
-
-		if (!el) {
+		const element = canvasEl.value;
+		if (!element) {
 			return;
 		}
 
-		fabricCanvas.value = new Canvas(el, {
-			width: PAGE_WIDTH,
-			height: PAGE_HEIGHT,
+		fabricCanvas.value = new Canvas(element, {
+			width: pageWidth.value,
+			height: pageHeight.value,
 			backgroundColor: '#ffffff',
 			selection: true,
 		});
-		
+
 		// Fabric 7 aplica options en el constructor pero no pinta hasta el primer render.
 		fabricCanvas.value.requestRenderAll();
 	};
@@ -42,7 +39,7 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 	return {
 		fabricCanvas,
 		init,
-		PAGE_WIDTH,
-		PAGE_HEIGHT,
+		pageWidth,
+		pageHeight,
 	};
 };
