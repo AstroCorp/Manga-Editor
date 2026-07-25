@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import {
 	MAX_GRID_POINTS,
@@ -8,11 +10,20 @@ import {
 	MIN_PAGE_SIZE,
 	MIN_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
+import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import type { PageMarginSide } from '@/types/page';
 
 const mangaStore = useMangaStore();
-const { activePage, pageSize, gridSize, margins, strokeWidth } = useActivePageLayout();
+const editorStore = useEditorStore();
+const { selectedStrokeWidth } = storeToRefs(editorStore);
+const { activePage, pageSize, gridSize, margins, strokeWidth } =
+	useActivePageLayout();
+
+/** Con selección: stroke del panel; sin ella: stroke por defecto de la página. */
+const panelStrokeWidth = computed(() => {
+	return selectedStrokeWidth.value ?? strokeWidth.value;
+});
 
 const onWidthChange = (event: Event) => {
 	mangaStore.setActivePageSize(
@@ -62,6 +73,12 @@ const onStrokeWidthChange = (event: Event) => {
 	const value = Number((event.target as HTMLInputElement).value);
 
 	if (!Number.isFinite(value)) {
+		return;
+	}
+
+	if (selectedStrokeWidth.value !== null) {
+		editorStore.setSelectionStrokeWidth(value);
+
 		return;
 	}
 
@@ -216,7 +233,7 @@ const onStrokeWidthChange = (event: Event) => {
 				<input
 					type="number"
 					class="w-18 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none transition hover:border-blue-600/50 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus:border-blue-500 dark:focus:ring-blue-500/25"
-					:value="strokeWidth"
+					:value="panelStrokeWidth"
 					:min="MIN_STROKE_WIDTH"
 					:max="MAX_STROKE_WIDTH"
 					@input="onStrokeWidthChange"

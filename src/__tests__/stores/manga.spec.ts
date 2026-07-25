@@ -53,4 +53,25 @@ describe('useMangaStore config layout', () => {
 		expect(store.strokeWidth).toBe(8);
 		expect(store.contentResetEpoch).toBe(epoch);
 	});
+
+	it('removeShape and setShapeStrokeWidth mutate the active page', () => {
+		const store = useMangaStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			3,
+		);
+
+		store.addShape(shape);
+		store.setShapeStrokeWidth(shape.id, 12);
+
+		expect(store.shapes[0]?.strokeWidth).toBe(12);
+
+		store.removeShape(shape.id);
+
+		expect(store.shapes).toHaveLength(0);
+	});
 });

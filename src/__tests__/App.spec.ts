@@ -40,6 +40,17 @@ vi.mock('@/composables/panel/usePanelStroke', () => {
 	};
 });
 
+vi.mock('@/composables/panel/usePanelSelection', () => {
+	return {
+		usePanelSelection: () => {
+			return {
+				removeActive: vi.fn(() => false),
+				setSelectionStrokeWidth: vi.fn(() => false),
+			};
+		},
+	};
+});
+
 afterEach(() => {
 	document.body.innerHTML = '';
 });
@@ -62,6 +73,9 @@ describe('App', () => {
 		expect(wrapper.text()).toContain('Layouts');
 		expect(
 			wrapper.find('button[aria-label="Hide guides"]').exists(),
+		).toBe(true);
+		expect(
+			wrapper.find('button[aria-label="Delete selection"]').exists(),
 		).toBe(true);
 
 		wrapper.unmount();

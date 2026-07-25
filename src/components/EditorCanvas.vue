@@ -1,22 +1,30 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
 import { usePageContentReset } from '@/composables/page/usePageContentReset';
 import { usePanelGuides } from '@/composables/panel/usePanelGuides';
+import { usePanelSelection } from '@/composables/panel/usePanelSelection';
 import { usePanelStroke } from '@/composables/panel/usePanelStroke';
+import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 
 const ZOOM = 0.75;
 
 const mangaStore = useMangaStore();
+const editorStore = useEditorStore();
 const { contentResetEpoch } = storeToRefs(mangaStore);
 
 const canvasEl = ref<HTMLCanvasElement | null>(null);
-	
+
 const { fabricCanvas, init, pageWidth, pageHeight } = useFabricCanvas(canvasEl);
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
-const { cancelStroke } = usePanelStroke({ fabricCanvas });
+const { cancelStroke, syncInteractionMode } = usePanelStroke({ fabricCanvas });
+const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
+	fabricCanvas,
+	syncInteractionMode,
+	cancelStroke,
+});
 
 usePageContentReset({
 	fabricCanvas,
@@ -43,6 +51,16 @@ const scaleStyle = computed(() => {
 onMounted(() => {
 	init();
 	refreshGuides();
+
+	editorStore.registerCanvas({
+		cancelStroke,
+		removeActive,
+		setSelectionStrokeWidth,
+	});
+});
+
+onBeforeUnmount(() => {
+	editorStore.unregisterCanvas();
 });
 </script>
 

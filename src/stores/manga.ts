@@ -95,6 +95,29 @@ export const useMangaStore = defineStore('manga', () => {
 		touchPages();
 	};
 
+	const removeShape = (shapeId: string) => {
+		const page = getActivePage();
+
+		if (!page?.removeShape(shapeId)) {
+			return;
+		}
+
+		touchPages();
+	};
+
+	const setShapeStrokeWidth = (shapeId: string, width: number) => {
+		const page = getActivePage();
+		const shape = page?.findShape(shapeId);
+
+		if (!shape) {
+			return;
+		}
+
+		shape.strokeWidth = width;
+		
+		touchPages();
+	};
+
 	// Cambiar geometría invalida el dibujo (la rejilla ya no encaja).
 	const setActivePageSize = (width: number, height: number) => {
 		const page = getActivePage();
@@ -155,6 +178,8 @@ export const useMangaStore = defineStore('manga', () => {
 		shapes,
 		clearActivePage,
 		addShape,
+		removeShape,
+		setShapeStrokeWidth,
 		setActivePageSize,
 		setActivePageGrid,
 		setActivePageMargins,

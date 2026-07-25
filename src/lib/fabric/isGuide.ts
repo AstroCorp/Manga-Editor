@@ -1,4 +1,4 @@
-import type { FabricObject } from 'fabric';
+import type { Canvas, FabricObject } from 'fabric';
 import type { GuideMarkedObject } from '@/types/fabric';
 
 export const isGuide = (object: FabricObject): boolean => {
@@ -21,4 +21,16 @@ export const getPanelId = (object: FabricObject): string | undefined => {
 	const value = object.get('panelId');
 
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+/** Quita del canvas todos los objetos ligados a un panelId. */
+export const removeObjectsByPanelId = (canvas: Canvas, panelId: string) => {
+	canvas
+		.getObjects()
+		.filter((object) => {
+			return getPanelId(object) === panelId;
+		})
+		.forEach((object) => {
+			canvas.remove(object);
+		});
 };

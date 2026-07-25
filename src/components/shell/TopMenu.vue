@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GuideToggle from '@/components/toolbar/GuideToggle.vue';
+import PageActions from '@/components/toolbar/PageActions.vue';
 </script>
 
 <template>
@@ -13,6 +14,7 @@ import GuideToggle from '@/components/toolbar/GuideToggle.vue';
 		</p>
 
 		<div class="flex items-center gap-2">
+			<PageActions />
 			<GuideToggle />
 		</div>
 	</header>

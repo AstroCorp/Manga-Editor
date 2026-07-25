@@ -391,22 +391,6 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		updateRubberBand(pointFromEvent(event));
 	};
 
-	const onKeyDown = (event: KeyboardEvent) => {
-		if (event.key !== 'Escape') {
-			return;
-		}
-
-		// No cancelar si se escribe en un input.
-		if (
-			event.target instanceof HTMLInputElement ||
-			event.target instanceof HTMLTextAreaElement
-		) {
-			return;
-		}
-
-		cancelStroke();
-	};
-
 	const bindCanvasEvents = (canvas: Canvas) => {
 		canvas.on('mouse:down', onCanvasMouseDown);
 		canvas.on('mouse:move', onCanvasMouseMove);
@@ -447,16 +431,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		cancelStroke();
 	});
 
-	// Escape a nivel de ventana.
-	if (typeof window !== 'undefined') {
-		window.addEventListener('keydown', onKeyDown);
-	}
-
 	onBeforeUnmount(() => {
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('keydown', onKeyDown);
-		}
-
 		if (rubberFrameId !== null) {
 			cancelAnimationFrame(rubberFrameId);
 			rubberFrameId = null;
