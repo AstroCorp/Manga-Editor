@@ -70,8 +70,9 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(removeActive).not.toHaveBeenCalled();
 	});
 
-	it('exportPage downloads when exportDataUrl returns a data url', () => {
+	it('exportPage cancels stroke then downloads the image', () => {
 		const store = useEditorStore();
+		const cancelStroke = vi.fn();
 		const exportDataUrl = vi.fn(() => 'data:image/png;base64,abc');
 		const click = vi.fn();
 		const remove = vi.fn();
@@ -89,7 +90,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 		});
 
 		store.registerCanvas({
-			cancelStroke: vi.fn(),
+			cancelStroke,
 			removeActive: vi.fn(() => false),
 			setSelectionStrokeWidth: vi.fn(() => false),
 			exportDataUrl,
@@ -98,6 +99,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		store.exportPage(EXPORT_IMAGE_FORMAT.Png);
 
+		expect(cancelStroke).toHaveBeenCalledOnce();
 		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Png);
 		expect(link.download).toBe('untitled-page-1.png');
 		expect(click).toHaveBeenCalledOnce();

@@ -1,6 +1,7 @@
 import { onBeforeUnmount, shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
+import { isGuide } from '@/lib/fabric/isGuide';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
@@ -52,11 +53,26 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 			return null;
 		}
 
-		return canvas.toDataURL({
-			format,
-			quality: 1,
-			multiplier: 1,
+		const guides = canvas.getObjects().filter((object) => {
+			return isGuide(object);
 		});
+
+		guides.forEach((guide) => {
+			guide.visible = false;
+		});
+
+		try {
+			return canvas.toDataURL({
+				format,
+				quality: 1,
+				multiplier: 1,
+			});
+		} finally {
+			guides.forEach((guide) => {
+				guide.visible = true;
+			});
+			canvas.requestRenderAll();
+		}
 	};
 
 	onBeforeUnmount(() => {

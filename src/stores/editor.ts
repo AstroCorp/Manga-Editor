@@ -77,6 +77,9 @@ export const useEditorStore = defineStore('editor', () => {
 	};
 
 	const exportPage = (format: ExportImageFormat) => {
+		// Como Escape: no exportar un trazo a medias ni el rubber.
+		canvasActions.cancelStroke();
+
 		const dataUrl = canvasActions.exportDataUrl(format);
 
 		if (!dataUrl) {
