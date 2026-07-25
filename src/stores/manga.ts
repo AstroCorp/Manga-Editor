@@ -2,6 +2,7 @@ import { computed, ref, triggerRef } from 'vue';
 import { defineStore } from 'pinia';
 import { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
+import type { ShapeImage } from '@/models/ShapeImage';
 import type { PageLayoutMetrics } from '@/types/geometry';
 import type { PageMargins } from '@/types/page';
 
@@ -28,16 +29,26 @@ export const useMangaStore = defineStore('manga', () => {
 		});
 	};
 
-	const getActivePage = () => {
-		return findPage(activePageId.value);
+	/**
+	 * Siempre hay ≥1 página y activePageId apunta a una válida
+	 * (o caemos a la primera).
+	 */
+	const getActivePage = (): Page => {
+		const page = findPage(activePageId.value) ?? pages.value[0];
+
+		if (!page) {
+			throw new Error('Manga document must have at least one page');
+		}
+
+		return page;
 	};
 
-	const activePage = computed(() => {
-		return getActivePage() ?? null;
+	const activePage = computed((): Page => {
+		return getActivePage();
 	});
 
 	const layout = computed((): PageLayoutMetrics => {
-		const page = getActivePage() ?? firstPage;
+		const page = getActivePage();
 
 		return {
 			width: page.width,
@@ -54,51 +65,123 @@ export const useMangaStore = defineStore('manga', () => {
 	});
 
 	const pageWidth = computed(() => {
-		return (getActivePage() ?? firstPage).width;
+		return getActivePage().width;
 	});
 
 	const pageHeight = computed(() => {
-		return (getActivePage() ?? firstPage).height;
+		return getActivePage().height;
 	});
 
 	const strokeWidth = computed(() => {
-		return (getActivePage() ?? firstPage).strokeWidth;
+		return getActivePage().strokeWidth;
 	});
 
 	const shapes = computed(() => {
-		return getActivePage()?.shapes ?? [];
+		return getActivePage().shapes;
 	});
 
 	/** Vacía paneles de la página activa y avisa al canvas. */
 	const clearActivePage = () => {
-		const page = getActivePage();
+		getActivePage().clearShapes();
+		contentResetEpoch.value += 1;
+		touchPages();
+	};
+
+	const addPage = () => {
+		const active = getActivePage();
+		const page = Page.createBlank(
+			pages.value.length + 1,
+			active.width,
+			active.height,
+		);
+
+		pages.value.push(page);
+		activePageId.value = page.id;
+		touchPages();
+	};
+
+	/** Siempre queda al menos una página; si borras la activa, selecciona vecina. */
+	const removePage = (pageId: string) => {
+		if (pages.value.length <= 1) {
+			return;
+		}
+
+		const index = pages.value.findIndex((page) => {
+			return page.id === pageId;
+		});
+
+		if (index === -1) {
+			return;
+		}
+
+		pages.value.splice(index, 1);
+
+		if (activePageId.value === pageId) {
+			const nextIndex = Math.min(index, pages.value.length - 1);
+			const nextPage = pages.value[nextIndex];
+
+			if (!nextPage) {
+				throw new Error('Manga document must have at least one page');
+			}
+
+			activePageId.value = nextPage.id;
+		}
+
+		touchPages();
+	};
+
+	const selectPage = (pageId: string) => {
+		if (
+			!pages.value.some((page) => {
+				return page.id === pageId;
+			})
+		) {
+			return;
+		}
+
+		activePageId.value = pageId;
+	};
+
+	const reorderPages = (fromIndex: number, toIndex: number) => {
+		if (
+			fromIndex === toIndex ||
+			fromIndex < 0 ||
+			toIndex < 0 ||
+			fromIndex >= pages.value.length ||
+			toIndex >= pages.value.length
+		) {
+			return;
+		}
+
+		const [page] = pages.value.splice(fromIndex, 1);
 
 		if (!page) {
 			return;
 		}
 
-		page.clearShapes();
+		pages.value.splice(toIndex, 0, page);
+		touchPages();
+	};
 
-		contentResetEpoch.value += 1;
+	const renamePage = (pageId: string, name: string) => {
+		const trimmed = name.trim();
+		const page = findPage(pageId);
 
+		if (!page || !trimmed || trimmed === page.name) {
+			return;
+		}
+
+		page.name = trimmed;
 		touchPages();
 	};
 
 	const addShape = (shape: Shape) => {
-		const page = getActivePage();
-
-		if (!page) {
-			return;
-		}
-
-		page.addShape(shape);
+		getActivePage().addShape(shape);
 		touchPages();
 	};
 
 	const removeShape = (shapeId: string) => {
-		const page = getActivePage();
-
-		if (!page?.removeShape(shapeId)) {
+		if (!getActivePage().removeShape(shapeId)) {
 			return;
 		}
 
@@ -106,62 +189,39 @@ export const useMangaStore = defineStore('manga', () => {
 	};
 
 	const setShapeStrokeWidth = (shapeId: string, width: number) => {
-		const page = getActivePage();
-		const shape = page?.findShape(shapeId);
-
-		if (!shape) {
+		if (!getActivePage().setShapeStrokeWidth(shapeId, width)) {
 			return;
 		}
 
-		shape.strokeWidth = width;
-		
+		touchPages();
+	};
+
+	const setShapeImage = (shapeId: string, image: ShapeImage | null) => {
+		if (!getActivePage().setShapeImage(shapeId, image)) {
+			return;
+		}
+
 		touchPages();
 	};
 
 	// Cambiar geometría invalida el dibujo (la rejilla ya no encaja).
 	const setActivePageSize = (width: number, height: number) => {
-		const page = getActivePage();
-
-		if (!page) {
-			return;
-		}
-
-		page.setSize(width, height);
-
+		getActivePage().setSize(width, height);
 		clearActivePage();
 	};
 
 	const setActivePageGrid = (cols: number, rows: number) => {
-		const page = getActivePage();
-
-		if (!page) {
-			return;
-		}
-
-		page.setGrid(cols, rows);
-		
+		getActivePage().setGrid(cols, rows);
 		clearActivePage();
 	};
 
 	const setActivePageMargins = (margins: PageMargins) => {
-		const page = getActivePage();
-
-		if (!page) {
-			return;
-		}
-
-		page.setMargins(margins);
+		getActivePage().setMargins(margins);
 		clearActivePage();
 	};
 
 	const setActivePageStrokeWidth = (width: number) => {
-		const page = getActivePage();
-
-		if (!page) {
-			return;
-		}
-
-		page.setStrokeWidth(width);
+		getActivePage().setStrokeWidth(width);
 		touchPages();
 	};
 
@@ -176,10 +236,16 @@ export const useMangaStore = defineStore('manga', () => {
 		pageHeight,
 		strokeWidth,
 		shapes,
+		addPage,
+		removePage,
+		selectPage,
+		reorderPages,
+		renamePage,
 		clearActivePage,
 		addShape,
 		removeShape,
 		setShapeStrokeWidth,
+		setShapeImage,
 		setActivePageSize,
 		setActivePageGrid,
 		setActivePageMargins,

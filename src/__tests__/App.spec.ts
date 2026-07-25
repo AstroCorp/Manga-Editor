@@ -10,8 +10,25 @@ vi.mock('@/composables/fabric/useFabricCanvas', () => {
 			return {
 				fabricCanvas: shallowRef(null),
 				init: vi.fn(),
-				pageWidth: shallowRef(1753),
-				pageHeight: shallowRef(2480),
+				hydratePage: vi.fn(),
+			};
+		},
+	};
+});
+
+vi.mock('@/composables/fabric/useFabricZoom', () => {
+	return {
+		useFabricZoom: () => {
+			return {
+				stageStyle: shallowRef({ width: '100px', height: '100px' }),
+				scaleStyle: shallowRef({
+					width: '100px',
+					height: '100px',
+					transform: 'scale(0.75)',
+				}),
+				resetZoomView: vi.fn(),
+				bindWheel: vi.fn(),
+				unbindWheel: vi.fn(),
 			};
 		},
 	};
@@ -56,9 +73,9 @@ afterEach(() => {
 });
 
 describe('App', () => {
-	it('renders header, guide toggle and sidebar tabs', () => {
+	it('renders header, page strip and sidebar tabs', () => {
 		const pinia = createPinia();
-		
+
 		setActivePinia(pinia);
 
 		const wrapper = mount(App, {
@@ -77,6 +94,10 @@ describe('App', () => {
 		expect(
 			wrapper.find('button[aria-label="Delete selection"]').exists(),
 		).toBe(true);
+		expect(wrapper.find('button[aria-label="Add page"]').exists()).toBe(
+			true,
+		);
+		expect(wrapper.find('[aria-label="Zoom"]').exists()).toBe(true);
 
 		wrapper.unmount();
 	});

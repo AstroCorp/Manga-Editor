@@ -1,8 +1,8 @@
-/**
- * Panel de dominio → Polygon Fabric (bloqueado en posición).
- */
+import type { Canvas } from 'fabric';
 import { Polygon } from 'fabric';
 import { PANEL_FILL, PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
+import { isGuide } from '@/lib/fabric/isGuide';
+import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
 
@@ -36,4 +36,26 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 	});
 
 	return polygon;
+};
+
+/** Quita contenido de página (no guías) y pinta shapes desde el dominio. */
+export const hydrateCanvasFromPage = (canvas: Canvas, page: Page): void => {
+	canvas.setDimensions({ width: page.width, height: page.height });
+
+	canvas
+		.getObjects()
+		.filter((object) => {
+			return !isGuide(object);
+		})
+		.forEach((object) => {
+			canvas.remove(object);
+		});
+
+	canvas.backgroundColor = '#ffffff';
+
+	for (const shape of page.shapes) {
+		canvas.add(shapeToPolygon(shape));
+	}
+
+	canvas.requestRenderAll();
 };

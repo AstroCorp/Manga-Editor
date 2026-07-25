@@ -65,6 +65,39 @@ describe('Page / Shape / ShapeImage', () => {
 		expect(shape.toLayoutJSON().image).toBeNull();
 	});
 
+	it('setShapeStrokeWidth and setShapeImage refresh the shapes array ref', () => {
+		const page = Page.createBlank(1);
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 10, y: 20 },
+			],
+			2,
+		);
+
+		page.addShape(shape);
+
+		const afterAdd = page.shapes;
+
+		expect(page.setShapeStrokeWidth(shape.id, 8)).toBe(true);
+		expect(page.shapes).not.toBe(afterAdd);
+		expect(page.shapes[0]?.strokeWidth).toBe(8);
+
+		const afterStroke = page.shapes;
+		const image = new ShapeImage({
+			src: 'data:image/png;base64,xx',
+			left: 5,
+			top: 5,
+			scaleX: 1,
+			scaleY: 1,
+		});
+
+		expect(page.setShapeImage(shape.id, image)).toBe(true);
+		expect(page.shapes).not.toBe(afterStroke);
+		expect(page.shapes[0]?.image?.src).toBe(image.src);
+	});
+
 	it('clamps page size and margins', () => {
 		const page = Page.createBlank(1);
 		

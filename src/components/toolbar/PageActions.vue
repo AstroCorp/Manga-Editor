@@ -54,7 +54,7 @@ const confirmClearPage = () => {
 		<ConfirmModal
 			v-if="pendingClear"
 			title="Clear page"
-			:message="`Clear '${activePage?.name ?? 'this page'}'? Panels will be removed.`"
+			:message="`Clear '${activePage.name}'? Panels will be removed.`"
 			confirm-label="Clear"
 			cancel-label="Cancel"
 			@confirm="confirmClearPage"

@@ -1,5 +1,6 @@
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
+import type { Ref } from 'vue';
 
 export type PagePoint = {
 	x: number;
@@ -23,6 +24,36 @@ export type ShapeJSON = {
 	points: PagePoint[];
 	strokeWidth: number;
 	image: ShapeImageJSON | null;
+};
+
+export type ShapeLike =
+	| Pick<ShapeJSON, 'points' | 'strokeWidth' | 'image'>
+	| Shape;
+
+export type PagePreviewPanel = {
+	points: string;
+	strokeWidth: number;
+};
+
+export type PagePreviewImage = {
+	href: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+};
+
+export type PagePreviewModel = {
+	width: number;
+	height: number;
+	panels: PagePreviewPanel[];
+	images: PagePreviewImage[];
+};
+
+export type ContentResetDeps = {
+	contentResetEpoch: Ref<number>;
+	applyReset: () => void;
+	discardSelection?: () => void;
 };
 
 export type PageMarginSide =

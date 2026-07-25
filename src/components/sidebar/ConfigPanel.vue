@@ -56,10 +56,6 @@ const onRowsChange = (event: Event) => {
 const onMarginChange = (side: PageMarginSide, event: Event) => {
 	const page = activePage.value;
 
-	if (!page) {
-		return;
-	}
-
 	mangaStore.setActivePageMargins({
 		marginTop: page.marginTop,
 		marginRight: page.marginRight,

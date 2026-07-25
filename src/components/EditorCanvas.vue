@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
+import { useFabricZoom } from '@/composables/fabric/useFabricZoom';
+import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { usePageContentReset } from '@/composables/page/usePageContentReset';
 import { usePanelGuides } from '@/composables/panel/usePanelGuides';
 import { usePanelSelection } from '@/composables/panel/usePanelSelection';
@@ -9,15 +11,17 @@ import { usePanelStroke } from '@/composables/panel/usePanelStroke';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 
-const ZOOM = 0.75;
-
 const mangaStore = useMangaStore();
 const editorStore = useEditorStore();
-const { contentResetEpoch } = storeToRefs(mangaStore);
+const { activePageId, contentResetEpoch } = storeToRefs(mangaStore);
+const { activePage, pageSize } = useActivePageLayout();
 
+const rootEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
-const { fabricCanvas, init, pageWidth, pageHeight } = useFabricCanvas(canvasEl);
+const { fabricCanvas, init, hydratePage } = useFabricCanvas(canvasEl);
+const { stageStyle, scaleStyle, resetZoomView, bindWheel, unbindWheel } =
+	useFabricZoom({ fabricCanvas, rootEl, pageSize });
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
 const { cancelStroke, syncInteractionMode } = usePanelStroke({ fabricCanvas });
 const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
@@ -26,47 +30,66 @@ const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
 	cancelStroke,
 });
 
+const discardSelection = () => {
+	fabricCanvas.value?.discardActiveObject();
+	editorStore.setHasSelection(false);
+	editorStore.setSelectedStrokeWidth(null);
+};
+
+const applyActivePage = () => {
+	const page = activePage.value;
+
+	cancelStroke();
+	discardSelection();
+	hydratePage(page);
+	refreshGuides();
+	syncInteractionMode();
+	resetZoomView();
+};
+
 usePageContentReset({
-	fabricCanvas,
 	contentResetEpoch,
-	cancelStroke,
-	refreshGuides,
-});
-
-const stageStyle = computed(() => {
-	return {
-		width: `${pageWidth.value * ZOOM}px`,
-		height: `${pageHeight.value * ZOOM}px`,
-	};
-});
-
-const scaleStyle = computed(() => {
-	return {
-		width: `${pageWidth.value}px`,
-		height: `${pageHeight.value}px`,
-		transform: `scale(${ZOOM})`,
-	};
+	applyReset: applyActivePage,
+	discardSelection,
 });
 
 onMounted(() => {
-	init();
-	refreshGuides();
+	if (!canvasEl.value) {
+		return;
+	}
+
+	const page = activePage.value;
+
+	init(page.width, page.height);
+	applyActivePage();
+	bindWheel();
 
 	editorStore.registerCanvas({
 		cancelStroke,
 		removeActive,
 		setSelectionStrokeWidth,
+		resetZoomView,
 	});
 });
 
 onBeforeUnmount(() => {
+	unbindWheel();
 	editorStore.unregisterCanvas();
+});
+
+watch(activePageId, (nextId, prevId) => {
+	if (nextId === prevId) {
+		return;
+	}
+
+	applyActivePage();
 });
 </script>
 
 <template>
 	<!-- Click en el damero (fuera de la página) cancela el trazo. -->
 	<div
+		ref="rootEl"
 		class="stage-checker h-full w-full overflow-auto p-8 pt-12"
 		@pointerdown.self="cancelStroke"
 	>

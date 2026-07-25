@@ -74,4 +74,72 @@ describe('useMangaStore config layout', () => {
 
 		expect(store.shapes).toHaveLength(0);
 	});
+
+	it('addPage / selectPage / removePage manage the document', () => {
+		const store = useMangaStore();
+		const firstId = store.activePageId;
+
+		store.addPage();
+
+		expect(store.pages).toHaveLength(2);
+		expect(store.activePageId).not.toBe(firstId);
+
+		const secondId = store.activePageId;
+
+		store.selectPage(firstId);
+
+		expect(store.activePageId).toBe(firstId);
+
+		store.removePage(secondId);
+
+		expect(store.pages).toHaveLength(1);
+		expect(store.activePageId).toBe(firstId);
+
+		store.removePage(firstId);
+
+		expect(store.pages).toHaveLength(1);
+	});
+
+	it('reorderPages and renamePage update the strip', () => {
+		const store = useMangaStore();
+
+		store.addPage();
+		store.addPage();
+
+		const [first, second, third] = store.pages;
+
+		store.reorderPages(2, 0);
+
+		expect(store.pages[0]?.id).toBe(third!.id);
+		expect(store.pages[1]?.id).toBe(first!.id);
+		expect(store.pages[2]?.id).toBe(second!.id);
+
+		store.renamePage(first!.id, 'Cover');
+
+		expect(store.pages.find((page) => page.id === first!.id)?.name).toBe(
+			'Cover',
+		);
+	});
+
+	it('shape mutations replace the shapes array reference', () => {
+		const store = useMangaStore();
+		const page = store.activePage;
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			3,
+		);
+
+		store.addShape(shape);
+
+		const afterAdd = page.shapes;
+
+		store.setShapeStrokeWidth(shape.id, 5);
+
+		expect(page.shapes).not.toBe(afterAdd);
+		expect(page.shapes[0]?.strokeWidth).toBe(5);
+	});
 });

@@ -1,11 +1,17 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import {
+	DEFAULT_ZOOM_PERCENT,
+	ZOOM_STEP_PERCENT,
+	clampZoomPercent,
+} from '@/lib/zoom';
 import type { CanvasActions } from '@/types/editor';
 
 export const useEditorStore = defineStore('editor', () => {
 	const hasSelection = ref(false);
 	const selectedStrokeWidth = ref<number | null>(null);
 	const showGridGuides = ref(true);
+	const zoomPercent = ref(DEFAULT_ZOOM_PERCENT);
 
 	/** Stubs seguros hasta que EditorCanvas registre las acciones reales. */
 	const createCanvasActionStubs = (): CanvasActions => {
@@ -13,6 +19,7 @@ export const useEditorStore = defineStore('editor', () => {
 			cancelStroke: () => undefined,
 			removeActive: () => false,
 			setSelectionStrokeWidth: () => false,
+			resetZoomView: () => undefined,
 		};
 	};
 
@@ -41,13 +48,35 @@ export const useEditorStore = defineStore('editor', () => {
 		showGridGuides.value = !showGridGuides.value;
 	};
 
+	const setZoomPercent = (value: number) => {
+		zoomPercent.value = clampZoomPercent(value);
+	};
+
+	const zoomIn = () => {
+		setZoomPercent(zoomPercent.value + ZOOM_STEP_PERCENT);
+	};
+
+	const zoomOut = () => {
+		setZoomPercent(zoomPercent.value - ZOOM_STEP_PERCENT);
+	};
+
+	const resetZoom = () => {
+		setZoomPercent(DEFAULT_ZOOM_PERCENT);
+		canvasActions.resetZoomView();
+	};
+
 	return {
 		hasSelection,
 		selectedStrokeWidth,
 		showGridGuides,
+		zoomPercent,
 		setHasSelection,
 		setSelectedStrokeWidth,
 		toggleGridGuides,
+		setZoomPercent,
+		zoomIn,
+		zoomOut,
+		resetZoom,
 		registerCanvas,
 		unregisterCanvas,
 		cancelStroke: () => {

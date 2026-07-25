@@ -13,6 +13,7 @@ import {
 } from '@/lib/page/pageLimits';
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
+import type { ShapeImage } from '@/models/ShapeImage';
 import type { PageJSON, PageMargins, PageValue } from '@/types/page';
 
 export class Page {
@@ -112,17 +113,49 @@ export class Page {
 	}
 
 	addShape(shape: Shape) {
-		this.shapes.push(shape);
+		this.shapes = [...this.shapes, shape];
 	}
 
 	removeShape(shapeId: string): boolean {
-		const index = this.shapes.findIndex((shape) => {
-			return shape.id === shapeId;
+		const next = this.shapes.filter((shape) => {
+			return shape.id !== shapeId;
 		});
-		if (index === -1) {
+
+		if (next.length === this.shapes.length) {
 			return false;
 		}
-		this.shapes.splice(index, 1);
+
+		this.shapes = next;
+
+		return true;
+	}
+
+	setShapeStrokeWidth(shapeId: string, width: number): boolean {
+		const shape = this.findShape(shapeId);
+
+		if (!shape) {
+			return false;
+		}
+
+		shape.strokeWidth = clampStrokeWidth(width);
+
+		// Nueva ref del array: Vue detecta mutaciones in-place en miniaturas.
+		this.shapes = this.shapes.slice();
+
+		return true;
+	}
+
+	setShapeImage(shapeId: string, image: ShapeImage | null): boolean {
+		const shape = this.findShape(shapeId);
+
+		if (!shape) {
+			return false;
+		}
+
+		shape.setImage(image);
+		// Nueva ref del array: Vue detecta mutaciones in-place en miniaturas.
+		this.shapes = this.shapes.slice();
+
 		return true;
 	}
 
@@ -135,6 +168,7 @@ export class Page {
 	/** Copia un layout sobre esta página conservando el id actual. */
 	applyLayout(data: PageJSON) {
 		const fields = resolveLayoutFields(data);
+		
 		this.name = data.name;
 		this.setSize(data.width, data.height);
 		this.shapes = data.shapes.map((shapeJson) => {
@@ -194,6 +228,7 @@ export class Page {
 
 	static fromJSON(data: PageJSON): Page {
 		const fields = resolveLayoutFields(data);
+		
 		return new Page({
 			id: data.id,
 			name: data.name,
