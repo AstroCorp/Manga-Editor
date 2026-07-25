@@ -6,7 +6,7 @@ export const isGuide = (object: FabricObject): boolean => {
 	return Boolean(marked.isGuide || object.get('isGuide'));
 };
 
-/** Solo la imagen raster de puntos (no el draft/rubber band). */
+/** Solo la imagen raster de puntos (no el draft/rubber band (línea azul discontinua)). */
 export const isGridGuide = (object: FabricObject): boolean => {
 	const marked = object as GuideMarkedObject;
 

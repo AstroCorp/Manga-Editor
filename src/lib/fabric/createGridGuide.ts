@@ -82,7 +82,8 @@ export const createGridGuideImage = (layout: PageLayoutMetrics): GridGuideImage 
 	}) as GridGuideImage;
 
 	image.isGuide = true;
-	// Distinto del draft/rubber: refreshGuides solo quita la rejilla.
+	
+	// Distinto del draft/rubber (línea azul discontinua): refreshGuides solo quita la rejilla.
 	image.isGridGuide = true;
 
 	return image;

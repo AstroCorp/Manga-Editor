@@ -33,6 +33,7 @@ vi.mock('@/composables/panel/usePanelStroke', () => {
 		usePanelStroke: () => {
 			return {
 				path: shallowRef([]),
+				cancelStroke: vi.fn(),
 				syncInteractionMode: vi.fn(),
 			};
 		},

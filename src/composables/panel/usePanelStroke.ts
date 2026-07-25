@@ -26,16 +26,23 @@ import type { GuidedPolyline, StrokeDeps } from '@/types/stroke';
 
 export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 	const editorStore = useEditorStore();
-	const { showGridGuides, layout, strokeWidth, panels } =storeToRefs(editorStore);
+	const { showGridGuides, layout, strokeWidth, panels } = storeToRefs(editorStore);
 
+	// path = puntos de rejilla ya clicados (fuente de verdad del trazo).
 	const path = shallowRef<GridPoint[]>([]);
+	// draft = línea sólida entre esos puntos; rubber (línea azul discontinua) = preview al ratón.
 	const draftLine = shallowRef<GuidedPolyline | null>(null);
 	const rubberBand = shallowRef<GuidedPolyline | null>(null);
 
+	// El rubber band (línea azul discontinua) se actualiza como máximo 1 vez por frame (rAF).
 	let rubberFrameId: number | null = null;
 	let pendingHover: GridPoint | null = null;
 
-	/** Mientras hay trazo abierto: sin selección, cursor crosshair. */
+	/**
+	 * Modo interacción según haya trazo abierto o no:
+	 * - dibujando → sin selección, cursor crosshair, paneles no clicables
+	 * - idle → se puede seleccionar paneles (bloqueados en posición)
+	 */
 	const syncInteractionMode = () => {
 		const canvas = fabricCanvas.value;
 
@@ -45,10 +52,12 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 
 		const drawing = path.value.length > 0;
 
+		// Mientras dibujas: no hay marquee de selección.
 		canvas.selection = !drawing;
 		canvas.defaultCursor = drawing ? 'crosshair' : 'default';
 
 		canvas.forEachObject((object) => {
+			// Guías (rejilla, draft, rubber (línea azul discontinua)): nunca seleccionables.
 			if (isGuide(object)) {
 				object.selectable = false;
 				object.evented = false;
@@ -56,6 +65,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 				return;
 			}
 
+			// En dibujo, el resto del canvas no debe “comerse” los clicks.
 			if (drawing) {
 				object.selectable = false;
 				object.evented = false;
@@ -63,6 +73,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 				return;
 			}
 
+			// En idle: paneles clicables pero fijos (sin mover/escalar).
 			if (isPanel(object)) {
 				object.selectable = true;
 				object.evented = true;
@@ -83,6 +94,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		canvas.requestRenderAll();
 	};
 
+	/** Quita del canvas el draft y el rubber band (línea azul discontinua). */
 	const clearDraftGraphics = () => {
 		const canvas = fabricCanvas.value;
 
@@ -101,12 +113,29 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		}
 	};
 
+	/** Aborta el trazo en curso y vuelve al modo selección. */
+	const cancelStroke = () => {
+		// Cancela un rAF pendiente del rubber band (línea azul discontinua).
+		if (rubberFrameId !== null) {
+			cancelAnimationFrame(rubberFrameId);
+			rubberFrameId = null;
+		}
+
+		pendingHover = null;
+		path.value = [];
+
+		clearDraftGraphics();
+		syncInteractionMode();
+	};
+
+	/** Polígonos ya cerrados (para no cruzarlos / no dibujar dentro). */
 	const existingPolygons = () => {
 		return panels.value
 			.map((panel) => panel.points)
 			.filter((points) => points.length >= 3);
 	};
 
+	/** ¿Se puede añadir este punto al path según panelGeometry? */
 	const canExtendPathTo = (point: GridPoint): boolean => {
 		return canExtendStrokePath(
 			path.value,
@@ -116,6 +145,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		);
 	};
 
+	/** Redibuja la línea sólida del path (≥2 puntos). */
 	const updateDraftLine = () => {
 		const canvas = fabricCanvas.value;
 
@@ -123,13 +153,16 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			return;
 		}
 
+		// Siempre recreamos: más simple que mutar puntos a mano.
 		if (draftLine.value) {
 			canvas.remove(draftLine.value);
 			draftLine.value = null;
 		}
 
+		// Con 0–1 puntos no hay segmento que pintar.
 		if (path.value.length < 2) {
 			canvas.requestRenderAll();
+
 			return;
 		}
 
@@ -147,6 +180,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			objectCaching: false,
 		}) as GuidedPolyline;
 
+		// isGuide: refreshGuides no la borra (solo quita isGridGuide).
 		line.isGuide = true;
 
 		canvas.add(line);
@@ -156,6 +190,10 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		canvas.requestRenderAll();
 	};
 
+	/**
+	 * Pinta o actualiza el rubber band (línea azul discontinua) último-punto → hover.
+	 * Si el hover no es válido, se oculta.
+	 */
 	const applyRubberBand = (hover: GridPoint | null) => {
 		const canvas = fabricCanvas.value;
 
@@ -163,6 +201,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			return;
 		}
 
+		// Sin hover o sin path: no hay preview.
 		if (!hover || path.value.length === 0) {
 			if (rubberBand.value) {
 				canvas.remove(rubberBand.value);
@@ -175,6 +214,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 
 		const last = path.value[path.value.length - 1];
 
+		// Hover inválido (cruce, dentro de panel, etc.) → sin rubber (línea azul discontinua).
 		if (last === undefined || !canExtendPathTo(hover)) {
 			if (rubberBand.value) {
 				canvas.remove(rubberBand.value);
@@ -190,6 +230,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			toCanvasPoint(hover, layout.value),
 		];
 
+		// Ya existe: solo actualizamos extremos (más barato que recrear).
 		if (rubberBand.value) {
 			rubberBand.value.set({
 				points,
@@ -197,7 +238,6 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			});
 
 			rubberBand.value.setCoords();
-
 			rubberBand.value.dirty = true;
 
 			canvas.requestRenderAll();
@@ -205,6 +245,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			return;
 		}
 
+		// Primera vez: creamos la Polyline discontinua.
 		const line = new Polyline(points, {
 			fill: 'transparent',
 			stroke: GUIDE_STROKE_COLOR,
@@ -225,9 +266,11 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		canvas.requestRenderAll();
 	};
 
+	/** Encola el hover y aplica el rubber (línea azul discontinua) en el próximo animation frame. */
 	const updateRubberBand = (hover: GridPoint | null) => {
 		pendingHover = hover;
 
+		// Ya hay un frame pendiente: solo actualizamos pendingHover.
 		if (rubberFrameId !== null) {
 			return;
 		}
@@ -238,6 +281,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		});
 	};
 
+	/** Cierra el path: guarda el panel y lo pinta como Polygon permanente. */
 	const commitPanel = () => {
 		const canvas = fabricCanvas.value;
 
@@ -251,6 +295,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			return toCanvasPoint(point, layout.value);
 		});
 
+		// El draft ya no hace falta: el panel lo sustituye.
 		clearDraftGraphics();
 
 		path.value = [];
@@ -261,6 +306,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			strokeWidth: strokeWidth.value,
 		};
 
+		// Persistimos en store y añadimos al canvas.
 		editorStore.addPanel(shape);
 
 		const panel = shapeToPolygon(shape);
@@ -268,14 +314,18 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		canvas.add(panel);
 		canvas.bringObjectToFront(panel);
 
+		// Volvemos a modo selección.
 		syncInteractionMode();
 	};
 
+	/** Intenta añadir un punto de rejilla al path (o cerrar si vuelve al inicio). */
 	const addPoint = (point: GridPoint) => {
+		// Reglas de geometría: si no vale, el click no hace nada.
 		if (!canExtendPathTo(point)) {
 			return;
 		}
 
+		// Primer punto: arranca el trazo.
 		if (path.value.length === 0) {
 			path.value = [point];
 
@@ -288,6 +338,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			return;
 		}
 
+		// Puntos siguientes: alargamos el path y el draft.
 		const nextPath = [...path.value, point];
 
 		path.value = nextPath;
@@ -295,12 +346,16 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		updateDraftLine();
 		updateRubberBand(null);
 
+		// Si cerramos (último = primero con ≥4 puntos), commit del panel.
 		if (isClosed(nextPath)) {
 			commitPanel();
 		}
 	};
 
-	const pointFromEvent = (event: TPointerEventInfo<TPointerEvent>): GridPoint => {
+	/** Click del ratón → GridPoint más cercano (snap a la rejilla). */
+	const pointFromEvent = (
+		event: TPointerEventInfo<TPointerEvent>,
+	): GridPoint => {
 		return snapToGridPoint(
 			event.scenePoint.x,
 			event.scenePoint.y,
@@ -312,6 +367,7 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		// Trazo en curso: cualquier click intenta añadir punto.
 		if (path.value.length > 0) {
 			addPoint(pointFromEvent(event));
+
 			return;
 		}
 
@@ -329,11 +385,28 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 	};
 
 	const onCanvasMouseMove = (event: TPointerEventInfo<TPointerEvent>) => {
+		// Solo hay rubber band (línea azul discontinua) si ya hay trazo abierto.
 		if (path.value.length === 0) {
 			return;
 		}
 
 		updateRubberBand(pointFromEvent(event));
+	};
+
+	const onKeyDown = (event: KeyboardEvent) => {
+		if (event.key !== 'Escape') {
+			return;
+		}
+
+		// No cancelar si se escribe en un input.
+		if (
+			event.target instanceof HTMLInputElement ||
+			event.target instanceof HTMLTextAreaElement
+		) {
+			return;
+		}
+
+		cancelStroke();
 	};
 
 	const bindCanvasEvents = (canvas: Canvas) => {
@@ -346,13 +419,17 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		canvas.off('mouse:move', onCanvasMouseMove);
 	};
 
+	// Cuando aparece el canvas: enganchamos eventos y aplicamos el modo idle.
 	watch(
 		fabricCanvas,
 		(canvas, _previous, onCleanup) => {
 			if (!canvas) {
 				return;
 			}
+
 			bindCanvasEvents(canvas);
+			syncInteractionMode();
+
 			onCleanup(() => {
 				unbindCanvasEvents(canvas);
 			});
@@ -360,23 +437,45 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		{ immediate: true },
 	);
 
+	// Ocultar la guía aborta el trazo (no se puede seguir dibujando a ciegas).
+	watch(showGridGuides, (visible) => {
+		if (!visible) {
+			cancelStroke();
+		}
+	});
+
+	// Si cambia el layout, el path en coords de rejilla ya no encaja.
+	watch(layout, () => {
+		cancelStroke();
+	});
+
+	// Escape a nivel de ventana.
+	if (typeof window !== 'undefined') {
+		window.addEventListener('keydown', onKeyDown);
+	}
+
 	onBeforeUnmount(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('keydown', onKeyDown);
+		}
+
 		if (rubberFrameId !== null) {
 			cancelAnimationFrame(rubberFrameId);
 			rubberFrameId = null;
 		}
-		
+
 		const canvas = fabricCanvas.value;
 
 		if (canvas) {
 			unbindCanvasEvents(canvas);
 		}
 
-		clearDraftGraphics();
+		cancelStroke();
 	});
 
 	return {
 		path,
+		cancelStroke,
 		syncInteractionMode,
 	};
 };

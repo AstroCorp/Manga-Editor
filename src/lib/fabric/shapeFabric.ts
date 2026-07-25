@@ -21,7 +21,8 @@ export const shapeToPolygon = (shape: PanelShape): PanelPolygon => {
 			hasControls: false,
 			hoverCursor: 'pointer',
 			objectCaching: true,
-			perPixelTargetFind: false,
+			// Hit-test por forma real, no por bounding box (permite dibujar en huecos cóncavos).
+			perPixelTargetFind: true,
 		},
 	) as PanelPolygon;
 

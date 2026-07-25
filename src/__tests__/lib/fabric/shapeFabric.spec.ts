@@ -23,5 +23,6 @@ describe('shapeToPolygon', () => {
 		expect(polygon.lockMovementX).toBe(true);
 		expect(polygon.hasControls).toBe(false);
 		expect(polygon.strokeWidth).toBe(3);
+		expect(polygon.perPixelTargetFind).toBe(true);
 	});
 });
