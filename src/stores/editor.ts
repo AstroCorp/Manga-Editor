@@ -5,6 +5,7 @@ import {
 	downloadText,
 	exportFileBaseName,
 } from '@/lib/download';
+import { exportImageExtension } from '@/lib/editor/editorEnums';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
 import {
 	DEFAULT_ZOOM_PERCENT,
@@ -14,7 +15,7 @@ import {
 import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { CanvasActions, ExportImageFormat } from '@/types/editor';
-import type { LayoutJSON } from '@/types/page';
+import type { LayoutJSON } from '@/types/layouts';
 
 export const useEditorStore = defineStore('editor', () => {
 	const hasSelection = ref(false);
@@ -87,9 +88,8 @@ export const useEditorStore = defineStore('editor', () => {
 			mangaStore.title,
 			mangaStore.activePage.name,
 		);
-		const extension = format === 'jpeg' ? 'jpg' : 'png';
 
-		downloadDataUrl(dataUrl, `${baseName}.${extension}`);
+		downloadDataUrl(dataUrl, `${baseName}.${exportImageExtension(format)}`);
 	};
 
 	const exportPageJson = () => {

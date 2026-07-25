@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { DEFAULT_ZOOM_PERCENT } from '@/lib/zoom';
+import { EXPORT_IMAGE_FORMAT } from '@/lib/editor/editorEnums';
 import { useEditorStore } from '@/stores/editor';
 
 describe('useEditorStore selection and zoom bridge', () => {
@@ -95,9 +96,9 @@ describe('useEditorStore selection and zoom bridge', () => {
 			resetZoomView: vi.fn(),
 		});
 
-		store.exportPage('png');
+		store.exportPage(EXPORT_IMAGE_FORMAT.Png);
 
-		expect(exportDataUrl).toHaveBeenCalledWith('png');
+		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Png);
 		expect(link.download).toBe('untitled-page-1.png');
 		expect(click).toHaveBeenCalledOnce();
 	});

@@ -1,14 +1,10 @@
 import { storeToRefs } from 'pinia';
-import { watch, type ShallowRef } from 'vue';
-import type { Canvas } from 'fabric';
+import { watch } from 'vue';
 import { createGridGuideImage } from '@/lib/fabric/createGridGuide';
 import { isGridGuide } from '@/lib/fabric/isGuide';
 import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
-
-type GuidesDeps = {
-	fabricCanvas: ShallowRef<Canvas | null>;
-};
+import type { GuidesDeps } from '@/types/panel';
 
 export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 	const editorStore = useEditorStore();

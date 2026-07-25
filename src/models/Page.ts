@@ -14,7 +14,8 @@ import {
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
-import type { LayoutJSON, PageJSON, PageMargins, PageValue } from '@/types/page';
+import type { LayoutJSON } from '@/types/layouts';
+import type { PageJSON, PageMargins, PageValue } from '@/types/page';
 
 export class Page {
 	public readonly id: string;

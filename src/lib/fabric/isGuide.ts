@@ -1,4 +1,5 @@
 import type { Canvas, FabricObject } from 'fabric';
+import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import type { GuideMarkedObject } from '@/types/fabric';
 
 export const isGuide = (object: FabricObject): boolean => {
@@ -14,7 +15,7 @@ export const isGridGuide = (object: FabricObject): boolean => {
 };
 
 export const isPanel = (object: FabricObject): boolean => {
-	return object.get('objectType') === 'panel';
+	return object.get('objectType') === FABRIC_OBJECT_TYPE.Panel;
 };
 
 export const getPanelId = (object: FabricObject): string | undefined => {

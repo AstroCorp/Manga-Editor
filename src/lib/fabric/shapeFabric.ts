@@ -1,6 +1,7 @@
 import type { Canvas } from 'fabric';
 import { Polygon } from 'fabric';
 import { PANEL_FILL, PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
+import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
@@ -30,7 +31,7 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 	) as PanelPolygon;
 
 	polygon.set({
-		objectType: 'panel',
+		objectType: FABRIC_OBJECT_TYPE.Panel,
 		panelId: shape.id,
 	});
 

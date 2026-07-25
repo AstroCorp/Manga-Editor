@@ -3,24 +3,25 @@ import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import ConfigPanel from '@/components/sidebar/ConfigPanel.vue';
 import LayoutsPanel from '@/components/sidebar/LayoutsPanel.vue';
+import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
 import type { SidebarTab, SidebarTabDef } from '@/types/sidebar';
 
 const tabs: SidebarTabDef[] = [
 	{
-		id: 'config',
+		id: SIDEBAR_TAB.Config,
 		label: 'Config',
 		icon: 'fluent:settings-24-regular',
 		panel: ConfigPanel,
 	},
 	{
-		id: 'layouts',
+		id: SIDEBAR_TAB.Layouts,
 		label: 'Layouts',
 		icon: 'fluent:grid-24-regular',
 		panel: LayoutsPanel,
 	},
 ];
 
-const activeTab = ref<SidebarTab | null>('config');
+const activeTab = ref<SidebarTab | null>(SIDEBAR_TAB.Config);
 
 const activeTabDef = computed(() => {
 	return tabs.find((tab) => tab.id === activeTab.value) ?? null;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
 import { useTheme } from '@/composables/useTheme';
+import { THEME_PREFERENCE } from '@/lib/editor/editorEnums';
 import type { ThemePreference } from '@/types/editor';
 
 const { preference, setPreference } = useTheme();
@@ -10,9 +11,21 @@ const options: {
 	label: string;
 	icon: string;
 }[] = [
-	{ value: 'auto', label: 'Auto', icon: 'fluent:desktop-24-regular' },
-	{ value: 'light', label: 'Light', icon: 'fluent:weather-sunny-24-regular' },
-	{ value: 'dark', label: 'Dark', icon: 'fluent:weather-moon-24-regular' },
+	{
+		value: THEME_PREFERENCE.Auto,
+		label: 'Auto',
+		icon: 'fluent:desktop-24-regular',
+	},
+	{
+		value: THEME_PREFERENCE.Light,
+		label: 'Light',
+		icon: 'fluent:weather-sunny-24-regular',
+	},
+	{
+		value: THEME_PREFERENCE.Dark,
+		label: 'Dark',
+		icon: 'fluent:weather-moon-24-regular',
+	},
 ];
 </script>
 

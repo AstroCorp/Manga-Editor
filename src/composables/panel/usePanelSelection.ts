@@ -1,4 +1,4 @@
-import { watch, type ShallowRef } from 'vue';
+import { watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import type { Canvas, FabricObject } from 'fabric';
 import {
@@ -10,12 +10,7 @@ import {
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
-
-type SelectionDeps = {
-	fabricCanvas: ShallowRef<Canvas | null>;
-	syncInteractionMode: () => void;
-	cancelStroke: () => void;
-};
+import type { SelectionDeps } from '@/types/panel';
 
 export const usePanelSelection = ({
 	fabricCanvas,

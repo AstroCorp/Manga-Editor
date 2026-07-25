@@ -22,7 +22,8 @@ import { Shape } from '@/models/Shape';
 import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
 import type { GridPoint } from '@/types/geometry';
-import type { GuidedPolyline, StrokeDeps } from '@/types/stroke';
+import type { GuidedPolyline } from '@/types/fabric';
+import type { StrokeDeps } from '@/types/panel';
 
 export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 	const editorStore = useEditorStore();

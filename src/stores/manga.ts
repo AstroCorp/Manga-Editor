@@ -4,7 +4,8 @@ import { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { PageLayoutMetrics } from '@/types/geometry';
-import type { LayoutJSON, PageMargins } from '@/types/page';
+import type { LayoutJSON } from '@/types/layouts';
+import type { PageMargins } from '@/types/page';
 
 export const useMangaStore = defineStore('manga', () => {
 	const title = ref('Untitled');

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { Icon } from '@iconify/vue';
 import { useEditorStore } from '@/stores/editor';
+import { EXPORT_IMAGE_FORMAT } from '@/lib/editor/editorEnums';
 import type { ExportImageFormat } from '@/types/editor';
 
 const editorStore = useEditorStore();
@@ -49,7 +50,7 @@ onClickOutside(downloadRoot, closeDownload);
 				type="button"
 				role="menuitem"
 				class="w-full border-0 border-b border-slate-200 bg-transparent px-3.5 py-2.5 text-left text-sm text-slate-900 transition last:border-b-0 hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:border-zinc-800 dark:text-slate-100 dark:hover:bg-blue-950 dark:hover:text-blue-400"
-				@click="onExportImage('png')"
+				@click="onExportImage(EXPORT_IMAGE_FORMAT.Png)"
 			>
 				PNG
 			</button>
@@ -57,7 +58,7 @@ onClickOutside(downloadRoot, closeDownload);
 				type="button"
 				role="menuitem"
 				class="w-full border-0 border-b border-slate-200 bg-transparent px-3.5 py-2.5 text-left text-sm text-slate-900 transition last:border-b-0 hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:border-zinc-800 dark:text-slate-100 dark:hover:bg-blue-950 dark:hover:text-blue-400"
-				@click="onExportImage('jpeg')"
+				@click="onExportImage(EXPORT_IMAGE_FORMAT.Jpeg)"
 			>
 				JPG
 			</button>

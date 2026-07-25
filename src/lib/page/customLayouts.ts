@@ -1,6 +1,6 @@
 import { createId } from '@/lib/id';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
-import type { LayoutJSON, PresetLayout } from '@/types/page';
+import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
 export const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
 

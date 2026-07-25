@@ -4,7 +4,7 @@ import {
 	DEFAULT_MARGIN,
 	DEFAULT_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
-import type { LayoutJSON } from '@/types/page';
+import type { LayoutJSON } from '@/types/layouts';
 
 export const resolveLayoutFields = (data: LayoutJSON) => {
 	return {

@@ -1,25 +1,35 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import PagePreview from '@/components/page/PagePreview.vue';
+import { PRESETS_LOAD_STATUS } from '@/lib/layouts/presetsLoadStatus';
 import { useEditorStore } from '@/stores/editor';
 import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
-import type { PresetLayout } from '@/types/page';
+import type { PresetLayout } from '@/types/layouts';
+
+const PRESET_SKELETON_COUNT = 1;
 
 const mangaStore = useMangaStore();
 const editorStore = useEditorStore();
 const layoutsStore = useLayoutsStore();
 const { activePage } = storeToRefs(mangaStore);
-const { customLayouts } = storeToRefs(layoutsStore);
+const { presets, presetsStatus, customLayouts } = storeToRefs(layoutsStore);
 
-const presets = layoutsStore.presets;
 const pendingPreset = ref<PresetLayout | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const pageHasDrawing = computed(() => {
 	return activePage.value.shapes.length > 0;
+});
+
+const presetsLoading = computed(() => {
+	return presetsStatus.value === PRESETS_LOAD_STATUS.Loading;
+});
+
+onMounted(() => {
+	void layoutsStore.ensurePresetsLoaded();
 });
 
 const requestApply = (preset: PresetLayout) => {
@@ -85,7 +95,23 @@ const onFileChange = (event: Event) => {
 			>
 				Apply a built-in layout to the active page.
 			</p>
-			<ul v-if="presets.length > 0" class="grid grid-cols-2 gap-2.5">
+			<ul
+				v-if="presetsLoading"
+				class="grid grid-cols-2 gap-2.5"
+				aria-busy="true"
+				aria-label="Loading presets"
+			>
+				<li v-for="index in PRESET_SKELETON_COUNT" :key="`preset-skeleton-${index}`">
+					<div
+						class="w-full rounded-lg border border-slate-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950"
+					>
+						<div
+							class="aspect-3/4 w-full animate-pulse rounded-sm bg-slate-200 dark:bg-zinc-800"
+						/>
+					</div>
+				</li>
+			</ul>
+			<ul v-else-if="presets.length > 0" class="grid grid-cols-2 gap-2.5">
 				<li v-for="preset in presets" :key="preset.id">
 					<button
 						type="button"

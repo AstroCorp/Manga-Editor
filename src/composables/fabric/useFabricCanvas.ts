@@ -54,7 +54,7 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 
 		return canvas.toDataURL({
 			format,
-			quality: format === 'jpeg' ? 0.92 : 1,
+			quality: 1,
 			multiplier: 1,
 		});
 	};

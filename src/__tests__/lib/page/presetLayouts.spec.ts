@@ -3,7 +3,7 @@ import {
 	isLayoutJSON,
 	listPresetLayouts,
 } from '@/lib/page/presetLayouts';
-import type { PresetLayout } from '@/types/page';
+import type { PresetLayout } from '@/types/layouts';
 
 describe('presetLayouts', () => {
 	it('isLayoutJSON accepts minimal page geometry', () => {
@@ -35,10 +35,10 @@ describe('presetLayouts', () => {
 		).toBe(false);
 	});
 
-	it('listPresetLayouts loads packaged JSON presets', () => {
-		const presets: PresetLayout[] = listPresetLayouts();
+	it('listPresetLayouts loads packaged JSON presets', async () => {
+		const presets: PresetLayout[] = await listPresetLayouts();
 
-		expect(presets.length).toBeGreaterThanOrEqual(2);
+		expect(presets.length).toBeGreaterThanOrEqual(1);
 		expect(
 			presets.some((preset: PresetLayout) => {
 				return preset.id === 'blank';

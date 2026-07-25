@@ -1,4 +1,4 @@
-import type { LayoutJSON, PresetLayout } from '@/types/page';
+import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
 /** Type guard: width/height; shapes opcionales (se normalizan a []). */
 export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
@@ -32,12 +32,11 @@ const toLayoutJSON = (value: LayoutJSON): LayoutJSON => {
 
 /**
  * Layouts por defecto en `src/layouts/*.json`.
- * Añade más JSON en esa carpeta: Vite los incluye al recargar.
+ * Lazy: Vite parte chunks y solo se piden al listar presets.
  */
 const modules = import.meta.glob('../../layouts/*.json', {
-	eager: true,
 	import: 'default',
-}) as Record<string, unknown>;
+}) as Record<string, () => Promise<unknown>>;
 
 const fileIdFromPath = (path: string): string => {
 	const file = path.split('/').pop() ?? path;
@@ -45,21 +44,23 @@ const fileIdFromPath = (path: string): string => {
 	return file.replace(/\.json$/i, '');
 };
 
-export const listPresetLayouts = (): PresetLayout[] => {
+export const listPresetLayouts = async (): Promise<PresetLayout[]> => {
 	const presets: PresetLayout[] = [];
 
-	for (const [path, value] of Object.entries(modules)) {
-		if (!isLayoutJSON(value)) {
-			continue;
-		}
+	await Promise.all(
+		Object.entries(modules).map(async ([path, load]) => {
+			const value = await load();
 
-		const id = fileIdFromPath(path);
+			if (!isLayoutJSON(value)) {
+				return;
+			}
 
-		presets.push({
-			id,
-			layout: toLayoutJSON(value),
-		});
-	}
+			presets.push({
+				id: fileIdFromPath(path),
+				layout: toLayoutJSON(value),
+			});
+		}),
+	);
 
 	return presets.sort((a, b) => {
 		return a.id.localeCompare(b.id, undefined, {
