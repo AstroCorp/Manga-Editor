@@ -14,7 +14,7 @@ import {
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
-import type { PageJSON, PageMargins, PageValue } from '@/types/page';
+import type { LayoutJSON, PageJSON, PageMargins, PageValue } from '@/types/page';
 
 export class Page {
 	public readonly id: string;
@@ -165,11 +165,9 @@ export class Page {
 		});
 	}
 
-	/** Copia un layout sobre esta página conservando el id actual. */
-	applyLayout(data: PageJSON) {
+	applyLayout(data: LayoutJSON) {
 		const fields = resolveLayoutFields(data);
-		
-		this.name = data.name;
+
 		this.setSize(data.width, data.height);
 		this.shapes = data.shapes.map((shapeJson) => {
 			return Shape.fromJSON(shapeJson);
@@ -207,10 +205,8 @@ export class Page {
 	 * Layout exportable: página + formas geométricas.
 	 * Sin imágenes.
 	 */
-	toLayoutJSON(): PageJSON {
+	toLayoutJSON(): LayoutJSON {
 		return {
-			id: this.id,
-			name: this.name,
 			width: this.width,
 			height: this.height,
 			shapes: this.shapes.map((shape) => {

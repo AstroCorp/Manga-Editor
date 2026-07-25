@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ThemeToggle from '@/components/shell/ThemeToggle.vue';
+import ExportActions from '@/components/toolbar/ExportActions.vue';
 import GuideToggle from '@/components/toolbar/GuideToggle.vue';
 import PageActions from '@/components/toolbar/PageActions.vue';
 </script>
@@ -19,6 +20,7 @@ import PageActions from '@/components/toolbar/PageActions.vue';
 		<div class="flex items-center gap-2">
 			<GuideToggle />
 			<PageActions />
+			<ExportActions />
 		</div>
 	</header>
 </template>

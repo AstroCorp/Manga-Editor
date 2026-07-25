@@ -75,6 +75,74 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes).toHaveLength(0);
 	});
 
+	it('applyActivePageLayout replaces shapes and keeps the page name', () => {
+		const store = useMangaStore();
+		const originalName = store.activePage.name;
+		const originalId = store.activePage.id;
+		const epoch = store.contentResetEpoch;
+
+		store.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				3,
+			),
+		);
+
+		store.applyActivePageLayout({
+			width: 800,
+			height: 1200,
+			shapes: [
+				{
+					id: 'panel-1',
+					points: [
+						{ x: 0, y: 0 },
+						{ x: 40, y: 0 },
+						{ x: 40, y: 40 },
+					],
+					strokeWidth: 5,
+					image: null,
+				},
+			],
+			gridCols: 10,
+			gridRows: 20,
+			marginTop: 5,
+			marginRight: 5,
+			marginBottom: 5,
+			marginLeft: 5,
+			strokeWidth: 5,
+		});
+
+		expect(store.activePage.name).toBe(originalName);
+		expect(store.activePage.id).toBe(originalId);
+		expect(store.pageWidth).toBe(800);
+		expect(store.pageHeight).toBe(1200);
+		expect(store.shapes).toHaveLength(1);
+		expect(store.shapes[0]?.strokeWidth).toBe(5);
+		expect(store.contentResetEpoch).toBe(epoch + 1);
+
+		store.applyActivePageLayout({
+			width: 800,
+			height: 1200,
+			shapes: [],
+		});
+
+		expect(store.activePage.name).toBe(originalName);
+		expect(store.shapes).toHaveLength(0);
+	});
+
+	it('getActivePageLayout exports geometry without id or name', () => {
+		const store = useMangaStore();
+		const layout = store.getActivePageLayout();
+
+		expect(layout.shapes).toEqual([]);
+		expect(layout).not.toHaveProperty('id');
+		expect(layout).not.toHaveProperty('name');
+	});
+
 	it('addPage / selectPage / removePage manage the document', () => {
 		const store = useMangaStore();
 		const firstId = store.activePageId;

@@ -19,7 +19,7 @@ const { activePage, pageSize } = useActivePageLayout();
 const rootEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
-const { fabricCanvas, init, hydratePage } = useFabricCanvas(canvasEl);
+const { fabricCanvas, init, hydratePage, exportDataUrl } = useFabricCanvas(canvasEl);
 const { stageStyle, scaleStyle, resetZoomView } = useFabricZoom({
 	fabricCanvas,
 	rootEl,
@@ -70,6 +70,7 @@ onMounted(() => {
 		cancelStroke,
 		removeActive,
 		setSelectionStrokeWidth,
+		exportDataUrl,
 		resetZoomView,
 	});
 });

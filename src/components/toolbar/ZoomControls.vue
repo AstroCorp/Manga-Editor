@@ -43,10 +43,11 @@ const onZoomInput = (event: Event) => {
 				@change="onZoomInput"
 			/>
 			<span
-				class="select-none text-slate-500 dark:text-slate-400"
+				class="select-none text-slate-500 dark:text-slate-400 ml-1"
 				aria-hidden="true"
-				>%</span
 			>
+				%
+			</span>
 		</label>
 		<button
 			type="button"

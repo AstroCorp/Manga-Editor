@@ -3,6 +3,7 @@ import { Canvas } from 'fabric';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
+import type { ExportImageFormat } from '@/types/editor';
 
 export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 	const fabricCanvas = shallowRef<Canvas | null>(null);
@@ -44,6 +45,20 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 		hydrateCanvasFromPage(canvas, page);
 	};
 
+	const exportDataUrl = (format: ExportImageFormat): string | null => {
+		const canvas = fabricCanvas.value;
+
+		if (!canvas) {
+			return null;
+		}
+
+		return canvas.toDataURL({
+			format,
+			quality: format === 'jpeg' ? 0.92 : 1,
+			multiplier: 1,
+		});
+	};
+
 	onBeforeUnmount(() => {
 		dispose();
 	});
@@ -52,5 +67,6 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 		fabricCanvas,
 		init,
 		hydratePage,
+		exportDataUrl,
 	};
 };

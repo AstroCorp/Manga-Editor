@@ -4,7 +4,7 @@ import { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { PageLayoutMetrics } from '@/types/geometry';
-import type { PageMargins } from '@/types/page';
+import type { LayoutJSON, PageMargins } from '@/types/page';
 
 export const useMangaStore = defineStore('manga', () => {
 	const title = ref('Untitled');
@@ -174,6 +174,21 @@ export const useMangaStore = defineStore('manga', () => {
 		touchPages();
 	};
 
+	const getActivePageLayout = (): LayoutJSON => {
+		return getActivePage().toLayoutJSON();
+	};
+
+	/** Sustituye geometría de la página activa; conserva name/id. */
+	const applyActivePageLayout = (layoutJson: LayoutJSON) => {
+		getActivePage().applyLayout({
+			...layoutJson,
+			shapes: layoutJson.shapes ?? [],
+		});
+
+		touchPages();
+		contentResetEpoch.value += 1;
+	};
+
 	const addShape = (shape: Shape) => {
 		// Page reasigna shapes[]; la proxy de Pinia actualiza el strip.
 		getActivePage().addShape(shape);
@@ -227,6 +242,8 @@ export const useMangaStore = defineStore('manga', () => {
 		selectPage,
 		reorderPages,
 		renamePage,
+		getActivePageLayout,
+		applyActivePageLayout,
 		clearActivePage,
 		addShape,
 		removeShape,

@@ -4,9 +4,9 @@ import {
 	DEFAULT_MARGIN,
 	DEFAULT_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
-import type { PageJSON } from '@/types/page';
+import type { LayoutJSON } from '@/types/page';
 
-export const resolveLayoutFields = (data: PageJSON) => {
+export const resolveLayoutFields = (data: LayoutJSON) => {
 	return {
 		gridCols: data.gridCols ?? DEFAULT_GRID_COLS,
 		gridRows: data.gridRows ?? DEFAULT_GRID_ROWS,

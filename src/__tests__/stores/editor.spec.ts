@@ -21,12 +21,14 @@ describe('useEditorStore selection and zoom bridge', () => {
 		const cancelStroke = vi.fn();
 		const removeActive = vi.fn(() => true);
 		const setSelectionStrokeWidth = vi.fn(() => true);
+		const exportDataUrl = vi.fn(() => 'data:image/png;base64,abc');
 		const resetZoomView = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
 			removeActive,
 			setSelectionStrokeWidth,
+			exportDataUrl,
 			resetZoomView,
 		});
 
@@ -40,7 +42,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(setSelectionStrokeWidth).toHaveBeenCalledWith(5);
 
 		store.resetZoom();
-		
+
 		expect(store.zoomPercent).toBe(DEFAULT_ZOOM_PERCENT);
 		expect(resetZoomView).toHaveBeenCalledOnce();
 	});
@@ -53,6 +55,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 			cancelStroke: vi.fn(),
 			removeActive,
 			setSelectionStrokeWidth: vi.fn(() => true),
+			exportDataUrl: vi.fn(() => null),
 			resetZoomView: vi.fn(),
 		});
 		store.setHasSelection(true);
@@ -64,6 +67,39 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(store.selectedStrokeWidth).toBeNull();
 		expect(store.removeActive()).toBe(false);
 		expect(removeActive).not.toHaveBeenCalled();
+	});
+
+	it('exportPage downloads when exportDataUrl returns a data url', () => {
+		const store = useEditorStore();
+		const exportDataUrl = vi.fn(() => 'data:image/png;base64,abc');
+		const click = vi.fn();
+		const remove = vi.fn();
+		const link = {
+			href: '',
+			download: '',
+			rel: '',
+			click,
+			remove,
+		} as unknown as HTMLAnchorElement;
+
+		vi.spyOn(document, 'createElement').mockReturnValue(link);
+		vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+			return node;
+		});
+
+		store.registerCanvas({
+			cancelStroke: vi.fn(),
+			removeActive: vi.fn(() => false),
+			setSelectionStrokeWidth: vi.fn(() => false),
+			exportDataUrl,
+			resetZoomView: vi.fn(),
+		});
+
+		store.exportPage('png');
+
+		expect(exportDataUrl).toHaveBeenCalledWith('png');
+		expect(link.download).toBe('untitled-page-1.png');
+		expect(click).toHaveBeenCalledOnce();
 	});
 
 	it('clamps zoom percent and steps in/out', () => {
