@@ -2,12 +2,15 @@
 import { computed, onMounted, ref } from 'vue';
 import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
 import { usePanelGuides } from '@/composables/panel/usePanelGuides';
+import { usePanelStroke } from '@/composables/panel/usePanelStroke';
 
 const ZOOM = 0.75;
 
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 const { fabricCanvas, init, pageWidth, pageHeight } = useFabricCanvas(canvasEl);
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
+
+usePanelStroke({ fabricCanvas });
 
 const stageStyle = computed(() => {
 	return {

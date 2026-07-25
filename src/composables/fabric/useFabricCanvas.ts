@@ -1,6 +1,7 @@
 import { onBeforeUnmount, shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
 import { storeToRefs } from 'pinia';
+import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
 import { useEditorStore } from '@/stores/editor';
 
 export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
@@ -20,6 +21,8 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 		if (!element) {
 			return;
 		}
+
+		setupFabricCustomProperties();
 
 		fabricCanvas.value = new Canvas(element, {
 			width: pageWidth.value,

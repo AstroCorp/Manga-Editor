@@ -35,6 +35,7 @@ describe('createGridGuideImage', () => {
 		const guide = createGridGuideImage(layout);
 
 		expect(isGuide(guide)).toBe(true);
+		expect(guide.isGridGuide).toBe(true);
 		expect(guide.selectable).toBe(false);
 		expect(guide.evented).toBe(false);
 		expect(guide.excludeFromExport).toBe(true);

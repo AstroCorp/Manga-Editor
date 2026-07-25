@@ -68,8 +68,7 @@ export const createGridGuideImage = (layout: PageLayoutMetrics): GridGuideImage 
 		cachedKey = key;
 	}
 
-	// Usamos una imagen para representar la rejilla de puntos en el canvas y evitar pintar N círculos Fabric al mover el viewport.
-	// Esto es más barato que N círculos Fabric al mover el viewport.
+	// Un solo FabricImage en vez de N círculos: mucho más barato al mover el viewport.
 	const image = new FabricImage(cachedElement, {
 		left: 0,
 		top: 0,
@@ -83,6 +82,8 @@ export const createGridGuideImage = (layout: PageLayoutMetrics): GridGuideImage 
 	}) as GridGuideImage;
 
 	image.isGuide = true;
-	
+	// Distinto del draft/rubber: refreshGuides solo quita la rejilla.
+	image.isGridGuide = true;
+
 	return image;
 };

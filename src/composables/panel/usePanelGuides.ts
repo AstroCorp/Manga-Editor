@@ -1,11 +1,8 @@
-/**
- * Guía de rejilla en el canvas: crea/quita el FabricImage según showGridGuides.
- */
 import { storeToRefs } from 'pinia';
 import { watch, type ShallowRef } from 'vue';
 import type { Canvas } from 'fabric';
 import { createGridGuideImage } from '@/lib/fabric/createGridGuide';
-import { isGuide } from '@/lib/fabric/isGuide';
+import { isGridGuide } from '@/lib/fabric/isGuide';
 import { useEditorStore } from '@/stores/editor';
 
 type GuidesDeps = {
@@ -23,9 +20,10 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 			return;
 		}
 
+		// Solo ocultamos la rejilla, no el trazo en curso o el que está en curso.
 		canvas
 			.getObjects()
-			.filter((object) => isGuide(object))
+			.filter((object) => isGridGuide(object))
 			.forEach((object) => {
 				canvas.remove(object);
 			});
@@ -42,6 +40,7 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 
 		if (showGridGuides.value) {
 			const guide = createGridGuideImage(layout.value);
+			
 			canvas.add(guide);
 			canvas.sendObjectToBack(guide);
 		}

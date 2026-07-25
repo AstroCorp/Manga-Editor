@@ -28,6 +28,17 @@ vi.mock('@/composables/panel/usePanelGuides', () => {
 	};
 });
 
+vi.mock('@/composables/panel/usePanelStroke', () => {
+	return {
+		usePanelStroke: () => {
+			return {
+				path: shallowRef([]),
+				syncInteractionMode: vi.fn(),
+			};
+		},
+	};
+});
+
 afterEach(() => {
 	document.body.innerHTML = '';
 });

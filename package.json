@@ -15,6 +15,7 @@
     "@iconify/vue": "^5.0.1",
     "fabric": "^7.4.0",
     "pinia": "^4.0.2",
+    "uuid": "^14.0.1",
     "vue": "^3.5.40"
   },
   "devDependencies": {
