@@ -1,48 +1,74 @@
-# Manga-Editor
+<p align="center">
+  <img src="public/favicon.svg" alt="Manga Editor" width="96" height="96" />
+</p>
 
-This template should help get you started developing with Vue 3 in Vite.
+<h1 align="center">Manga Editor</h1>
 
-## Recommended IDE Setup
+<p align="center">
+  Online manga/comic layout editor.<br />
+  <em>Editor online de layouts para manga/cómic.</em>
+</p>
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+---
 
-## Recommended Browser Setup
+## English
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+Online manga/comic layout editor: draw panels on a guide grid, manage pages, and export the active page.
 
-## Type Support for `.vue` Imports in TS
+**Features**
+- Draw closed panels on a snap grid (guides on/off)
+- Select panels: delete, stroke width
+- Drop images onto panels and move / scale them
+- Multi-page strip: add, rename, reorder, remove
+- Zoom (controls + Ctrl/⌘ + wheel)
+- Light / dark / system theme
+- Page config: size, grid, margins, stroke
+- Layout presets + custom (import/export JSON)
+- Export active page as PNG or JPG (no guides / in-progress strokes)
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+**Stack:** Vue 3 · Vite · Pinia · Fabric.js · Tailwind CSS · TypeScript · pnpm
 
-## Customize configuration
+### Commands
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+| Command | Description |
+| --- | --- |
+| `pnpm install` | Install dependencies |
+| `pnpm dev` | Dev server |
+| `pnpm build` | Type-check + production build |
+| `pnpm preview` | Preview production build |
+| `pnpm test:unit` | Unit tests (Vitest) |
+| `pnpm type-check` | TypeScript check only |
 
-## Project Setup
+Requires Node `^22.18.0` or `>=24.12.0`.
 
-```sh
-pnpm install
-```
+---
 
-### Compile and Hot-Reload for Development
+## Español
 
-```sh
-pnpm dev
-```
+Editor online de layouts para manga/cómic: dibuja paneles sobre una rejilla, gestiona páginas y exporta la página activa.
 
-### Type-Check, Compile and Minify for Production
+**Funciones**
+- Dibujar paneles cerrados con snap a rejilla (guías on/off)
+- Seleccionar paneles: borrar, grosor de trazo
+- Insertar imágenes arrastrándolas a paneles y manipularlas (mover / escalar)
+- Tira multipágina: añadir, renombrar, reordenar, eliminar
+- Zoom (controles + Ctrl/⌘ + rueda)
+- Tema claro / oscuro / sistema
+- Config de página: tamaño, rejilla, márgenes, stroke
+- Presets de layout + custom (import/export JSON)
+- Export PNG o JPG de la página activa (sin guías ni trazo en curso)
 
-```sh
-pnpm build
-```
+**Stack:** Vue 3 · Vite · Pinia · Fabric.js · Tailwind CSS · TypeScript · pnpm
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+### Comandos
 
-```sh
-pnpm test:unit
-```
+| Comando | Descripción |
+| --- | --- |
+| `pnpm install` | Instalar dependencias |
+| `pnpm dev` | Servidor de desarrollo |
+| `pnpm build` | Type-check + build de producción |
+| `pnpm preview` | Previsualizar el build |
+| `pnpm test:unit` | Tests unitarios (Vitest) |
+| `pnpm type-check` | Solo comprobación TypeScript |
+
+Requiere Node `^22.18.0` o `>=24.12.0`.
