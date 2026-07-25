@@ -11,6 +11,12 @@ export const useMangaStore = defineStore('manga', () => {
 	const pages = ref<Page[]>([firstPage]);
 	const activePageId = ref(firstPage.id);
 
+	/**
+	 * Sube cuando hay que vaciar el dibujo del canvas
+	 * (cambio de tamaño, rejilla o márgenes).
+	 */
+	const contentResetEpoch = ref(0);
+
 	/** Pinia no detecta mutaciones internas de Page; forzamos reactividad. */
 	const touchPages = () => {
 		triggerRef(pages);
@@ -63,6 +69,21 @@ export const useMangaStore = defineStore('manga', () => {
 		return getActivePage()?.shapes ?? [];
 	});
 
+	/** Vacía paneles de la página activa y avisa al canvas. */
+	const clearActivePage = () => {
+		const page = getActivePage();
+
+		if (!page) {
+			return;
+		}
+
+		page.clearShapes();
+
+		contentResetEpoch.value += 1;
+
+		touchPages();
+	};
+
 	const addShape = (shape: Shape) => {
 		const page = getActivePage();
 
@@ -71,11 +92,35 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		page.addShape(shape);
-
 		touchPages();
 	};
 
-	const setActiveMargins = (margins: PageMargins) => {
+	// Cambiar geometría invalida el dibujo (la rejilla ya no encaja).
+	const setActivePageSize = (width: number, height: number) => {
+		const page = getActivePage();
+
+		if (!page) {
+			return;
+		}
+
+		page.setSize(width, height);
+
+		clearActivePage();
+	};
+
+	const setActivePageGrid = (cols: number, rows: number) => {
+		const page = getActivePage();
+
+		if (!page) {
+			return;
+		}
+
+		page.setGrid(cols, rows);
+		
+		clearActivePage();
+	};
+
+	const setActivePageMargins = (margins: PageMargins) => {
 		const page = getActivePage();
 
 		if (!page) {
@@ -83,19 +128,17 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		page.setMargins(margins);
-
-		touchPages();
+		clearActivePage();
 	};
 
-	const setActiveStrokeWidth = (width: number) => {
+	const setActivePageStrokeWidth = (width: number) => {
 		const page = getActivePage();
-		
+
 		if (!page) {
 			return;
 		}
 
 		page.setStrokeWidth(width);
-
 		touchPages();
 	};
 
@@ -103,15 +146,19 @@ export const useMangaStore = defineStore('manga', () => {
 		title,
 		pages,
 		activePageId,
+		contentResetEpoch,
 		activePage,
 		layout,
 		pageWidth,
 		pageHeight,
 		strokeWidth,
 		shapes,
+		clearActivePage,
 		addShape,
-		setActiveMargins,
-		setActiveStrokeWidth,
+		setActivePageSize,
+		setActivePageGrid,
+		setActivePageMargins,
+		setActivePageStrokeWidth,
 		touchPages,
 	};
 });

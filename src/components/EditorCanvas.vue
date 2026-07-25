@@ -1,15 +1,29 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
+import { usePageContentReset } from '@/composables/page/usePageContentReset';
 import { usePanelGuides } from '@/composables/panel/usePanelGuides';
 import { usePanelStroke } from '@/composables/panel/usePanelStroke';
+import { useMangaStore } from '@/stores/manga';
 
 const ZOOM = 0.75;
 
+const mangaStore = useMangaStore();
+const { contentResetEpoch } = storeToRefs(mangaStore);
+
 const canvasEl = ref<HTMLCanvasElement | null>(null);
+	
 const { fabricCanvas, init, pageWidth, pageHeight } = useFabricCanvas(canvasEl);
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
 const { cancelStroke } = usePanelStroke({ fabricCanvas });
+
+usePageContentReset({
+	fabricCanvas,
+	contentResetEpoch,
+	cancelStroke,
+	refreshGuides,
+});
 
 const stageStyle = computed(() => {
 	return {

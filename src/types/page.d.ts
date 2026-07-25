@@ -25,12 +25,13 @@ export type ShapeJSON = {
 	image: ShapeImageJSON | null;
 };
 
-export interface PageMargins {
-	marginTop: number;
-	marginRight: number;
-	marginBottom: number;
-	marginLeft: number;
-}
+export type PageMarginSide =
+	| 'marginTop'
+	| 'marginRight'
+	| 'marginBottom'
+	| 'marginLeft';
+
+export type PageMargins = Record<PageMarginSide, number>;
 
 export type ShapeImageValue = {
 	src: string;
