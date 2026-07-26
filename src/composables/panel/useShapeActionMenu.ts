@@ -12,7 +12,6 @@ import {
 	isImageFile,
 	placeImageFileInPanel,
 } from '@/lib/fabric/panelImagePlace';
-import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import type { PageOverlayPosition, ShapeActionMenuDeps } from '@/types/panel';
 
@@ -23,7 +22,6 @@ export const useShapeActionMenu = ({
 	onChanged,
 }: ShapeActionMenuDeps) => {
 	const mangaStore = useMangaStore();
-	const editorStore = useEditorStore();
 
 	const panelId = shallowRef<string | null>(null);
 	const hasImage = shallowRef(false);
@@ -86,7 +84,6 @@ export const useShapeActionMenu = ({
 		mangaStore.removeShape(id);
 		removeObjectsByPanelId(canvas, id);
 		canvas.discardActiveObject();
-		editorStore.setSelectedStrokeWidth(null);
 		clearMenu();
 		onChanged?.();
 		canvas.requestRenderAll();
@@ -119,7 +116,6 @@ export const useShapeActionMenu = ({
 			canvas.setActiveObject(panel);
 		} else {
 			canvas.discardActiveObject();
-			editorStore.setSelectedStrokeWidth(null);
 			clearMenu();
 		}
 

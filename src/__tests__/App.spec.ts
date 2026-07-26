@@ -59,9 +59,7 @@ vi.mock('@/composables/panel/usePanelStroke', () => {
 vi.mock('@/composables/panel/usePanelSelection', () => {
 	return {
 		usePanelSelection: () => {
-			return {
-				setSelectionStrokeWidth: vi.fn(() => false),
-			};
+			return undefined;
 		},
 	};
 });

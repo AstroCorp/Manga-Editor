@@ -32,9 +32,9 @@ describe('useMangaStore config layout', () => {
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
-	it('changing stroke width does not clear shapes', () => {
+	it('changing stroke width updates all shapes without clearing them', () => {
 		const store = useMangaStore();
-		
+
 		store.addShape(
 			Shape.create(
 				[
@@ -52,10 +52,11 @@ describe('useMangaStore config layout', () => {
 
 		expect(store.shapes).toHaveLength(1);
 		expect(store.strokeWidth).toBe(8);
+		expect(store.shapes[0]?.strokeWidth).toBe(8);
 		expect(store.contentResetEpoch).toBe(epoch);
 	});
 
-	it('removeShape and setShapeStrokeWidth mutate the active page', () => {
+	it('removeShape mutates the active page', () => {
 		const store = useMangaStore();
 		const shape = Shape.create(
 			[
@@ -67,10 +68,6 @@ describe('useMangaStore config layout', () => {
 		);
 
 		store.addShape(shape);
-		store.setShapeStrokeWidth(shape.id, 12);
-
-		expect(store.shapes[0]?.strokeWidth).toBe(12);
-
 		store.removeShape(shape.id);
 
 		expect(store.shapes).toHaveLength(0);
@@ -222,7 +219,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes[0]?.image).toBeNull();
 	});
 
-	it('shape mutations replace the shapes array reference', () => {
+	it('shape image mutations replace the shapes array reference', () => {
 		const store = useMangaStore();
 		const page = store.activePage;
 		const shape = Shape.create(
@@ -238,9 +235,18 @@ describe('useMangaStore config layout', () => {
 
 		const afterAdd = page.shapes;
 
-		store.setShapeStrokeWidth(shape.id, 5);
+		store.setShapeImage(
+			shape.id,
+			new ShapeImage({
+				src: 'data:image/png;base64,xx',
+				left: 1,
+				top: 1,
+				scaleX: 1,
+				scaleY: 1,
+			}),
+		);
 
 		expect(page.shapes).not.toBe(afterAdd);
-		expect(page.shapes[0]?.strokeWidth).toBe(5);
+		expect(page.shapes[0]?.image?.src).toBe('data:image/png;base64,xx');
 	});
 });

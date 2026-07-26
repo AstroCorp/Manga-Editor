@@ -18,7 +18,6 @@ import type { CanvasActions, ExportImageFormat } from '@/types/editor';
 import type { LayoutJSON } from '@/types/layouts';
 
 export const useEditorStore = defineStore('editor', () => {
-	const selectedStrokeWidth = ref<number | null>(null);
 	const showGridGuides = ref(true);
 	const zoomPercent = ref(DEFAULT_ZOOM_PERCENT);
 
@@ -26,7 +25,6 @@ export const useEditorStore = defineStore('editor', () => {
 	const createCanvasActionStubs = (): CanvasActions => {
 		return {
 			cancelStroke: () => undefined,
-			setSelectionStrokeWidth: () => false,
 			exportDataUrl: () => null,
 			resetZoomView: () => undefined,
 		};
@@ -41,11 +39,6 @@ export const useEditorStore = defineStore('editor', () => {
 	/** Suelta closures del canvas desmontado (tests, HMR, remount). */
 	const unregisterCanvas = () => {
 		Object.assign(canvasActions, createCanvasActionStubs());
-		selectedStrokeWidth.value = null;
-	};
-
-	const setSelectedStrokeWidth = (value: number | null) => {
-		selectedStrokeWidth.value = value;
 	};
 
 	const toggleGridGuides = () => {
@@ -128,10 +121,8 @@ export const useEditorStore = defineStore('editor', () => {
 	};
 
 	return {
-		selectedStrokeWidth,
 		showGridGuides,
 		zoomPercent,
-		setSelectedStrokeWidth,
 		toggleGridGuides,
 		setZoomPercent,
 		zoomIn,
@@ -141,9 +132,6 @@ export const useEditorStore = defineStore('editor', () => {
 		unregisterCanvas,
 		cancelStroke: () => {
 			return canvasActions.cancelStroke();
-		},
-		setSelectionStrokeWidth: (width: number) => {
-			return canvasActions.setSelectionStrokeWidth(width);
 		},
 		exportPage,
 		exportPageJson,

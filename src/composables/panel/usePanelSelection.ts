@@ -2,7 +2,6 @@ import { watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { FabricImage, type Canvas, type FabricObject } from 'fabric';
 import {
-	findPanelById,
 	getPanelId,
 	isGuide,
 	isPanel,
@@ -11,9 +10,7 @@ import {
 } from '@/lib/fabric/isGuide';
 import { shapeImageFromFabric } from '@/lib/fabric/panelImageFabric';
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
-import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
-import type { PanelLikeObject } from '@/types/fabric';
 import type { SelectionDeps } from '@/types/panel';
 
 export const usePanelSelection = ({
@@ -22,7 +19,6 @@ export const usePanelSelection = ({
 	cancelStroke,
 }: SelectionDeps) => {
 	const mangaStore = useMangaStore();
-	const editorStore = useEditorStore();
 
 	/** Borra panel (+ imagen) o solo la imagen activa. */
 	const removeActive = (): boolean => {
@@ -46,8 +42,6 @@ export const usePanelSelection = ({
 
 			canvas.discardActiveObject();
 
-			editorStore.setSelectedStrokeWidth(null);
-
 			syncInteractionMode();
 
 			canvas.requestRenderAll();
@@ -61,10 +55,8 @@ export const usePanelSelection = ({
 			canvas.remove(active);
 			canvas.discardActiveObject();
 
-			editorStore.setSelectedStrokeWidth(null);
-
 			syncInteractionMode();
-			
+
 			canvas.requestRenderAll();
 
 			return true;
@@ -73,64 +65,25 @@ export const usePanelSelection = ({
 		return false;
 	};
 
-	const resolveSelectedPanel = (): PanelLikeObject | null => {
+	/** Aplica el stroke de página a todos los paneles del canvas. */
+	const applyPageStrokeWidth = (width: number) => {
 		const canvas = fabricCanvas.value;
-		const active = canvas?.getActiveObject() as PanelLikeObject | null;
 
-		if (!canvas || !active) {
-			return null;
-		}
-
-		if (isPanel(active)) {
-			return active;
-		}
-
-		if (isPanelImage(active)) {
-			const panelId = getPanelId(active);
-
-			return panelId ? findPanelById(canvas, panelId) : null;
-		}
-
-		return null;
-	};
-
-	const syncSelectedStrokeWidth = () => {
-		const panel = resolveSelectedPanel();
-
-		if (!panel) {
-			editorStore.setSelectedStrokeWidth(null);
-
+		if (!canvas) {
 			return;
-		}
-
-		editorStore.setSelectedStrokeWidth(
-			clampStrokeWidth(
-				Number(panel.strokeWidth ?? panel.get('strokeWidth')),
-			),
-		);
-	};
-
-	const onSelectionChange = () => {
-		syncSelectedStrokeWidth();
-	};
-
-	const setSelectionStrokeWidth = (width: number): boolean => {
-		const canvas = fabricCanvas.value;
-		const panel = resolveSelectedPanel();
-		const panelId = panel ? getPanelId(panel) : undefined;
-
-		if (!canvas || !panel || !panelId) {
-			return false;
 		}
 
 		const nextWidth = clampStrokeWidth(width);
 
-		mangaStore.setShapeStrokeWidth(panelId, nextWidth);
-		panel.set('strokeWidth', nextWidth);
-		editorStore.setSelectedStrokeWidth(nextWidth);
-		canvas.requestRenderAll();
+		canvas.getObjects().forEach((object) => {
+			if (!isPanel(object)) {
+				return;
+			}
 
-		return true;
+			object.set('strokeWidth', nextWidth);
+		});
+
+		canvas.requestRenderAll();
 	};
 
 	/** Tras mover/escalar imagen en Fabric, persiste transform en el dominio. */
@@ -173,16 +126,10 @@ export const usePanelSelection = ({
 	};
 
 	const bindSelectionEvents = (canvas: Canvas) => {
-		canvas.on('selection:created', onSelectionChange);
-		canvas.on('selection:updated', onSelectionChange);
-		canvas.on('selection:cleared', onSelectionChange);
 		canvas.on('object:modified', onObjectModified);
 	};
 
 	const unbindSelectionEvents = (canvas: Canvas) => {
-		canvas.off('selection:created', onSelectionChange);
-		canvas.off('selection:updated', onSelectionChange);
-		canvas.off('selection:cleared', onSelectionChange);
 		canvas.off('object:modified', onObjectModified);
 	};
 
@@ -202,9 +149,12 @@ export const usePanelSelection = ({
 		{ immediate: true },
 	);
 
-	useEventListener(window, 'keydown', onKeyDown);
+	watch(
+		() => mangaStore.strokeWidth,
+		(width) => {
+			applyPageStrokeWidth(width);
+		},
+	);
 
-	return {
-		setSelectionStrokeWidth,
-	};
+	useEventListener(window, 'keydown', onKeyDown);
 };

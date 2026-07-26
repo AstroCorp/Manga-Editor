@@ -111,8 +111,17 @@ export class Page {
 		);
 	}
 
+	/** Stroke global de la página: aplica a todos los paneles. */
 	setStrokeWidth(width: number) {
 		this.strokeWidth = clampStrokeWidth(width);
+
+		for (const shape of this.shapes) {
+			shape.strokeWidth = this.strokeWidth;
+		}
+
+		if (this.shapes.length > 0) {
+			this.shapes = this.shapes.slice();
+		}
 	}
 
 	clearShapes() {
@@ -120,6 +129,7 @@ export class Page {
 	}
 
 	addShape(shape: Shape) {
+		shape.strokeWidth = this.strokeWidth;
 		this.shapes = [...this.shapes, shape];
 	}
 
@@ -133,21 +143,6 @@ export class Page {
 		}
 
 		this.shapes = next;
-
-		return true;
-	}
-
-	setShapeStrokeWidth(shapeId: string, width: number): boolean {
-		const shape = findShapeOnPage(this, shapeId);
-
-		if (!shape) {
-			return false;
-		}
-
-		shape.strokeWidth = clampStrokeWidth(width);
-
-		// Nueva ref del array: Vue detecta mutaciones in-place en miniaturas.
-		this.shapes = this.shapes.slice();
 
 		return true;
 	}
@@ -168,11 +163,9 @@ export class Page {
 
 	applyLayout(data: LayoutJSON) {
 		const fields = resolveLayoutFields(data);
+		const pageStroke = clampStrokeWidth(fields.strokeWidth);
 
 		this.setSize(data.width, data.height);
-		this.shapes = data.shapes.map((shapeJson) => {
-			return Shape.fromJSON(shapeJson);
-		});
 		this.setGrid(fields.gridCols, fields.gridRows);
 		this.setMargins({
 			marginTop: fields.marginTop,
@@ -180,7 +173,13 @@ export class Page {
 			marginBottom: fields.marginBottom,
 			marginLeft: fields.marginLeft,
 		});
-		this.setStrokeWidth(fields.strokeWidth);
+		this.strokeWidth = pageStroke;
+		this.shapes = data.shapes.map((shapeJson) => {
+			return Shape.fromJSON({
+				...shapeJson,
+				strokeWidth: pageStroke,
+			});
+		});
 	}
 
 	/**
@@ -192,7 +191,10 @@ export class Page {
 			width: this.width,
 			height: this.height,
 			shapes: this.shapes.map((shape) => {
-				return shape.toLayoutJSON();
+				return {
+					...shape.toLayoutJSON(),
+					strokeWidth: this.strokeWidth,
+				};
 			}),
 			gridCols: this.gridCols,
 			gridRows: this.gridRows,

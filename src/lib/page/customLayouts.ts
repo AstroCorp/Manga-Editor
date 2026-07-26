@@ -7,13 +7,14 @@ export const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
 
 /** Geometría lista para catálogo (sin id/name de página ni imágenes). */
 const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
+	const pageStroke = layout.strokeWidth;
 	const shapes = (layout.shapes ?? []).map((shape) => {
 		return {
 			id: shape.id,
 			points: shape.points.map((point) => {
 				return { x: point.x, y: point.y };
 			}),
-			strokeWidth: shape.strokeWidth,
+			strokeWidth: pageStroke ?? shape.strokeWidth,
 			image: null,
 		};
 	});

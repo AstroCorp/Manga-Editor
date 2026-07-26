@@ -21,6 +21,9 @@ describe('Page / Shape / ShapeImage', () => {
 
 	it('applies layout JSON and exports geometry without images', () => {
 		const page = Page.createBlank(1);
+
+		page.setStrokeWidth(4);
+
 		const shape = Shape.create(
 			[
 				{ x: 10, y: 10 },
@@ -43,6 +46,7 @@ describe('Page / Shape / ShapeImage', () => {
 
 		const layout = page.toLayoutJSON();
 
+		expect(layout.strokeWidth).toBe(4);
 		expect(layout.shapes).toHaveLength(1);
 		expect(layout.shapes[0]?.strokeWidth).toBe(4);
 		expect(layout.shapes[0]?.image).toBeNull();
@@ -57,6 +61,7 @@ describe('Page / Shape / ShapeImage', () => {
 		});
 
 		expect(other.shapes).toHaveLength(1);
+		expect(other.strokeWidth).toBe(4);
 		expect(other.shapes[0]?.strokeWidth).toBe(4);
 		expect(other.shapes[0]?.points).toEqual(shape.points);
 		expect(other.shapes[0]?.image).toBeNull();
@@ -86,7 +91,7 @@ describe('Page / Shape / ShapeImage', () => {
 		expect(shape.toLayoutJSON().image).toBeNull();
 	});
 
-	it('setShapeStrokeWidth and setShapeImage refresh the shapes array ref', () => {
+	it('setStrokeWidth applies to all shapes and setShapeImage refreshes the shapes array ref', () => {
 		const page = Page.createBlank(1);
 		const shape = Shape.create(
 			[
@@ -101,8 +106,9 @@ describe('Page / Shape / ShapeImage', () => {
 
 		const afterAdd = page.shapes;
 
-		expect(page.setShapeStrokeWidth(shape.id, 8)).toBe(true);
+		page.setStrokeWidth(8);
 		expect(page.shapes).not.toBe(afterAdd);
+		expect(page.strokeWidth).toBe(8);
 		expect(page.shapes[0]?.strokeWidth).toBe(8);
 
 		const afterStroke = page.shapes;
@@ -117,6 +123,31 @@ describe('Page / Shape / ShapeImage', () => {
 		expect(page.setShapeImage(shape.id, image)).toBe(true);
 		expect(page.shapes).not.toBe(afterStroke);
 		expect(page.shapes[0]?.image?.src).toBe(image.src);
+	});
+
+	it('applyLayout forces page stroke on every shape', () => {
+		const page = Page.createBlank(1);
+
+		page.applyLayout({
+			width: 800,
+			height: 1200,
+			shapes: [
+				{
+					id: 'a',
+					points: [
+						{ x: 0, y: 0 },
+						{ x: 10, y: 0 },
+						{ x: 10, y: 10 },
+					],
+					strokeWidth: 2,
+					image: null,
+				},
+			],
+			strokeWidth: 12,
+		});
+
+		expect(page.strokeWidth).toBe(12);
+		expect(page.shapes[0]?.strokeWidth).toBe(12);
 	});
 
 	it('clamps page size and margins', () => {

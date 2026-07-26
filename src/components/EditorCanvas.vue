@@ -36,7 +36,8 @@ const { refreshGuides } = usePanelGuides({ fabricCanvas });
 const { path: strokePath, cancelStroke, syncInteractionMode } = usePanelStroke({
 	fabricCanvas,
 });
-const { setSelectionStrokeWidth } = usePanelSelection({
+
+usePanelSelection({
 	fabricCanvas,
 	syncInteractionMode,
 	cancelStroke,
@@ -86,7 +87,6 @@ const shapeMenuStage = computed(() => {
 
 const discardSelection = () => {
 	fabricCanvas.value?.discardActiveObject();
-	editorStore.setSelectedStrokeWidth(null);
 	clearShapeMenu();
 };
 
@@ -125,7 +125,6 @@ onMounted(() => {
 
 	editorStore.registerCanvas({
 		cancelStroke,
-		setSelectionStrokeWidth,
 		exportDataUrl,
 		resetZoomView,
 	});

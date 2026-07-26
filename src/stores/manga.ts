@@ -1,4 +1,4 @@
-import { computed, ref, triggerRef } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
@@ -18,11 +18,6 @@ export const useMangaStore = defineStore('manga', () => {
 	 * (cambio de tamaño, rejilla o márgenes).
 	 */
 	const contentResetEpoch = ref(0);
-
-	/** Pinia no detecta mutaciones internas de Page; forzamos reactividad. */
-	const touchPages = () => {
-		triggerRef(pages);
-	};
 
 	const findPage = (pageId: string) => {
 		return pages.value.find((page) => {
@@ -89,7 +84,6 @@ export const useMangaStore = defineStore('manga', () => {
 
 		pages.value.push(page);
 		activePageId.value = page.id;
-		touchPages();
 	};
 
 	/** Siempre queda al menos una página; si borras la activa, selecciona vecina. */
@@ -118,8 +112,6 @@ export const useMangaStore = defineStore('manga', () => {
 
 			activePageId.value = nextPage.id;
 		}
-
-		touchPages();
 	};
 
 	const selectPage = (pageId: string) => {
@@ -152,7 +144,6 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		pages.value.splice(toIndex, 0, page);
-		touchPages();
 	};
 
 	const renamePage = (pageId: string, name: string) => {
@@ -164,7 +155,6 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		page.name = trimmed;
-		touchPages();
 	};
 
 	const getActivePageLayout = (): LayoutJSON => {
@@ -178,21 +168,15 @@ export const useMangaStore = defineStore('manga', () => {
 			shapes: layoutJson.shapes ?? [],
 		});
 
-		touchPages();
 		contentResetEpoch.value += 1;
 	};
 
 	const addShape = (shape: Shape) => {
-		// Page reasigna shapes[]; la proxy de Pinia actualiza el strip.
 		getActivePage().addShape(shape);
 	};
 
 	const removeShape = (shapeId: string) => {
 		getActivePage().removeShape(shapeId);
-	};
-
-	const setShapeStrokeWidth = (shapeId: string, width: number) => {
-		getActivePage().setShapeStrokeWidth(shapeId, width);
 	};
 
 	const setShapeImage = (shapeId: string, image: ShapeImage | null) => {
@@ -238,7 +222,6 @@ export const useMangaStore = defineStore('manga', () => {
 		clearActivePage,
 		addShape,
 		removeShape,
-		setShapeStrokeWidth,
 		setShapeImage,
 		setActivePageSize,
 		setActivePageGrid,
