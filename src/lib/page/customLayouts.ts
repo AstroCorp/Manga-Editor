@@ -2,10 +2,10 @@ import { createId } from '@/lib/id';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
 import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
-export const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
+const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
 
 /** Geometría lista para catálogo (sin id/name de página ni imágenes). */
-export const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
+const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
 	const shapes = (layout.shapes ?? []).map((shape) => {
 		return {
 			id: shape.id,

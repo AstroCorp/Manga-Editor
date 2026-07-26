@@ -9,25 +9,22 @@ describe('useEditorStore selection and zoom bridge', () => {
 		setActivePinia(createPinia());
 	});
 
-	it('starts without selection at default zoom', () => {
+	it('starts without selected stroke at default zoom', () => {
 		const store = useEditorStore();
 
-		expect(store.hasSelection).toBe(false);
 		expect(store.selectedStrokeWidth).toBeNull();
 		expect(store.zoomPercent).toBe(DEFAULT_ZOOM_PERCENT);
 	});
 
-	it('registerCanvas wires selection and zoom actions', () => {
+	it('registerCanvas wires stroke and zoom actions', () => {
 		const store = useEditorStore();
 		const cancelStroke = vi.fn();
-		const removeActive = vi.fn(() => true);
 		const setSelectionStrokeWidth = vi.fn(() => true);
 		const exportDataUrl = vi.fn(() => 'data:image/png;base64,abc');
 		const resetZoomView = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
-			removeActive,
 			setSelectionStrokeWidth,
 			exportDataUrl,
 			resetZoomView,
@@ -35,9 +32,6 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		store.cancelStroke();
 		expect(cancelStroke).toHaveBeenCalledOnce();
-
-		expect(store.removeActive()).toBe(true);
-		expect(removeActive).toHaveBeenCalledOnce();
 
 		expect(store.setSelectionStrokeWidth(5)).toBe(true);
 		expect(setSelectionStrokeWidth).toHaveBeenCalledWith(5);
@@ -48,26 +42,23 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(resetZoomView).toHaveBeenCalledOnce();
 	});
 
-	it('unregisterCanvas clears selection flags and stubs actions', () => {
+	it('unregisterCanvas clears stroke width and stubs actions', () => {
 		const store = useEditorStore();
-		const removeActive = vi.fn(() => true);
+		const setSelectionStrokeWidth = vi.fn(() => true);
 
 		store.registerCanvas({
 			cancelStroke: vi.fn(),
-			removeActive,
-			setSelectionStrokeWidth: vi.fn(() => true),
+			setSelectionStrokeWidth,
 			exportDataUrl: vi.fn(() => null),
 			resetZoomView: vi.fn(),
 		});
-		store.setHasSelection(true);
 		store.setSelectedStrokeWidth(8);
 
 		store.unregisterCanvas();
 
-		expect(store.hasSelection).toBe(false);
 		expect(store.selectedStrokeWidth).toBeNull();
-		expect(store.removeActive()).toBe(false);
-		expect(removeActive).not.toHaveBeenCalled();
+		expect(store.setSelectionStrokeWidth(3)).toBe(false);
+		expect(setSelectionStrokeWidth).not.toHaveBeenCalled();
 	});
 
 	it('exportPage cancels stroke then downloads the image', () => {
@@ -91,7 +82,6 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		store.registerCanvas({
 			cancelStroke,
-			removeActive: vi.fn(() => false),
 			setSelectionStrokeWidth: vi.fn(() => false),
 			exportDataUrl,
 			resetZoomView: vi.fn(),

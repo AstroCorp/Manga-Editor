@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { shallowRef } from 'vue';
+import { computed, shallowRef } from 'vue';
 import App from '../App.vue';
 
 vi.mock('@/composables/fabric/useFabricCanvas', () => {
@@ -11,6 +11,7 @@ vi.mock('@/composables/fabric/useFabricCanvas', () => {
 				fabricCanvas: shallowRef(null),
 				init: vi.fn(),
 				hydratePage: vi.fn(),
+				exportDataUrl: vi.fn(() => null),
 			};
 		},
 	};
@@ -26,6 +27,7 @@ vi.mock('@/composables/fabric/useFabricZoom', () => {
 					height: '100px',
 					transform: 'scale(0.75)',
 				}),
+				zoomFactor: computed(() => 0.75),
 				resetZoomView: vi.fn(),
 			};
 		},
@@ -36,7 +38,6 @@ vi.mock('@/composables/panel/usePanelGuides', () => {
 	return {
 		usePanelGuides: () => {
 			return {
-				clearGuides: vi.fn(),
 				refreshGuides: vi.fn(),
 			};
 		},
@@ -59,8 +60,35 @@ vi.mock('@/composables/panel/usePanelSelection', () => {
 	return {
 		usePanelSelection: () => {
 			return {
-				removeActive: vi.fn(() => false),
 				setSelectionStrokeWidth: vi.fn(() => false),
+			};
+		},
+	};
+});
+
+vi.mock('@/composables/panel/useGridPointHover', () => {
+	return {
+		useGridPointHover: () => {
+			return {
+				hoverPoint: shallowRef(null),
+				labelPosition: shallowRef(null),
+			};
+		},
+		formatGridPointLabel: () => '',
+	};
+});
+
+vi.mock('@/composables/panel/useShapeActionMenu', () => {
+	return {
+		useShapeActionMenu: () => {
+			return {
+				visible: computed(() => false),
+				hasImage: shallowRef(false),
+				position: shallowRef(null),
+				deleteShape: vi.fn(),
+				clearImage: vi.fn(),
+				placeImage: vi.fn(),
+				clearMenu: vi.fn(),
 			};
 		},
 	};
@@ -90,8 +118,11 @@ describe('App', () => {
 			wrapper.find('button[aria-label="Hide guides"]').exists(),
 		).toBe(true);
 		expect(
-			wrapper.find('button[aria-label="Delete selection"]').exists(),
+			wrapper.find('button[aria-label="Clear page"]').exists(),
 		).toBe(true);
+		expect(
+			wrapper.find('button[aria-label="Delete selection"]').exists(),
+		).toBe(false);
 		expect(wrapper.find('button[aria-label="Add page"]').exists()).toBe(
 			true,
 		);

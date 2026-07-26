@@ -46,7 +46,6 @@ export const usePanelSelection = ({
 
 			canvas.discardActiveObject();
 
-			editorStore.setHasSelection(false);
 			editorStore.setSelectedStrokeWidth(null);
 
 			syncInteractionMode();
@@ -62,7 +61,6 @@ export const usePanelSelection = ({
 			canvas.remove(active);
 			canvas.discardActiveObject();
 
-			editorStore.setHasSelection(false);
 			editorStore.setSelectedStrokeWidth(null);
 
 			syncInteractionMode();
@@ -113,10 +111,6 @@ export const usePanelSelection = ({
 	};
 
 	const onSelectionChange = () => {
-		const canvas = fabricCanvas.value;
-		const active = canvas?.getActiveObject();
-
-		editorStore.setHasSelection(Boolean(active && !isGuide(active)));
 		syncSelectedStrokeWidth();
 	};
 
@@ -211,7 +205,6 @@ export const usePanelSelection = ({
 	useEventListener(window, 'keydown', onKeyDown);
 
 	return {
-		removeActive,
 		setSelectionStrokeWidth,
 	};
 };

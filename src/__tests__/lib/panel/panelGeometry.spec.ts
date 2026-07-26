@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
 	canAddEdge,
 	canExtendStrokePath,
-	isCanvasPointUsedAsVertex,
 	isClosed,
 	isPointInsideAnyPolygon,
 	isPointInsidePolygon,
@@ -299,8 +298,6 @@ describe('canExtendStrokePath', () => {
 	});
 
 	it('rejects vertices already used by an existing shape', () => {
-		// (100,100) = grid (0.666…) no cae en esta rejilla 3×3 exacta;
-		// usamos un polígono anclado a vértices de rejilla.
 		const onGrid = [
 			[
 				toCanvasPoint(gridPoint(0, 0), layout),
@@ -310,9 +307,6 @@ describe('canExtendStrokePath', () => {
 			],
 		];
 
-		expect(isCanvasPointUsedAsVertex(toCanvasPoint(gridPoint(0, 0), layout), onGrid)).toBe(
-			true,
-		);
 		expect(canExtendStrokePath([], gridPoint(0, 0), layout, onGrid)).toBe(
 			false,
 		);

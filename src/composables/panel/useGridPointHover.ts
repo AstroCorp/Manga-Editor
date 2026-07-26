@@ -107,6 +107,5 @@ export const useGridPointHover = ({ fabricCanvas }: GridPointHoverDeps) => {
 	return {
 		hoverPoint,
 		labelPosition,
-		formatGridPointLabel,
 	};
 };

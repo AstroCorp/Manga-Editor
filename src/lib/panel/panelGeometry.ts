@@ -15,7 +15,7 @@ export const ZERO_MARGINS: PageMargins = {
 };
 
 /** Compara dos puntos de rejilla por columna y fila. */
-export const sameGridPoint = (first: GridPoint, second: GridPoint): boolean => {
+const sameGridPoint = (first: GridPoint, second: GridPoint): boolean => {
 	return first.col === second.col && first.row === second.row;
 };
 
@@ -278,7 +278,7 @@ const pointOnSegment = (point: CanvasPoint, segmentStart: CanvasPoint, segmentEn
 };
 
 /** ¿El punto toca el borde del polígono (alguna arista)? */
-export const isPointOnPolygonBoundary = (point: CanvasPoint, polygon: CanvasPoint[]): boolean => {
+const isPointOnPolygonBoundary = (point: CanvasPoint, polygon: CanvasPoint[]): boolean => {
 	if (polygon.length < 2) {
 		return false;
 	}
@@ -411,7 +411,7 @@ export const polygonContainsAnyVertexOf = (outer: CanvasPoint[], polygons: Canva
 };
 
 /** ¿El punto coincide con algún vértice de los polígonos existentes? */
-export const isCanvasPointUsedAsVertex = (point: CanvasPoint, polygons: CanvasPoint[][]): boolean => {
+const isCanvasPointUsedAsVertex = (point: CanvasPoint, polygons: CanvasPoint[][]): boolean => {
 	return polygons.some((polygon) => {
 		return polygon.some((vertex) => {
 			return sameCanvasPoint(point, vertex);

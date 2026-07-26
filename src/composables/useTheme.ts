@@ -15,7 +15,6 @@ export const useTheme = createSharedComposable(() => {
 
 	return {
 		preference: mode.store,
-		resolved: mode.state,
 		setPreference,
 	};
 });

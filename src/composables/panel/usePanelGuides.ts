@@ -53,7 +53,6 @@ export const usePanelGuides = ({ fabricCanvas }: GuidesDeps) => {
 	});
 
 	return {
-		clearGuides,
 		refreshGuides,
 	};
 };

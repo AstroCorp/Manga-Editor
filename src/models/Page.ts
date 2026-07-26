@@ -15,7 +15,13 @@ import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { LayoutJSON } from '@/types/layouts';
-import type { PageJSON, PageMargins, PageValue } from '@/types/page';
+import type { PageMargins, PageValue } from '@/types/page';
+
+const findShapeOnPage = (page: Page, shapeId: string): Shape | undefined => {
+	return page.shapes.find((shape) => {
+		return shape.id === shapeId;
+	});
+};
 
 export class Page {
 	public readonly id: string;
@@ -132,7 +138,7 @@ export class Page {
 	}
 
 	setShapeStrokeWidth(shapeId: string, width: number): boolean {
-		const shape = this.findShape(shapeId);
+		const shape = findShapeOnPage(this, shapeId);
 
 		if (!shape) {
 			return false;
@@ -147,7 +153,7 @@ export class Page {
 	}
 
 	setShapeImage(shapeId: string, image: ShapeImage | null): boolean {
-		const shape = this.findShape(shapeId);
+		const shape = findShapeOnPage(this, shapeId);
 
 		if (!shape) {
 			return false;
@@ -158,12 +164,6 @@ export class Page {
 		this.shapes = this.shapes.slice();
 
 		return true;
-	}
-
-	findShape(shapeId: string): Shape | undefined {
-		return this.shapes.find((shape) => {
-			return shape.id === shapeId;
-		});
 	}
 
 	applyLayout(data: LayoutJSON) {
@@ -181,25 +181,6 @@ export class Page {
 			marginLeft: fields.marginLeft,
 		});
 		this.setStrokeWidth(fields.strokeWidth);
-	}
-
-	toJSON(): PageJSON {
-		return {
-			id: this.id,
-			name: this.name,
-			width: this.width,
-			height: this.height,
-			shapes: this.shapes.map((shape) => {
-				return shape.toJSON();
-			}),
-			gridCols: this.gridCols,
-			gridRows: this.gridRows,
-			marginTop: this.marginTop,
-			marginRight: this.marginRight,
-			marginBottom: this.marginBottom,
-			marginLeft: this.marginLeft,
-			strokeWidth: this.strokeWidth,
-		};
 	}
 
 	/**
@@ -221,26 +202,5 @@ export class Page {
 			marginLeft: this.marginLeft,
 			strokeWidth: this.strokeWidth,
 		};
-	}
-
-	static fromJSON(data: PageJSON): Page {
-		const fields = resolveLayoutFields(data);
-		
-		return new Page({
-			id: data.id,
-			name: data.name,
-			width: data.width,
-			height: data.height,
-			shapes: data.shapes.map((shapeJson) => {
-				return Shape.fromJSON(shapeJson);
-			}),
-			gridCols: fields.gridCols,
-			gridRows: fields.gridRows,
-			marginTop: fields.marginTop,
-			marginRight: fields.marginRight,
-			marginBottom: fields.marginBottom,
-			marginLeft: fields.marginLeft,
-			strokeWidth: fields.strokeWidth,
-		});
 	}
 }

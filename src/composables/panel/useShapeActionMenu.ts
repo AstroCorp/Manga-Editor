@@ -86,7 +86,6 @@ export const useShapeActionMenu = ({
 		mangaStore.removeShape(id);
 		removeObjectsByPanelId(canvas, id);
 		canvas.discardActiveObject();
-		editorStore.setHasSelection(false);
 		editorStore.setSelectedStrokeWidth(null);
 		clearMenu();
 		onChanged?.();
@@ -120,7 +119,6 @@ export const useShapeActionMenu = ({
 			canvas.setActiveObject(panel);
 		} else {
 			canvas.discardActiveObject();
-			editorStore.setHasSelection(false);
 			editorStore.setSelectedStrokeWidth(null);
 			clearMenu();
 		}
@@ -198,7 +196,6 @@ export const useShapeActionMenu = ({
 		deleteShape,
 		clearImage,
 		placeImage,
-		refreshMenu,
 		clearMenu,
 	};
 };

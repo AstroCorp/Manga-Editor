@@ -65,14 +65,6 @@ export const useMangaStore = defineStore('manga', () => {
 		};
 	});
 
-	const pageWidth = computed(() => {
-		return getActivePage().width;
-	});
-
-	const pageHeight = computed(() => {
-		return getActivePage().height;
-	});
-
 	const strokeWidth = computed(() => {
 		return getActivePage().strokeWidth;
 	});
@@ -234,8 +226,6 @@ export const useMangaStore = defineStore('manga', () => {
 		contentResetEpoch,
 		activePage,
 		layout,
-		pageWidth,
-		pageHeight,
 		strokeWidth,
 		shapes,
 		addPage,
@@ -254,6 +244,5 @@ export const useMangaStore = defineStore('manga', () => {
 		setActivePageGrid,
 		setActivePageMargins,
 		setActivePageStrokeWidth,
-		touchPages,
 	};
 });

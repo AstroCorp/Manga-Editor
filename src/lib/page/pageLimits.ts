@@ -10,7 +10,7 @@ export const MIN_STROKE_WIDTH = 1;
 export const MAX_STROKE_WIDTH = 40;
 export const MIN_PAGE_SIZE = 100;
 export const MAX_PAGE_SIZE = 10000;
-export const MAX_MARGIN_RATIO = 0.2;
+const MAX_MARGIN_RATIO = 0.2;
 
 /**
  * Acota el número de columnas/filas de la rejilla al rango válido.

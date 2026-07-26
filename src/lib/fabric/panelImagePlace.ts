@@ -20,7 +20,7 @@ export const isImageFile = (file: File): boolean => {
 	return file.type.startsWith('image/');
 };
 
-export const readFileAsDataUrl = (file: File): Promise<string> => {
+const readFileAsDataUrl = (file: File): Promise<string> => {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
 

@@ -6,7 +6,7 @@ export const EXPORT_IMAGE_FORMAT = {
 	Jpeg: 'jpeg',
 } as const satisfies Record<string, ExportImageFormat>;
 
-export const EXPORT_IMAGE_EXTENSION = {
+const EXPORT_IMAGE_EXTENSION = {
 	[EXPORT_IMAGE_FORMAT.Png]: 'png',
 	[EXPORT_IMAGE_FORMAT.Jpeg]: 'jpg',
 } as const satisfies Record<ExportImageFormat, string>;

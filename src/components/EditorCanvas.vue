@@ -34,7 +34,7 @@ const { stageStyle, scaleStyle, zoomFactor, resetZoomView } = useFabricZoom({
 });
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
 const { cancelStroke, syncInteractionMode } = usePanelStroke({ fabricCanvas });
-const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
+const { setSelectionStrokeWidth } = usePanelSelection({
 	fabricCanvas,
 	syncInteractionMode,
 	cancelStroke,
@@ -81,7 +81,6 @@ const shapeMenuStage = computed(() => {
 
 const discardSelection = () => {
 	fabricCanvas.value?.discardActiveObject();
-	editorStore.setHasSelection(false);
 	editorStore.setSelectedStrokeWidth(null);
 	clearShapeMenu();
 };
@@ -121,7 +120,6 @@ onMounted(() => {
 
 	editorStore.registerCanvas({
 		cancelStroke,
-		removeActive,
 		setSelectionStrokeWidth,
 		exportDataUrl,
 		resetZoomView,

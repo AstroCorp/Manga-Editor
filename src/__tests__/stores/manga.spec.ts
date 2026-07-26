@@ -27,8 +27,8 @@ describe('useMangaStore config layout', () => {
 		store.setActivePageSize(900, 1300);
 
 		expect(store.shapes).toHaveLength(0);
-		expect(store.pageWidth).toBe(900);
-		expect(store.pageHeight).toBe(1300);
+		expect(store.activePage.width).toBe(900);
+		expect(store.activePage.height).toBe(1300);
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
@@ -119,8 +119,8 @@ describe('useMangaStore config layout', () => {
 
 		expect(store.activePage.name).toBe(originalName);
 		expect(store.activePage.id).toBe(originalId);
-		expect(store.pageWidth).toBe(800);
-		expect(store.pageHeight).toBe(1200);
+		expect(store.activePage.width).toBe(800);
+		expect(store.activePage.height).toBe(1200);
 		expect(store.shapes).toHaveLength(1);
 		expect(store.shapes[0]?.strokeWidth).toBe(5);
 		expect(store.contentResetEpoch).toBe(epoch + 1);

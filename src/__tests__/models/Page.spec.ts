@@ -19,7 +19,7 @@ describe('Page / Shape / ShapeImage', () => {
 		expect(page.shapes).toEqual([]);
 	});
 
-	it('adds and serializes shapes round-trip', () => {
+	it('applies layout JSON and exports geometry without images', () => {
 		const page = Page.createBlank(1);
 		const shape = Shape.create(
 			[
@@ -30,15 +30,36 @@ describe('Page / Shape / ShapeImage', () => {
 			4,
 		);
 
+		shape.setImage(
+			new ShapeImage({
+				src: 'data:image/png;base64,xx',
+				left: 5,
+				top: 5,
+				scaleX: 1,
+				scaleY: 1,
+			}),
+		);
 		page.addShape(shape);
 
-		const json = page.toJSON();
-		const restored = Page.fromJSON(json);
+		const layout = page.toLayoutJSON();
 
-		expect(restored.shapes).toHaveLength(1);
-		expect(restored.shapes[0]?.id).toBe(shape.id);
-		expect(restored.shapes[0]?.strokeWidth).toBe(4);
-		expect(restored.shapes[0]?.points).toEqual(shape.points);
+		expect(layout.shapes).toHaveLength(1);
+		expect(layout.shapes[0]?.strokeWidth).toBe(4);
+		expect(layout.shapes[0]?.image).toBeNull();
+		expect(layout).not.toHaveProperty('id');
+		expect(layout).not.toHaveProperty('name');
+
+		const other = Page.createBlank(2);
+
+		other.applyLayout({
+			...layout,
+			shapes: layout.shapes ?? [],
+		});
+
+		expect(other.shapes).toHaveLength(1);
+		expect(other.shapes[0]?.strokeWidth).toBe(4);
+		expect(other.shapes[0]?.points).toEqual(shape.points);
+		expect(other.shapes[0]?.image).toBeNull();
 	});
 
 	it('layout JSON strips images from shapes', () => {
