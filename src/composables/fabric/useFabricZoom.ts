@@ -151,6 +151,7 @@ export const useFabricZoom = ({
 	return {
 		stageStyle,
 		scaleStyle,
+		zoomFactor,
 		resetZoomView,
 	};
 };

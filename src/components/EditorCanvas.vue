@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import GridPointLabel from '@/components/canvas/GridPointLabel.vue';
+import ShapeActionMenu from '@/components/canvas/ShapeActionMenu.vue';
 import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
 import { useFabricZoom } from '@/composables/fabric/useFabricZoom';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { usePageContentReset } from '@/composables/page/usePageContentReset';
+import { useGridPointHover } from '@/composables/panel/useGridPointHover';
 import { usePanelGuides } from '@/composables/panel/usePanelGuides';
 import { usePanelImageDrop } from '@/composables/panel/usePanelImageDrop';
 import { usePanelSelection } from '@/composables/panel/usePanelSelection';
 import { usePanelStroke } from '@/composables/panel/usePanelStroke';
+import { useShapeActionMenu } from '@/composables/panel/useShapeActionMenu';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 
@@ -23,7 +27,7 @@ const canvasEl = ref<HTMLCanvasElement | null>(null);
 let hydrateGeneration = 0;
 
 const { fabricCanvas, init, hydratePage, exportDataUrl } = useFabricCanvas(canvasEl);
-const { stageStyle, scaleStyle, resetZoomView } = useFabricZoom({
+const { stageStyle, scaleStyle, zoomFactor, resetZoomView } = useFabricZoom({
 	fabricCanvas,
 	rootEl,
 	pageSize,
@@ -38,10 +42,48 @@ const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
 
 usePanelImageDrop(rootEl, fabricCanvas, syncInteractionMode);
 
+const { hoverPoint, labelPosition } = useGridPointHover({ fabricCanvas });
+
+/** Page coords → stage (page × zoom), sin escalar el UI. */
+const toStageCoords = (position: { left: number; top: number } | null) => {
+	if (!position) {
+		return { left: null as number | null, top: null as number | null };
+	}
+
+	const factor = zoomFactor.value;
+
+	return {
+		left: position.left * factor,
+		top: position.top * factor,
+	};
+};
+
+const gridLabelStage = computed(() => {
+	return toStageCoords(labelPosition.value);
+});
+
+const {
+	visible: shapeMenuVisible,
+	hasImage: shapeMenuHasImage,
+	position: shapeMenuPosition,
+	deleteShape,
+	clearImage,
+	placeImage,
+	clearMenu: clearShapeMenu,
+} = useShapeActionMenu({
+	fabricCanvas,
+	onChanged: syncInteractionMode,
+});
+
+const shapeMenuStage = computed(() => {
+	return toStageCoords(shapeMenuPosition.value);
+});
+
 const discardSelection = () => {
 	fabricCanvas.value?.discardActiveObject();
 	editorStore.setHasSelection(false);
 	editorStore.setSelectedStrokeWidth(null);
+	clearShapeMenu();
 };
 
 const applyActivePage = async () => {
@@ -106,10 +148,24 @@ watch(activePageId, (nextId, prevId) => {
 		class="stage-checker h-full w-full overflow-auto p-8 pt-12"
 		@pointerdown.self="cancelStroke"
 	>
-		<div class="mx-auto" :style="stageStyle">
+		<div class="relative mx-auto" :style="stageStyle">
 			<div class="origin-top-left" :style="scaleStyle">
 				<canvas ref="canvasEl" class="shadow-lg shadow-slate-900/20" />
 			</div>
+			<GridPointLabel
+				:point="hoverPoint"
+				:left="gridLabelStage.left"
+				:top="gridLabelStage.top"
+			/>
+			<ShapeActionMenu
+				:visible="shapeMenuVisible"
+				:has-image="shapeMenuHasImage"
+				:left="shapeMenuStage.left"
+				:top="shapeMenuStage.top"
+				@delete-shape="deleteShape"
+				@clear-image="clearImage"
+				@place-image="placeImage"
+			/>
 		</div>
 	</div>
 </template>

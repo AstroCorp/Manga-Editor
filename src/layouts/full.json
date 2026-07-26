@@ -1,0 +1,36 @@
+{
+  "width": 1753,
+  "height": 2480,
+  "shapes": [
+    {
+      "id": "aa0372de-a0da-49f0-98ee-28bbdb5d9aee",
+      "points": [
+        {
+          "x": 20,
+          "y": 20
+        },
+        {
+          "x": 1733,
+          "y": 20
+        },
+        {
+          "x": 1733,
+          "y": 2460
+        },
+        {
+          "x": 20,
+          "y": 2460
+        }
+      ],
+      "strokeWidth": 3,
+      "image": null
+    }
+  ],
+  "gridCols": 80,
+  "gridRows": 120,
+  "marginTop": 20,
+  "marginRight": 20,
+  "marginBottom": 20,
+  "marginLeft": 20,
+  "strokeWidth": 12
+}

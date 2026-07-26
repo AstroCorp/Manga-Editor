@@ -1,4 +1,4 @@
-import type { FabricImage, FabricObject, Point, Polygon, Polyline } from 'fabric';
+import type { Canvas, FabricImage, FabricObject, Point, Polygon, Polyline } from 'fabric';
 
 export type GridGuideImage = FabricImage & {
 	isGuide?: boolean;
@@ -39,4 +39,13 @@ export type PanelCenter = {
 
 export type CanvasTargetFind = {
 	_checkTarget: (obj: FabricObject, pointer: Point) => boolean;
+};
+
+export type PlaceImageInPanelOptions = {
+	canvas: Canvas;
+	panelId: string;
+	file: File;
+	/** Si devuelve true, se aborta (hydrate/drop obsoleto). */
+	isStale?: () => boolean;
+	selectAfterPlace?: boolean;
 };
