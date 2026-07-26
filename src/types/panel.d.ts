@@ -18,6 +18,7 @@ export type StrokeDeps = {
 
 export type GridPointHoverDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
+	strokePath: ShallowRef<GridPoint[]>;
 };
 
 export type ShapeActionMenuDeps = {
@@ -30,8 +31,13 @@ export type PageOverlayPosition = {
 	top: number;
 };
 
+export type GridLineDelta = {
+	x: number;
+	y: number;
+};
+
 export type GridPointLabelProps = {
-	point: GridPoint | null;
+	delta: GridLineDelta | null;
 	left: number | null;
 	top: number | null;
 };

@@ -33,7 +33,9 @@ const { stageStyle, scaleStyle, zoomFactor, resetZoomView } = useFabricZoom({
 	pageSize,
 });
 const { refreshGuides } = usePanelGuides({ fabricCanvas });
-const { cancelStroke, syncInteractionMode } = usePanelStroke({ fabricCanvas });
+const { path: strokePath, cancelStroke, syncInteractionMode } = usePanelStroke({
+	fabricCanvas,
+});
 const { setSelectionStrokeWidth } = usePanelSelection({
 	fabricCanvas,
 	syncInteractionMode,
@@ -42,7 +44,10 @@ const { setSelectionStrokeWidth } = usePanelSelection({
 
 usePanelImageDrop(rootEl, fabricCanvas, syncInteractionMode);
 
-const { hoverPoint, labelPosition } = useGridPointHover({ fabricCanvas });
+const { lineDelta, labelPosition } = useGridPointHover({
+	fabricCanvas,
+	strokePath,
+});
 
 /** Page coords → stage (page × zoom), sin escalar el UI. */
 const toStageCoords = (position: { left: number; top: number } | null) => {
@@ -151,7 +156,7 @@ watch(activePageId, (nextId, prevId) => {
 				<canvas ref="canvasEl" class="shadow-lg shadow-slate-900/20" />
 			</div>
 			<GridPointLabel
-				:point="hoverPoint"
+				:delta="lineDelta"
 				:left="gridLabelStage.left"
 				:top="gridLabelStage.top"
 			/>

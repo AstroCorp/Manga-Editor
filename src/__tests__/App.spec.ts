@@ -70,11 +70,11 @@ vi.mock('@/composables/panel/useGridPointHover', () => {
 	return {
 		useGridPointHover: () => {
 			return {
-				hoverPoint: shallowRef(null),
+				lineDelta: shallowRef(null),
 				labelPosition: shallowRef(null),
 			};
 		},
-		formatGridPointLabel: () => '',
+		formatGridLineDelta: () => '',
 	};
 });
 

@@ -7,13 +7,25 @@ import { snapToGridPoint } from '@/lib/panel/panelGeometry';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import type { GridPoint } from '@/types/geometry';
-import type { GridPointHoverDeps, PageOverlayPosition } from '@/types/panel';
+import type {
+	GridLineDelta,
+	GridPointHoverDeps,
+	PageOverlayPosition,
+} from '@/types/panel';
 
 const LABEL_OFFSET_X = 12;
 const LABEL_OFFSET_Y = 12;
 
-export const formatGridPointLabel = (point: GridPoint): string => {
-	return `(${point.col}x, ${point.row}y)`;
+/** Pasos horizontales (x/col) y verticales (y/row) entre dos puntos. */
+export const gridLineDelta = (from: GridPoint, to: GridPoint): GridLineDelta => {
+	return {
+		x: Math.abs(from.col - to.col),
+		y: Math.abs(from.row - to.row),
+	};
+};
+
+export const formatGridLineDelta = (delta: GridLineDelta): string => {
+	return `${delta.x}x, ${delta.y}y`;
 };
 
 const isInsideAnyPanel = (canvas: Canvas, x: number, y: number): boolean => {
@@ -24,24 +36,29 @@ const isInsideAnyPanel = (canvas: Canvas, x: number, y: number): boolean => {
 	});
 };
 
-export const useGridPointHover = ({ fabricCanvas }: GridPointHoverDeps) => {
+export const useGridPointHover = ({
+	fabricCanvas,
+	strokePath,
+}: GridPointHoverDeps) => {
 	const editorStore = useEditorStore();
 	const mangaStore = useMangaStore();
 	const { showGridGuides } = storeToRefs(editorStore);
 	const { layout } = storeToRefs(mangaStore);
 
-	const hoverPoint = shallowRef<GridPoint | null>(null);
+	const lineDelta = shallowRef<GridLineDelta | null>(null);
 	const labelPosition = shallowRef<PageOverlayPosition | null>(null);
 
 	const clearHover = () => {
-		hoverPoint.value = null;
+		lineDelta.value = null;
 		labelPosition.value = null;
 	};
 
 	const onCanvasMouseMove = (event: TPointerEventInfo<TPointerEvent>) => {
 		const canvas = fabricCanvas.value;
+		const path = strokePath.value;
+		const last = path[path.length - 1];
 
-		if (!showGridGuides.value || !canvas) {
+		if (!showGridGuides.value || !canvas || !last) {
 			clearHover();
 
 			return;
@@ -49,16 +66,22 @@ export const useGridPointHover = ({ fabricCanvas }: GridPointHoverDeps) => {
 
 		const { x, y } = event.scenePoint;
 
-		// Dentro de un panel/imagen no hace falta el label de rejilla.
 		if (isInsideAnyPanel(canvas, x, y)) {
 			clearHover();
 
 			return;
 		}
 
-		const point = snapToGridPoint(x, y, layout.value);
+		const hover = snapToGridPoint(x, y, layout.value);
+		const delta = gridLineDelta(last, hover);
 
-		hoverPoint.value = point;
+		if (delta.x === 0 && delta.y === 0) {
+			clearHover();
+
+			return;
+		}
+
+		lineDelta.value = delta;
 		labelPosition.value = {
 			left: x + LABEL_OFFSET_X,
 			top: y + LABEL_OFFSET_Y,
@@ -85,6 +108,12 @@ export const useGridPointHover = ({ fabricCanvas }: GridPointHoverDeps) => {
 		}
 	});
 
+	watch(strokePath, (path) => {
+		if (path.length === 0) {
+			clearHover();
+		}
+	});
+
 	watch(
 		fabricCanvas,
 		(canvas, _previous, onCleanup) => {
@@ -105,7 +134,7 @@ export const useGridPointHover = ({ fabricCanvas }: GridPointHoverDeps) => {
 	);
 
 	return {
-		hoverPoint,
+		lineDelta,
 		labelPosition,
 	};
 };

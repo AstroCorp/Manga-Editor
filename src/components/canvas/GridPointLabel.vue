@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { formatGridPointLabel } from '@/composables/panel/useGridPointHover';
+import { formatGridLineDelta } from '@/composables/panel/useGridPointHover';
 import type { GridPointLabelProps } from '@/types/panel';
 
 const props = defineProps<GridPointLabelProps>();
 
 const label = computed(() => {
-	return props.point ? formatGridPointLabel(props.point) : '';
+	return props.delta ? formatGridLineDelta(props.delta) : '';
 });
 
 const style = computed(() => {
-	if (props.left === null || props.top === null || !props.point) {
+	if (props.left === null || props.top === null || !props.delta) {
 		return null;
 	}
 
