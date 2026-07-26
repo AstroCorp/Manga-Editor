@@ -1,12 +1,10 @@
-/**
- * Catálogo de layouts: presets empaquetados (lazy) + custom en localStorage.
- */
+import { useLocalStorage } from '@vueuse/core';
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import {
+	CUSTOM_LAYOUTS_STORAGE_KEY,
 	createCustomLayoutEntry,
-	readCustomLayouts,
-	writeCustomLayouts,
+	customLayoutsSerializer,
 } from '@/lib/page/customLayouts';
 import { listPresetLayouts } from '@/lib/page/presetLayouts';
 import { PRESETS_LOAD_STATUS } from '@/lib/layouts/presetsLoadStatus';
@@ -19,7 +17,11 @@ import type {
 export const useLayoutsStore = defineStore('layouts', () => {
 	const presets = ref<PresetLayout[]>([]);
 	const presetsStatus = ref<PresetsLoadStatus>(PRESETS_LOAD_STATUS.Idle);
-	const customLayouts = ref<PresetLayout[]>(readCustomLayouts());
+	const customLayouts = useLocalStorage<PresetLayout[]>(
+		CUSTOM_LAYOUTS_STORAGE_KEY,
+		[],
+		{ serializer: customLayoutsSerializer },
+	);
 
 	/** Carga presets empaquetados una sola vez (al abrir el panel Layouts). */
 	const ensurePresetsLoaded = async () => {
@@ -42,7 +44,6 @@ export const useLayoutsStore = defineStore('layouts', () => {
 		const entry = createCustomLayoutEntry(layout);
 
 		customLayouts.value = [...customLayouts.value, entry];
-		writeCustomLayouts(customLayouts.value);
 
 		return entry;
 	};
@@ -57,7 +58,6 @@ export const useLayoutsStore = defineStore('layouts', () => {
 		}
 
 		customLayouts.value = next;
-		writeCustomLayouts(next);
 
 		return true;
 	};

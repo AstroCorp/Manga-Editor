@@ -1,8 +1,9 @@
+import type { Serializer } from '@vueuse/core';
 import { createId } from '@/lib/id';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
 import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
-const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
+export const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
 
 /** Geometría lista para catálogo (sin id/name de página ni imágenes). */
 const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
@@ -41,46 +42,35 @@ const isPresetLayoutEntry = (value: unknown): value is PresetLayout => {
 	return typeof data.id === 'string' && isLayoutJSON(data.layout);
 };
 
-export const readCustomLayouts = (): PresetLayout[] => {
-	if (typeof localStorage === 'undefined') {
-		return [];
-	}
-
+const parseCustomLayouts = (raw: string): PresetLayout[] => {
 	try {
-		const raw = localStorage.getItem(CUSTOM_LAYOUTS_STORAGE_KEY);
-
-		if (!raw) {
-			return [];
-		}
-
 		const parsed: unknown = JSON.parse(raw);
 
 		if (!Array.isArray(parsed)) {
 			return [];
 		}
 
-		return parsed
-			.filter(isPresetLayoutEntry)
-			.map((entry) => {
-				return {
-					id: entry.id,
-					layout: normalizeLayoutForCatalog({
-						...entry.layout,
-						shapes: entry.layout.shapes ?? [],
-					}),
-				};
-			});
+		return parsed.filter(isPresetLayoutEntry).map((entry) => {
+			return {
+				id: entry.id,
+				layout: normalizeLayoutForCatalog({
+					...entry.layout,
+					shapes: entry.layout.shapes ?? [],
+				}),
+			};
+		});
 	} catch {
 		return [];
 	}
 };
 
-export const writeCustomLayouts = (layouts: PresetLayout[]): void => {
-	if (typeof localStorage === 'undefined') {
-		return;
-	}
-
-	localStorage.setItem(CUSTOM_LAYOUTS_STORAGE_KEY, JSON.stringify(layouts));
+export const customLayoutsSerializer: Serializer<PresetLayout[]> = {
+	read: (raw) => {
+		return parseCustomLayouts(raw);
+	},
+	write: (value) => {
+		return JSON.stringify(value);
+	},
 };
 
 export const createCustomLayoutEntry = (layout: LayoutJSON): PresetLayout => {
