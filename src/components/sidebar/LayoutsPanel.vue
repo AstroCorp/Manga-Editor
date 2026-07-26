@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import PagePreview from '@/components/page/PagePreview.vue';
 import { PRESETS_LOAD_STATUS } from '@/lib/layouts/presetsLoadStatus';
@@ -18,6 +19,7 @@ const { activePage } = storeToRefs(mangaStore);
 const { presets, presetsStatus, customLayouts } = storeToRefs(layoutsStore);
 
 const pendingPreset = ref<PresetLayout | null>(null);
+const pendingDeleteCustom = ref<PresetLayout | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const pageHasDrawing = computed(() => {
@@ -56,6 +58,26 @@ const confirmApply = () => {
 	}
 
 	editorStore.applyPageLayout(preset.layout);
+};
+
+const requestDeleteCustom = (preset: PresetLayout) => {
+	pendingDeleteCustom.value = preset;
+};
+
+const cancelDeleteCustom = () => {
+	pendingDeleteCustom.value = null;
+};
+
+const confirmDeleteCustom = () => {
+	const preset = pendingDeleteCustom.value;
+
+	pendingDeleteCustom.value = null;
+
+	if (!preset) {
+		return;
+	}
+
+	layoutsStore.removeCustomLayout(preset.id);
 };
 
 const onExportJson = () => {
@@ -156,10 +178,14 @@ const onFileChange = (event: Event) => {
 				v-if="customLayouts.length > 0"
 				class="grid grid-cols-2 gap-2.5"
 			>
-				<li v-for="preset in customLayouts" :key="preset.id">
+				<li
+					v-for="preset in customLayouts"
+					:key="preset.id"
+					class="group relative"
+				>
 					<button
 						type="button"
-						class="group w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
+						class="w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
 						aria-label="Apply custom layout"
 						@click="requestApply(preset)"
 					>
@@ -172,6 +198,15 @@ const onFileChange = (event: Event) => {
 								:shapes="preset.layout.shapes ?? []"
 							/>
 						</span>
+					</button>
+					<button
+						type="button"
+						class="absolute top-1.5 right-1.5 inline-flex size-8 items-center justify-center rounded-md border border-red-600/35 bg-white/95 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:border-red-600 hover:bg-red-600 hover:text-white focus-visible:border-red-600 focus-visible:opacity-100 dark:border-red-500/35 dark:bg-zinc-950/95 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white"
+						aria-label="Delete custom layout"
+						title="Delete custom layout"
+						@click.stop="requestDeleteCustom(preset)"
+					>
+						<Icon icon="fluent:delete-24-regular" class="size-5" />
 					</button>
 				</li>
 			</ul>
@@ -228,6 +263,15 @@ const onFileChange = (event: Event) => {
 			cancel-label="Cancel"
 			@confirm="confirmApply"
 			@cancel="cancelApply"
+		/>
+		<ConfirmModal
+			v-if="pendingDeleteCustom"
+			title="Delete custom layout"
+			message="Remove this layout from Custom? This cannot be undone."
+			confirm-label="Delete"
+			cancel-label="Cancel"
+			@confirm="confirmDeleteCustom"
+			@cancel="cancelDeleteCustom"
 		/>
 	</div>
 </template>

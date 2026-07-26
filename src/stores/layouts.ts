@@ -47,11 +47,27 @@ export const useLayoutsStore = defineStore('layouts', () => {
 		return entry;
 	};
 
+	const removeCustomLayout = (layoutId: string): boolean => {
+		const next = customLayouts.value.filter((entry) => {
+			return entry.id !== layoutId;
+		});
+
+		if (next.length === customLayouts.value.length) {
+			return false;
+		}
+
+		customLayouts.value = next;
+		writeCustomLayouts(next);
+
+		return true;
+	};
+
 	return {
 		presets,
 		presetsStatus,
 		customLayouts,
 		ensurePresetsLoaded,
 		addCustomLayout,
+		removeCustomLayout,
 	};
 });

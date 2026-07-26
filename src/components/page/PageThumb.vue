@@ -93,7 +93,7 @@ const onDragStart = (event: DragEvent) => {
 
 <template>
 	<div
-		class="relative flex min-w-18 flex-col items-stretch rounded-md border border-slate-200 bg-slate-50/70 text-slate-900 transition hover:bg-blue-50/60 dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-slate-100 dark:hover:bg-blue-950/60"
+		class="group relative flex min-w-18 flex-col items-stretch rounded-md border border-slate-200 bg-slate-50/70 text-slate-900 transition hover:bg-blue-50/60 dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-slate-100 dark:hover:bg-blue-950/60"
 		:class="{
 			'border-blue-600 bg-blue-50 text-blue-600 ring-1 ring-blue-600 ring-inset dark:border-blue-500 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-500':
 				active,
@@ -168,14 +168,14 @@ const onDragStart = (event: DragEvent) => {
 		<button
 			v-if="canRemove"
 			type="button"
-			class="absolute top-1 right-1 grid size-6 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-red-600 hover:bg-red-600 hover:text-white dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-300 dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white"
+			class="absolute top-1.5 right-1.5 inline-flex size-8 items-center justify-center rounded-md border border-red-600/35 bg-white/95 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:border-red-600 hover:bg-red-600 hover:text-white focus-visible:border-red-600 focus-visible:opacity-100 dark:border-red-500/35 dark:bg-zinc-950/95 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white"
 			draggable="false"
 			:aria-label="`Delete ${name}`"
 			:title="`Delete ${name}`"
 			@click.stop="$emit('remove')"
 			@mousedown.stop
 		>
-			<Icon icon="fluent:dismiss-24-regular" class="size-3.5" />
+			<Icon icon="fluent:delete-24-regular" class="size-5" />
 		</button>
 	</div>
 </template>
