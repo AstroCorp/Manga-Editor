@@ -2,6 +2,7 @@ import { onBeforeUnmount, shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
 import { isGuide } from '@/lib/fabric/isGuide';
+import { installPanelImageTargetFind } from '@/lib/fabric/panelHitTest';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
@@ -32,18 +33,20 @@ export const useFabricCanvas = (canvasEl: Ref<HTMLCanvasElement | null>) => {
 			selection: true,
 		});
 
+		installPanelImageTargetFind(fabricCanvas.value);
+
 		// Fabric 7 aplica options en el constructor pero no pinta hasta el primer render.
 		fabricCanvas.value.requestRenderAll();
 	};
 
-	const hydratePage = (page: Page) => {
+	const hydratePage = async (page: Page): Promise<void> => {
 		const canvas = fabricCanvas.value;
 
 		if (!canvas) {
 			return;
 		}
 
-		hydrateCanvasFromPage(canvas, page);
+		await hydrateCanvasFromPage(canvas, page);
 	};
 
 	const exportDataUrl = (format: ExportImageFormat): string | null => {

@@ -13,7 +13,13 @@ import {
 	toCanvasPoint,
 } from '@/lib/panel/panelGeometry';
 import { shapeToPolygon } from '@/lib/fabric/shapeFabric';
-import { isGuide, isPanel } from '@/lib/fabric/isGuide';
+import {
+	collectPanelIdsWithImage,
+	getPanelId,
+	isGuide,
+	isPanel,
+	isPanelImage,
+} from '@/lib/fabric/isGuide';
 import {
 	DRAFT_STROKE_COLOR,
 	GUIDE_STROKE_COLOR,
@@ -54,6 +60,9 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 		}
 
 		const drawing = path.value.length > 0;
+		const filledPanelIds = drawing
+			? new Set<string>()
+			: collectPanelIdsWithImage(canvas);
 
 		// Mientras dibujas: no hay marquee de selección.
 		canvas.selection = !drawing;
@@ -77,15 +86,33 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			}
 
 			// En idle: paneles clicables pero fijos (sin mover/escalar).
+			// Si el panel ya tiene imagen, la imagen es lo seleccionable.
 			if (isPanel(object)) {
-				object.selectable = true;
-				object.evented = true;
+				const panelId = getPanelId(object);
+				const filled = Boolean(panelId && filledPanelIds.has(panelId));
+
+				object.selectable = !filled;
+				object.evented = !filled;
 				object.lockMovementX = true;
 				object.lockMovementY = true;
 				object.lockRotation = true;
 				object.lockScalingX = true;
 				object.lockScalingY = true;
 				object.hasControls = false;
+
+				return;
+			}
+
+			if (isPanelImage(object)) {
+				object.selectable = true;
+				object.evented = true;
+				object.lockMovementX = false;
+				object.lockMovementY = false;
+				object.lockRotation = false;
+				object.lockScalingX = false;
+				object.lockScalingY = false;
+				object.hasControls = true;
+				object.perPixelTargetFind = true;
 
 				return;
 			}
@@ -363,6 +390,8 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 	};
 
 	const onCanvasMouseDown = (event: TPointerEventInfo<TPointerEvent>) => {
+		const canvas = fabricCanvas.value;
+
 		// Trazo en curso: cualquier click intenta añadir punto.
 		if (path.value.length > 0) {
 			addPoint(pointFromEvent(event));
@@ -370,14 +399,24 @@ export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
 			return;
 		}
 
-		// Click sobre un panel existente → dejar selección (no empezar trazo).
-		if (event.target && isPanel(event.target)) {
+		const target = event.target;
+
+		// Click sobre un panel/imagen existente → dejar selección (no empezar trazo).
+		// Con perPixelTargetFind, fuera de la forma el target ya no es la imagen.
+		if (target && (isPanel(target) || isPanelImage(target))) {
 			return;
 		}
 
 		// Hace falta ver la guía para empezar a dibujar.
 		if (!showGridGuides.value) {
 			return;
+		}
+
+		// Si Fabric aún tenía una imagen activa por bbox, soltarla al empezar trazo.
+		const active = canvas?.getActiveObject();
+
+		if (active && isPanelImage(active)) {
+			canvas?.discardActiveObject();
 		}
 
 		addPoint(pointFromEvent(event));

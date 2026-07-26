@@ -2,11 +2,14 @@ import type { Canvas } from 'fabric';
 import { Polygon } from 'fabric';
 import { PANEL_FILL, PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import { stackPageContent } from '@/lib/fabric/isGuide';
+import { shapeImageToFabric } from '@/lib/fabric/panelImageFabric';
 import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
 
 export const shapeToPolygon = (shape: Shape): PanelPolygon => {
+	const hasImage = Boolean(shape.image);
 	const polygon = new Polygon(
 		shape.points.map((point) => {
 			return { x: point.x, y: point.y };
@@ -15,8 +18,8 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 			fill: PANEL_FILL,
 			stroke: PANEL_STROKE_COLOR,
 			strokeWidth: shape.strokeWidth,
-			selectable: true,
-			evented: true,
+			selectable: !hasImage,
+			evented: !hasImage,
 			lockMovementX: true,
 			lockMovementY: true,
 			lockRotation: true,
@@ -38,8 +41,8 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 	return polygon;
 };
 
-/** Vacía el canvas y pinta shapes desde el dominio (sin guías; refreshGuides las repone). */
-export const hydrateCanvasFromPage = (canvas: Canvas, page: Page): void => {
+/** Vacía el canvas y pinta shapes (+ imágenes) desde el dominio. */
+export const hydrateCanvasFromPage = async (canvas: Canvas, page: Page): Promise<void> => {
 	canvas.setDimensions({ width: page.width, height: page.height });
 
 	// Incluye draft/rubber (línea azul discontinua): no deben sobrevivir un cambio de página.
@@ -53,8 +56,21 @@ export const hydrateCanvasFromPage = (canvas: Canvas, page: Page): void => {
 	canvas.backgroundColor = '#ffffff';
 
 	for (const shape of page.shapes) {
-		canvas.add(shapeToPolygon(shape));
+		const polygon = shapeToPolygon(shape);
+
+		canvas.add(polygon);
+
+		if (shape.image) {
+			const fabricImage = await shapeImageToFabric(
+				shape,
+				shape.image,
+				polygon,
+			);
+
+			canvas.add(fabricImage);
+		}
 	}
 
+	stackPageContent(canvas);
 	canvas.requestRenderAll();
 };

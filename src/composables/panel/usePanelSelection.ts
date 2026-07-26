@@ -1,15 +1,19 @@
 import { watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import type { Canvas, FabricObject } from 'fabric';
+import { FabricImage, type Canvas, type FabricObject } from 'fabric';
 import {
+	findPanelById,
 	getPanelId,
 	isGuide,
 	isPanel,
+	isPanelImage,
 	removeObjectsByPanelId,
 } from '@/lib/fabric/isGuide';
+import { shapeImageFromFabric } from '@/lib/fabric/panelImageFabric';
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
+import type { PanelLikeObject } from '@/types/fabric';
 import type { SelectionDeps } from '@/types/panel';
 
 export const usePanelSelection = ({
@@ -20,7 +24,7 @@ export const usePanelSelection = ({
 	const mangaStore = useMangaStore();
 	const editorStore = useEditorStore();
 
-	/** Borra el panel activo del store y del canvas. */
+	/** Borra panel (+ imagen) o solo la imagen activa. */
 	const removeActive = (): boolean => {
 		const canvas = fabricCanvas.value;
 
@@ -30,37 +34,72 @@ export const usePanelSelection = ({
 
 		const active = canvas.getActiveObject() as FabricObject | null;
 
-		if (!active || isGuide(active) || !isPanel(active)) {
+		if (!active || isGuide(active)) {
 			return false;
 		}
 
 		const panelId = getPanelId(active);
 
-		if (!panelId) {
-			return false;
+		if (isPanel(active) && panelId) {
+			mangaStore.removeShape(panelId);
+			removeObjectsByPanelId(canvas, panelId);
+
+			canvas.discardActiveObject();
+
+			editorStore.setHasSelection(false);
+			editorStore.setSelectedStrokeWidth(null);
+
+			syncInteractionMode();
+
+			canvas.requestRenderAll();
+
+			return true;
 		}
 
-		mangaStore.removeShape(panelId);
+		if (isPanelImage(active) && panelId) {
+			mangaStore.setShapeImage(panelId, null);
 
-		removeObjectsByPanelId(canvas, panelId);
+			canvas.remove(active);
+			canvas.discardActiveObject();
 
-		canvas.discardActiveObject();
+			editorStore.setHasSelection(false);
+			editorStore.setSelectedStrokeWidth(null);
 
-		editorStore.setHasSelection(false);
-		editorStore.setSelectedStrokeWidth(null);
+			syncInteractionMode();
+			
+			canvas.requestRenderAll();
 
-		syncInteractionMode();
+			return true;
+		}
 
-		canvas.requestRenderAll();
+		return false;
+	};
 
-		return true;
+	const resolveSelectedPanel = (): PanelLikeObject | null => {
+		const canvas = fabricCanvas.value;
+		const active = canvas?.getActiveObject() as PanelLikeObject | null;
+
+		if (!canvas || !active) {
+			return null;
+		}
+
+		if (isPanel(active)) {
+			return active;
+		}
+
+		if (isPanelImage(active)) {
+			const panelId = getPanelId(active);
+
+			return panelId ? findPanelById(canvas, panelId) : null;
+		}
+
+		return null;
 	};
 
 	const syncSelectedStrokeWidth = () => {
-		const canvas = fabricCanvas.value;
-		const active = canvas?.getActiveObject() as FabricObject | null;
+		const panel = resolveSelectedPanel();
 
-		if (!active || !isPanel(active)) {
+		if (!panel) {
 			editorStore.setSelectedStrokeWidth(null);
 
 			return;
@@ -68,7 +107,7 @@ export const usePanelSelection = ({
 
 		editorStore.setSelectedStrokeWidth(
 			clampStrokeWidth(
-				Number(active.strokeWidth ?? active.get('strokeWidth')),
+				Number(panel.strokeWidth ?? panel.get('strokeWidth')),
 			),
 		);
 	};
@@ -83,29 +122,39 @@ export const usePanelSelection = ({
 
 	const setSelectionStrokeWidth = (width: number): boolean => {
 		const canvas = fabricCanvas.value;
-		const active = canvas?.getActiveObject() as FabricObject | null;
+		const panel = resolveSelectedPanel();
+		const panelId = panel ? getPanelId(panel) : undefined;
 
-		if (!canvas || !active || !isPanel(active)) {
-			return false;
-		}
-
-		const panelId = getPanelId(active);
-
-		if (!panelId) {
+		if (!canvas || !panel || !panelId) {
 			return false;
 		}
 
 		const nextWidth = clampStrokeWidth(width);
 
 		mangaStore.setShapeStrokeWidth(panelId, nextWidth);
-
-		active.set('strokeWidth', nextWidth);
-
+		panel.set('strokeWidth', nextWidth);
 		editorStore.setSelectedStrokeWidth(nextWidth);
-		
 		canvas.requestRenderAll();
 
 		return true;
+	};
+
+	/** Tras mover/escalar imagen en Fabric, persiste transform en el dominio. */
+	const onObjectModified = () => {
+		const canvas = fabricCanvas.value;
+		const active = canvas?.getActiveObject() as FabricObject | null;
+
+		if (!active || !isPanelImage(active) || !(active instanceof FabricImage)) {
+			return;
+		}
+
+		const panelId = getPanelId(active);
+
+		if (!panelId) {
+			return;
+		}
+
+		mangaStore.setShapeImage(panelId, shapeImageFromFabric(active));
 	};
 
 	const onKeyDown = (event: KeyboardEvent) => {
@@ -133,12 +182,14 @@ export const usePanelSelection = ({
 		canvas.on('selection:created', onSelectionChange);
 		canvas.on('selection:updated', onSelectionChange);
 		canvas.on('selection:cleared', onSelectionChange);
+		canvas.on('object:modified', onObjectModified);
 	};
 
 	const unbindSelectionEvents = (canvas: Canvas) => {
 		canvas.off('selection:created', onSelectionChange);
 		canvas.off('selection:updated', onSelectionChange);
 		canvas.off('selection:cleared', onSelectionChange);
+		canvas.off('object:modified', onObjectModified);
 	};
 
 	watch(

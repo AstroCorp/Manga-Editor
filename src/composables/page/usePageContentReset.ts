@@ -9,6 +9,6 @@ export const usePageContentReset = ({
 }: ContentResetDeps) => {
 	watch(contentResetEpoch, () => {
 		discardSelection?.();
-		applyReset();
+		void applyReset();
 	});
 };

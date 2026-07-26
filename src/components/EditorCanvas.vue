@@ -6,6 +6,7 @@ import { useFabricZoom } from '@/composables/fabric/useFabricZoom';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { usePageContentReset } from '@/composables/page/usePageContentReset';
 import { usePanelGuides } from '@/composables/panel/usePanelGuides';
+import { usePanelImageDrop } from '@/composables/panel/usePanelImageDrop';
 import { usePanelSelection } from '@/composables/panel/usePanelSelection';
 import { usePanelStroke } from '@/composables/panel/usePanelStroke';
 import { useEditorStore } from '@/stores/editor';
@@ -18,6 +19,8 @@ const { activePage, pageSize } = useActivePageLayout();
 
 const rootEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
+/** Descarta hydrates obsoletos al cambiar de página / reset rápido. */
+let hydrateGeneration = 0;
 
 const { fabricCanvas, init, hydratePage, exportDataUrl } = useFabricCanvas(canvasEl);
 const { stageStyle, scaleStyle, resetZoomView } = useFabricZoom({
@@ -33,18 +36,26 @@ const { removeActive, setSelectionStrokeWidth } = usePanelSelection({
 	cancelStroke,
 });
 
+usePanelImageDrop(rootEl, fabricCanvas, syncInteractionMode);
+
 const discardSelection = () => {
 	fabricCanvas.value?.discardActiveObject();
 	editorStore.setHasSelection(false);
 	editorStore.setSelectedStrokeWidth(null);
 };
 
-const applyActivePage = () => {
+const applyActivePage = async () => {
 	const page = activePage.value;
+	const generation = ++hydrateGeneration;
 
 	cancelStroke();
 	discardSelection();
-	hydratePage(page);
+	await hydratePage(page);
+
+	if (generation !== hydrateGeneration) {
+		return;
+	}
+
 	refreshGuides();
 	syncInteractionMode();
 	resetZoomView();
@@ -64,7 +75,7 @@ onMounted(() => {
 	const page = activePage.value;
 
 	init(page.width, page.height);
-	applyActivePage();
+	void applyActivePage();
 
 	editorStore.registerCanvas({
 		cancelStroke,
@@ -84,7 +95,7 @@ watch(activePageId, (nextId, prevId) => {
 		return;
 	}
 
-	applyActivePage();
+	void applyActivePage();
 });
 </script>
 

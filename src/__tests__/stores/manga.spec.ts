@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { Shape } from '@/models/Shape';
+import { ShapeImage } from '@/models/ShapeImage';
 import { useMangaStore } from '@/stores/manga';
 
 describe('useMangaStore config layout', () => {
@@ -187,6 +188,38 @@ describe('useMangaStore config layout', () => {
 		expect(store.pages.find((page) => page.id === first!.id)?.name).toBe(
 			'Cover',
 		);
+	});
+
+	it('setShapeImage attaches and clears an image without removing the shape', () => {
+		const store = useMangaStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			3,
+		);
+
+		store.addShape(shape);
+		store.setShapeImage(
+			shape.id,
+			new ShapeImage({
+				src: 'data:image/png;base64,xx',
+				left: 10,
+				top: 10,
+				scaleX: 1,
+				scaleY: 1,
+			}),
+		);
+
+		expect(store.shapes).toHaveLength(1);
+		expect(store.shapes[0]?.image?.src).toBe('data:image/png;base64,xx');
+
+		store.setShapeImage(shape.id, null);
+
+		expect(store.shapes).toHaveLength(1);
+		expect(store.shapes[0]?.image).toBeNull();
 	});
 
 	it('shape mutations replace the shapes array reference', () => {

@@ -52,7 +52,7 @@ export type PagePreviewModel = {
 
 export type ContentResetDeps = {
 	contentResetEpoch: Ref<number>;
-	applyReset: () => void;
+	applyReset: () => Promise<void>;
 	discardSelection?: () => void;
 };
 
