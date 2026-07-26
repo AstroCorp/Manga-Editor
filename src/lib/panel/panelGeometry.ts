@@ -308,7 +308,8 @@ export const isPointOnPolygonBoundary = (point: CanvasPoint, polygon: CanvasPoin
  * ¿El punto está DENTRO del polígono (no en el borde)?
  *
  * Truco del rayo: línea a la derecha y cuenta cruces con aristas.
- * Impar = dentro, par = fuera. El borde no cuenta (paneles pueden compartir arista).
+ * Impar = dentro, par = fuera. El borde no cuenta aquí (el stroke
+ * bloquea vértices ya usados aparte, vía isCanvasPointUsedAsVertex).
  */
 export const isPointInsidePolygon = (point: CanvasPoint, polygon: CanvasPoint[]): boolean => {
 	if (polygon.length < 3 || isPointOnPolygonBoundary(point, polygon)) {
@@ -409,30 +410,45 @@ export const polygonContainsAnyVertexOf = (outer: CanvasPoint[], polygons: Canva
 	);
 };
 
+/** ¿El punto coincide con algún vértice de los polígonos existentes? */
+export const isCanvasPointUsedAsVertex = (point: CanvasPoint, polygons: CanvasPoint[][]): boolean => {
+	return polygons.some((polygon) => {
+		return polygon.some((vertex) => {
+			return sameCanvasPoint(point, vertex);
+		});
+	});
+};
+
 /**
  * Regla completa del stroke: ¿se puede añadir `next` al path actual?
  *
  * Encadena todo en cada click:
- * 1) next no puede caer dentro de un panel existente
- * 2) si el path está vacío, el primer punto vale
- * 3) la arista nueva debe pasar canAddEdge (sin auto-cruces del path)
- * 4) esa arista no puede atravesar paneles existentes
- * 5) si es un cierre, el polígono resultante no puede rodear otro panel
+ * 1) next no puede ser un vértice ya usado por otro panel
+ * 2) next no puede caer dentro de un panel existente
+ * 3) si el path está vacío, el primer punto vale
+ * 4) la arista nueva debe pasar canAddEdge (sin auto-cruces del path)
+ * 5) esa arista no puede atravesar paneles existentes
+ * 6) si es un cierre, el polígono resultante no puede rodear otro panel
  */
 export const canExtendStrokePath = (path: GridPoint[], next: GridPoint, layout: PageLayoutMetrics, existingPolygons: CanvasPoint[][]): boolean => {
 	const nextCanvasPoint = toCanvasPoint(next, layout);
 
-	// 1) next no puede caer dentro de un panel existente
+	// 1) next no puede reutilizar un vértice de otro panel
+	if (isCanvasPointUsedAsVertex(nextCanvasPoint, existingPolygons)) {
+		return false;
+	}
+
+	// 2) next no puede caer dentro de un panel existente
 	if (isPointInsideAnyPolygon(nextCanvasPoint, existingPolygons)) {
 		return false;
 	}
 
-	// 2) si el path está vacío, el primer punto vale
+	// 3) si el path está vacío, el primer punto vale
 	if (path.length === 0) {
 		return true;
 	}
 
-	// 3) la arista nueva debe pasar canAddEdge (sin auto-cruces del path)
+	// 4) la arista nueva debe pasar canAddEdge (sin auto-cruces del path)
 	if (!canAddEdge(path, next, layout)) {
 		return false;
 	}
@@ -445,7 +461,7 @@ export const canExtendStrokePath = (path: GridPoint[], next: GridPoint, layout: 
 
 	const lastCanvasPoint = toCanvasPoint(last, layout);
 
-	// 4) esa arista no puede atravesar paneles existentes
+	// 5) esa arista no puede atravesar paneles existentes
 	const isCrossing = segmentCrossesAnyPolygon(lastCanvasPoint, nextCanvasPoint, existingPolygons);
 	if (isCrossing) {
 		return false;
@@ -463,7 +479,7 @@ export const canExtendStrokePath = (path: GridPoint[], next: GridPoint, layout: 
 		return true;
 	}
 
-	// 5) si es un cierre, el polígono resultante no puede rodear otro panel
+	// 6) si es un cierre, el polígono resultante no puede rodear otro panel
 	const candidate = path.map((point) => toCanvasPoint(point, layout));
 
 	return !polygonContainsAnyVertexOf(candidate, existingPolygons);

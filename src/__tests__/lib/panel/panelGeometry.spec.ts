@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	canAddEdge,
 	canExtendStrokePath,
+	isCanvasPointUsedAsVertex,
 	isClosed,
 	isPointInsideAnyPolygon,
 	isPointInsidePolygon,
@@ -278,7 +279,7 @@ describe('polygonContainsAnyVertexOf', () => {
 });
 
 describe('canExtendStrokePath', () => {
-	/** Cubre el punto de rejilla (1,1) = (150,150). */
+	/** Cubre el punto de rejilla (1,1) = (150,150). Vértices en (100,100)… */
 	const existing = [
 		[
 			{ x: 100, y: 100 },
@@ -294,6 +295,37 @@ describe('canExtendStrokePath', () => {
 		).toBe(true);
 		expect(
 			canExtendStrokePath([], gridPoint(1, 1), layout, existing),
+		).toBe(false);
+	});
+
+	it('rejects vertices already used by an existing shape', () => {
+		// (100,100) = grid (0.666…) no cae en esta rejilla 3×3 exacta;
+		// usamos un polígono anclado a vértices de rejilla.
+		const onGrid = [
+			[
+				toCanvasPoint(gridPoint(0, 0), layout),
+				toCanvasPoint(gridPoint(1, 0), layout),
+				toCanvasPoint(gridPoint(1, 1), layout),
+				toCanvasPoint(gridPoint(0, 1), layout),
+			],
+		];
+
+		expect(isCanvasPointUsedAsVertex(toCanvasPoint(gridPoint(0, 0), layout), onGrid)).toBe(
+			true,
+		);
+		expect(canExtendStrokePath([], gridPoint(0, 0), layout, onGrid)).toBe(
+			false,
+		);
+		expect(canExtendStrokePath([], gridPoint(2, 2), layout, onGrid)).toBe(
+			true,
+		);
+		expect(
+			canExtendStrokePath(
+				[gridPoint(2, 0)],
+				gridPoint(1, 0),
+				layout,
+				onGrid,
+			),
 		).toBe(false);
 	});
 
