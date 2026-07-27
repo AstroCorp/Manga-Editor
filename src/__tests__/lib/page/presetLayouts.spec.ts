@@ -41,7 +41,7 @@ describe('presetLayouts', () => {
 		expect(presets.length).toBeGreaterThanOrEqual(1);
 		expect(
 			presets.some((preset: PresetLayout) => {
-				return preset.id === 'blank';
+				return preset.id === '01';
 			}),
 		).toBe(true);
 		expect(
