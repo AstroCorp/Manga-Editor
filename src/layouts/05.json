@@ -1,0 +1,82 @@
+{
+  "width": 1720,
+  "height": 2580,
+  "shapes": [
+    {
+      "id": "3ab8676e-342a-438b-9599-8dc18a953d5c",
+      "points": [
+        {
+          "x": 18,
+          "y": 872.625
+        },
+        {
+          "x": 18,
+          "y": 1707.375
+        },
+        {
+          "x": 1702,
+          "y": 1707.375
+        },
+        {
+          "x": 1702,
+          "y": 872.625
+        }
+      ],
+      "strokeWidth": 5,
+      "image": null
+    },
+    {
+      "id": "956f6a3e-0e54-4012-a587-d3faaed069c7",
+      "points": [
+        {
+          "x": 18,
+          "y": 1727.25
+        },
+        {
+          "x": 18,
+          "y": 2562
+        },
+        {
+          "x": 1702,
+          "y": 2562
+        },
+        {
+          "x": 1702,
+          "y": 1727.25
+        }
+      ],
+      "strokeWidth": 5,
+      "image": null
+    },
+    {
+      "id": "7d9816ee-2f86-4f2a-b595-bcb0b55622f8",
+      "points": [
+        {
+          "x": 1702,
+          "y": 852.75
+        },
+        {
+          "x": 1702,
+          "y": 18
+        },
+        {
+          "x": 18,
+          "y": 18
+        },
+        {
+          "x": 18,
+          "y": 852.75
+        }
+      ],
+      "strokeWidth": 5,
+      "image": null
+    }
+  ],
+  "gridCols": 86,
+  "gridRows": 129,
+  "marginTop": 18,
+  "marginRight": 18,
+  "marginBottom": 18,
+  "marginLeft": 18,
+  "strokeWidth": 5
+}

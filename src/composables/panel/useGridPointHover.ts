@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia';
 import { Point, type Canvas, type TPointerEvent, type TPointerEventInfo } from 'fabric';
 import { isPanel } from '@/lib/fabric/isGuide';
 import { panelContainsScenePoint } from '@/lib/fabric/panelHitTest';
-import { snapToGridPoint } from '@/lib/panel/panelGeometry';
+import { sameGridPoint, snapToGridPoint } from '@/lib/panel/panelGeometry';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import type { GridPoint } from '@/types/geometry';
@@ -16,11 +16,14 @@ import type {
 const LABEL_OFFSET_X = 12;
 const LABEL_OFFSET_Y = 12;
 
-/** Pasos horizontales (x/col) y verticales (y/row) entre dos puntos. */
+/**
+ * Longitud en puntos de rejilla (incluye origen y destino).
+ * De col 0→3 = 4x; misma fila = 1y.
+ */
 export const gridLineDelta = (from: GridPoint, to: GridPoint): GridLineDelta => {
 	return {
-		x: Math.abs(from.col - to.col),
-		y: Math.abs(from.row - to.row),
+		x: Math.abs(from.col - to.col) + 1,
+		y: Math.abs(from.row - to.row) + 1,
 	};
 };
 
@@ -73,15 +76,14 @@ export const useGridPointHover = ({
 		}
 
 		const hover = snapToGridPoint(x, y, layout.value);
-		const delta = gridLineDelta(last, hover);
 
-		if (delta.x === 0 && delta.y === 0) {
+		if (sameGridPoint(last, hover)) {
 			clearHover();
 
 			return;
 		}
 
-		lineDelta.value = delta;
+		lineDelta.value = gridLineDelta(last, hover);
 		labelPosition.value = {
 			left: x + LABEL_OFFSET_X,
 			top: y + LABEL_OFFSET_Y,

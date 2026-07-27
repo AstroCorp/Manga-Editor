@@ -15,7 +15,7 @@ export const ZERO_MARGINS: PageMargins = {
 };
 
 /** Compara dos puntos de rejilla por columna y fila. */
-const sameGridPoint = (first: GridPoint, second: GridPoint): boolean => {
+export const sameGridPoint = (first: GridPoint, second: GridPoint): boolean => {
 	return first.col === second.col && first.row === second.row;
 };
 

@@ -128,7 +128,7 @@ const onFileChange = (event: Event) => {
 						class="w-full rounded-lg border border-slate-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950"
 					>
 						<div
-							class="aspect-3/4 w-full animate-pulse rounded-sm bg-slate-200 dark:bg-zinc-800"
+							class="w-full animate-pulse rounded-sm bg-slate-200 dark:bg-zinc-800"
 						/>
 					</div>
 				</li>
@@ -142,7 +142,7 @@ const onFileChange = (event: Event) => {
 						@click="requestApply(preset)"
 					>
 						<span
-							class="aspect-3/4 block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
+							class="block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
 						>
 							<PagePreview
 								:width="preset.layout.width"
@@ -190,7 +190,7 @@ const onFileChange = (event: Event) => {
 						@click="requestApply(preset)"
 					>
 						<span
-							class="aspect-3/4 block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
+							class="block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
 						>
 							<PagePreview
 								:width="preset.layout.width"

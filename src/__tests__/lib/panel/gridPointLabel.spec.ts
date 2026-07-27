@@ -5,23 +5,23 @@ import {
 } from '@/composables/panel/useGridPointHover';
 
 describe('gridLineDelta', () => {
-	it('returns horizontal and vertical steps separately', () => {
+	it('counts inclusive grid points on each axis', () => {
 		expect(gridLineDelta({ col: 0, row: 0 }, { col: 0, row: 0 })).toEqual({
-			x: 0,
-			y: 0,
+			x: 1,
+			y: 1,
 		});
 		expect(gridLineDelta({ col: 0, row: 0 }, { col: 3, row: 0 })).toEqual({
-			x: 3,
-			y: 0,
+			x: 4,
+			y: 1,
 		});
 		expect(gridLineDelta({ col: 2, row: 5 }, { col: 4, row: 8 })).toEqual({
-			x: 2,
-			y: 3,
+			x: 3,
+			y: 4,
 		});
 	});
 
 	it('formats as Nx, My', () => {
-		expect(formatGridLineDelta({ x: 3, y: 0 })).toBe('3x, 0y');
-		expect(formatGridLineDelta({ x: 2, y: 3 })).toBe('2x, 3y');
+		expect(formatGridLineDelta({ x: 4, y: 1 })).toBe('4x, 1y');
+		expect(formatGridLineDelta({ x: 3, y: 4 })).toBe('3x, 4y');
 	});
 });

@@ -1,9 +1,9 @@
-export const DEFAULT_PAGE_WIDTH = 1753;
-export const DEFAULT_PAGE_HEIGHT = 2480;
-export const DEFAULT_GRID_COLS = 80;
-export const DEFAULT_GRID_ROWS = 120;
-export const DEFAULT_MARGIN = 20;
-export const DEFAULT_STROKE_WIDTH = 3;
+export const DEFAULT_PAGE_WIDTH = 1720;
+export const DEFAULT_PAGE_HEIGHT = 2580;
+export const DEFAULT_GRID_COLS = 86;
+export const DEFAULT_GRID_ROWS = 129;
+export const DEFAULT_MARGIN = 18;
+export const DEFAULT_STROKE_WIDTH = 5;
 export const MIN_GRID_POINTS = 2;
 export const MAX_GRID_POINTS = 200;
 export const MIN_STROKE_WIDTH = 1;
