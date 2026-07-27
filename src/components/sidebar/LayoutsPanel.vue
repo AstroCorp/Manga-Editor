@@ -10,7 +10,7 @@ import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { PresetLayout } from '@/types/layouts';
 
-const PRESET_SKELETON_COUNT = 1;
+const PRESET_SKELETON_COUNT = 8;
 
 const mangaStore = useMangaStore();
 const editorStore = useEditorStore();
