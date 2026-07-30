@@ -10,7 +10,7 @@ import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { PresetLayout } from '@/types/layouts';
 
-const PRESET_SKELETON_COUNT = 8;
+const PRESET_SKELETON_COUNT = 6;
 
 const mangaStore = useMangaStore();
 const editorStore = useEditorStore();
@@ -117,48 +117,50 @@ const onFileChange = (event: Event) => {
 			>
 				Apply a built-in layout to the active page.
 			</p>
-			<ul
-				v-if="presetsLoading"
-				class="grid grid-cols-2 gap-2.5"
-				aria-busy="true"
-				aria-label="Loading presets"
-			>
-				<li v-for="index in PRESET_SKELETON_COUNT" :key="`preset-skeleton-${index}`">
-					<div
-						class="w-full rounded-lg border border-slate-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950"
-					>
+			<div class="max-h-87.5 overflow-y-auto pe-0.5">
+				<ul
+					v-if="presetsLoading"
+					class="grid grid-cols-2 gap-2.5"
+					aria-busy="true"
+					aria-label="Loading presets"
+				>
+					<li v-for="index in PRESET_SKELETON_COUNT" :key="`preset-skeleton-${index}`">
 						<div
-							class="w-full animate-pulse rounded-sm bg-slate-200 dark:bg-zinc-800"
-						/>
-					</div>
-				</li>
-			</ul>
-			<ul v-else-if="presets.length > 0" class="grid grid-cols-2 gap-2.5">
-				<li v-for="preset in presets" :key="preset.id">
-					<button
-						type="button"
-						class="group w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
-						:aria-label="`Apply layout ${preset.id}`"
-						@click="requestApply(preset)"
-					>
-						<span
-							class="block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
+							class="w-full rounded-lg border border-slate-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950"
 						>
-							<PagePreview
-								:width="preset.layout.width"
-								:height="preset.layout.height"
-								:shapes="preset.layout.shapes ?? []"
+							<div
+								class="w-full animate-pulse rounded-sm bg-slate-200 dark:bg-zinc-800"
 							/>
-						</span>
-					</button>
-				</li>
-			</ul>
-			<p
-				v-else
-				class="mb-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
-			>
-				No layouts found.
-			</p>
+						</div>
+					</li>
+				</ul>
+				<ul v-else-if="presets.length > 0" class="grid grid-cols-2 gap-2.5">
+					<li v-for="preset in presets" :key="preset.id">
+						<button
+							type="button"
+							class="group w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
+							:aria-label="`Apply layout ${preset.id}`"
+							@click="requestApply(preset)"
+						>
+							<span
+								class="block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
+							>
+								<PagePreview
+									:width="preset.layout.width"
+									:height="preset.layout.height"
+									:shapes="preset.layout.shapes ?? []"
+								/>
+							</span>
+						</button>
+					</li>
+				</ul>
+				<p
+					v-else
+					class="mb-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
+				>
+					No layouts found.
+				</p>
+			</div>
 		</section>
 
 		<section
@@ -174,48 +176,50 @@ const onFileChange = (event: Event) => {
 			>
 				Layouts saved from Import JSON (stored in this browser).
 			</p>
-			<ul
-				v-if="customLayouts.length > 0"
-				class="grid grid-cols-2 gap-2.5"
-			>
-				<li
-					v-for="preset in customLayouts"
-					:key="preset.id"
-					class="group relative"
+			<div class="max-h-87.5 overflow-y-auto pe-0.5">
+				<ul
+					v-if="customLayouts.length > 0"
+					class="grid grid-cols-2 gap-2.5"
 				>
-					<button
-						type="button"
-						class="w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
-						aria-label="Apply custom layout"
-						@click="requestApply(preset)"
+					<li
+						v-for="preset in customLayouts"
+						:key="preset.id"
+						class="group relative"
 					>
-						<span
-							class="block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
+						<button
+							type="button"
+							class="w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
+							aria-label="Apply custom layout"
+							@click="requestApply(preset)"
 						>
-							<PagePreview
-								:width="preset.layout.width"
-								:height="preset.layout.height"
-								:shapes="preset.layout.shapes ?? []"
-							/>
-						</span>
-					</button>
-					<button
-						type="button"
-						class="absolute top-1.5 right-1.5 inline-flex size-8 items-center justify-center rounded-md border border-red-600/35 bg-white/95 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:border-red-600 hover:bg-red-600 hover:text-white focus-visible:border-red-600 focus-visible:opacity-100 dark:border-red-500/35 dark:bg-zinc-950/95 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white"
-						aria-label="Delete custom layout"
-						title="Delete custom layout"
-						@click.stop="requestDeleteCustom(preset)"
-					>
-						<Icon icon="fluent:delete-24-regular" class="size-5" />
-					</button>
-				</li>
-			</ul>
-			<p
-				v-else
-				class="mb-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
-			>
-				No custom layouts yet.
-			</p>
+							<span
+								class="block w-full overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition group-hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-blue-500/50"
+							>
+								<PagePreview
+									:width="preset.layout.width"
+									:height="preset.layout.height"
+									:shapes="preset.layout.shapes ?? []"
+								/>
+							</span>
+						</button>
+						<button
+							type="button"
+							class="absolute top-1.5 right-1.5 inline-flex size-8 items-center justify-center rounded-md border border-red-600/35 bg-white/95 text-red-600 opacity-0 shadow-sm transition group-hover:opacity-100 hover:border-red-600 hover:bg-red-600 hover:text-white focus-visible:border-red-600 focus-visible:opacity-100 dark:border-red-500/35 dark:bg-zinc-950/95 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white"
+							aria-label="Delete custom layout"
+							title="Delete custom layout"
+							@click.stop="requestDeleteCustom(preset)"
+						>
+							<Icon icon="fluent:delete-24-regular" class="size-5" />
+						</button>
+					</li>
+				</ul>
+				<p
+					v-else
+					class="mb-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
+				>
+					No custom layouts yet.
+				</p>
+			</div>
 		</section>
 
 		<section
