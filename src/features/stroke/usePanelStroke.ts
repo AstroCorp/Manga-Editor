@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { onBeforeUnmount, shallowRef, watch } from 'vue';
+import { onBeforeUnmount, shallowRef, watch, type ShallowRef } from 'vue';
 import {
 	Polyline,
 	type Canvas,
@@ -29,9 +29,8 @@ import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
 import type { GridPoint } from '@/types/geometry';
 import type { GuidedPolyline } from '@/types/fabric';
-import type { StrokeDeps } from '@/types/panel';
 
-export const usePanelStroke = ({ fabricCanvas }: StrokeDeps) => {
+export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 	const editorStore = useEditorStore();
 	const mangaStore = useMangaStore();
 	const { showGridGuides } = storeToRefs(editorStore);

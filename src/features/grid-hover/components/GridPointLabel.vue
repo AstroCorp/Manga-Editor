@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { formatGridLineDelta } from '@/composables/panel/useGridPointHover';
+import { formatGridLineDelta } from '@/features/grid-hover/useGridPointHover';
 import type { GridPointLabelProps } from '@/types/panel';
 
 const props = defineProps<GridPointLabelProps>();

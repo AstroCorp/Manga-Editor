@@ -73,6 +73,23 @@ const onFileChange = (event: Event) => {
 			v-if="hasImage"
 			type="button"
 			role="menuitem"
+			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
+			:class="
+				isGrayscale
+					? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+					: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+			"
+			:aria-label="isGrayscale ? 'Remove black and white' : 'Black and white'"
+			:aria-pressed="isGrayscale"
+			:title="isGrayscale ? 'Remove black and white' : 'Black and white'"
+			@click="emit('toggleGrayscale')"
+		>
+			<Icon icon="fluent:color-background-24-regular" class="size-5" />
+		</button>
+		<button
+			v-if="hasImage"
+			type="button"
+			role="menuitem"
 			class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 			aria-label="Remove image"
 			title="Remove image"

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	formatGridLineDelta,
 	gridLineDelta,
-} from '@/composables/panel/useGridPointHover';
+} from '@/features/grid-hover/useGridPointHover';
 
 describe('gridLineDelta', () => {
 	it('counts inclusive grid points on each axis', () => {

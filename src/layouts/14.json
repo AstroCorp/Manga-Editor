@@ -1,0 +1,59 @@
+{
+  "width": 1720,
+  "height": 2580,
+  "shapes": [
+    {
+      "id": "1742b460-cc4e-4dc0-93ed-82aed431e0c1",
+      "points": [
+        {
+          "x": 18,
+          "y": 2562
+        },
+        {
+          "x": 1702,
+          "y": 2562
+        },
+        {
+          "x": 1702,
+          "y": 1588.125
+        },
+        {
+          "x": 18,
+          "y": 1588.125
+        }
+      ],
+      "strokeWidth": 5,
+      "image": null
+    },
+    {
+      "id": "667b0cd3-cc50-48ea-9700-3d4d0b756329",
+      "points": [
+        {
+          "x": 1702,
+          "y": 1568.25
+        },
+        {
+          "x": 18,
+          "y": 1568.25
+        },
+        {
+          "x": 18,
+          "y": 18
+        },
+        {
+          "x": 1702,
+          "y": 18
+        }
+      ],
+      "strokeWidth": 5,
+      "image": null
+    }
+  ],
+  "gridCols": 86,
+  "gridRows": 129,
+  "marginTop": 18,
+  "marginRight": 18,
+  "marginBottom": 18,
+  "marginLeft": 18,
+  "strokeWidth": 5
+}

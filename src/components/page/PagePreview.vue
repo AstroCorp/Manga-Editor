@@ -37,6 +37,7 @@ const model = computed(() => {
 			:y="image.y"
 			:width="image.width"
 			:height="image.height"
+			:style="image.grayscale ? { filter: 'grayscale(1)' } : undefined"
 			preserveAspectRatio="xMidYMid slice"
 		/>
 		<polygon

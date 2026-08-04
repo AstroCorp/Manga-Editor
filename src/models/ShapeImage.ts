@@ -11,6 +11,7 @@ export class ShapeImage {
 	/** Tamaño intrínseco pre-scale (necesario para preview SVG). */
 	public width: number;
 	public height: number;
+	public grayscale: boolean;
 
 	constructor(value: ShapeImageValue) {
 		this.src = value.src;
@@ -22,6 +23,7 @@ export class ShapeImage {
 		this.originY = value.originY ?? 'center';
 		this.width = value.width ?? 1;
 		this.height = value.height ?? 1;
+		this.grayscale = Boolean(value.grayscale);
 	}
 
 	toJSON(): ShapeImageJSON {
@@ -35,6 +37,7 @@ export class ShapeImage {
 			originY: this.originY,
 			width: this.width,
 			height: this.height,
+			grayscale: this.grayscale,
 		};
 	}
 

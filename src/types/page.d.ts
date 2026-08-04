@@ -17,6 +17,8 @@ export type ShapeImageJSON = {
 	originY: 'center' | 'top';
 	width: number;
 	height: number;
+	/** Filtro B/N (opcional para layouts antiguos). */
+	grayscale?: boolean;
 };
 
 export type ShapeJSON = {
@@ -41,6 +43,7 @@ export type PagePreviewImage = {
 	y: number;
 	width: number;
 	height: number;
+	grayscale: boolean;
 };
 
 export type PagePreviewModel = {
@@ -74,6 +77,7 @@ export type ShapeImageValue = {
 	originY?: 'center' | 'top';
 	width?: number;
 	height?: number;
+	grayscale?: boolean;
 };
 
 export type ShapeValue = {

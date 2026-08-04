@@ -1,92 +1,21 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { computed, shallowRef } from 'vue';
+import { computed, ref } from 'vue';
 import App from '../App.vue';
 
-vi.mock('@/composables/fabric/useFabricCanvas', () => {
+vi.mock('@/composables/fabric/useEditorCanvas', () => {
 	return {
-		useFabricCanvas: () => {
+		useEditorCanvas: () => {
 			return {
-				fabricCanvas: shallowRef(null),
-				init: vi.fn(),
-				hydratePage: vi.fn(),
-				exportDataUrl: vi.fn(() => null),
-			};
-		},
-	};
-});
-
-vi.mock('@/composables/fabric/useFabricZoom', () => {
-	return {
-		useFabricZoom: () => {
-			return {
-				stageStyle: shallowRef({ width: '100px', height: '100px' }),
-				scaleStyle: shallowRef({
+				stageStyle: ref({ width: '100px', height: '100px' }),
+				scaleStyle: ref({
 					width: '100px',
 					height: '100px',
 					transform: 'scale(0.75)',
 				}),
-				zoomFactor: computed(() => 0.75),
-				resetZoomView: vi.fn(),
-			};
-		},
-	};
-});
-
-vi.mock('@/composables/panel/usePanelGuides', () => {
-	return {
-		usePanelGuides: () => {
-			return {
-				refreshGuides: vi.fn(),
-			};
-		},
-	};
-});
-
-vi.mock('@/composables/panel/usePanelStroke', () => {
-	return {
-		usePanelStroke: () => {
-			return {
-				path: shallowRef([]),
+				overlayViews: computed(() => []),
 				cancelStroke: vi.fn(),
-				syncInteractionMode: vi.fn(),
-			};
-		},
-	};
-});
-
-vi.mock('@/composables/panel/usePanelSelection', () => {
-	return {
-		usePanelSelection: () => {
-			return undefined;
-		},
-	};
-});
-
-vi.mock('@/composables/panel/useGridPointHover', () => {
-	return {
-		useGridPointHover: () => {
-			return {
-				lineDelta: shallowRef(null),
-				labelPosition: shallowRef(null),
-			};
-		},
-		formatGridLineDelta: () => '',
-	};
-});
-
-vi.mock('@/composables/panel/useShapeActionMenu', () => {
-	return {
-		useShapeActionMenu: () => {
-			return {
-				visible: computed(() => false),
-				hasImage: shallowRef(false),
-				position: shallowRef(null),
-				deleteShape: vi.fn(),
-				clearImage: vi.fn(),
-				placeImage: vi.fn(),
-				clearMenu: vi.fn(),
 			};
 		},
 	};

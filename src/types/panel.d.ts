@@ -2,18 +2,10 @@ import type { Canvas } from 'fabric';
 import type { ShallowRef } from 'vue';
 import type { GridPoint } from '@/types/geometry';
 
-export type GuidesDeps = {
-	fabricCanvas: ShallowRef<Canvas | null>;
-};
-
 export type SelectionDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
 	syncInteractionMode: () => void;
 	cancelStroke: () => void;
-};
-
-export type StrokeDeps = {
-	fabricCanvas: ShallowRef<Canvas | null>;
 };
 
 export type GridPointHoverDeps = {
@@ -45,6 +37,7 @@ export type GridPointLabelProps = {
 export type ShapeActionMenuProps = {
 	visible: boolean;
 	hasImage: boolean;
+	isGrayscale: boolean;
 	left: number | null;
 	top: number | null;
 };
@@ -53,4 +46,5 @@ export type ShapeActionMenuEmits = {
 	deleteShape: [];
 	clearImage: [];
 	placeImage: [file: File];
+	toggleGrayscale: [];
 };

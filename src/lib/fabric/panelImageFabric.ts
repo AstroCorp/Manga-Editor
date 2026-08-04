@@ -3,6 +3,10 @@
  */
 import { FabricImage, type FabricObject, type Point } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import {
+	hasGrayscaleFilter,
+	setGrayscaleFilter,
+} from '@/lib/fabric/panelImageFilters';
 import { panelContainsScenePoint } from '@/lib/fabric/panelHitTest';
 import { ShapeImage } from '@/models/ShapeImage';
 import type { Shape } from '@/models/Shape';
@@ -41,6 +45,7 @@ export const shapeImageFromFabric = (image: FabricImage): ShapeImage => {
 		originY: image.originY === 'top' ? 'top' : 'center',
 		width: Math.max(1, image.width ?? 1),
 		height: Math.max(1, image.height ?? 1),
+		grayscale: hasGrayscaleFilter(image),
 	});
 };
 
@@ -89,6 +94,10 @@ export const shapeImageToFabric = async (shape: Shape, image: ShapeImage, panel:
 	});
 
 	bindPanelImageHitTest(fabricImage, panel);
+
+	if (image.grayscale) {
+		setGrayscaleFilter(fabricImage, true);
+	}
 
 	return fabricImage;
 };

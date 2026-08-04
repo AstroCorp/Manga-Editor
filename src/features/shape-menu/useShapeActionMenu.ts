@@ -1,5 +1,5 @@
 import { computed, shallowRef, watch } from 'vue';
-import type { Canvas, FabricObject } from 'fabric';
+import { FabricImage, type Canvas, type FabricObject } from 'fabric';
 import {
 	findPanelById,
 	getPanelId,
@@ -8,6 +8,11 @@ import {
 	isPanelImage,
 	removeObjectsByPanelId,
 } from '@/lib/fabric/isGuide';
+import {
+	hasGrayscaleFilter,
+	setGrayscaleFilter,
+} from '@/lib/fabric/panelImageFilters';
+import { shapeImageFromFabric } from '@/lib/fabric/panelImageFabric';
 import {
 	isImageFile,
 	placeImageFileInPanel,
@@ -25,6 +30,7 @@ export const useShapeActionMenu = ({
 
 	const panelId = shallowRef<string | null>(null);
 	const hasImage = shallowRef(false);
+	const isGrayscale = shallowRef(false);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 
 	const visible = computed(() => {
@@ -34,6 +40,7 @@ export const useShapeActionMenu = ({
 	const clearMenu = () => {
 		panelId.value = null;
 		hasImage.value = false;
+		isGrayscale.value = false;
 		position.value = null;
 	};
 
@@ -47,6 +54,14 @@ export const useShapeActionMenu = ({
 		}
 
 		return null;
+	};
+
+	const findPanelImage = (canvas: Canvas, id: string): FabricImage | null => {
+		const match = canvas.getObjects().find((object) => {
+			return isPanelImage(object) && getPanelId(object) === id;
+		});
+
+		return match instanceof FabricImage ? match : null;
 	};
 
 	const refreshMenu = () => {
@@ -67,6 +82,7 @@ export const useShapeActionMenu = ({
 
 		panelId.value = nextPanelId;
 		hasImage.value = Boolean(shape?.image);
+		isGrayscale.value = Boolean(shape?.image?.grayscale);
 		position.value = {
 			left: bounds.left + bounds.width / 2,
 			top: Math.max(0, bounds.top - MENU_GAP),
@@ -148,6 +164,29 @@ export const useShapeActionMenu = ({
 		return true;
 	};
 
+	const toggleGrayscale = () => {
+		const canvas = fabricCanvas.value;
+		const id = panelId.value;
+
+		if (!canvas || !id || !hasImage.value) {
+			return;
+		}
+
+		const fabricImage = findPanelImage(canvas, id);
+
+		if (!fabricImage) {
+			return;
+		}
+
+		const next = !hasGrayscaleFilter(fabricImage);
+
+		setGrayscaleFilter(fabricImage, next);
+		mangaStore.setShapeImage(id, shapeImageFromFabric(fabricImage));
+		onChanged?.();
+		canvas.requestRenderAll();
+		refreshMenu();
+	};
+
 	const bindCanvasEvents = (canvas: Canvas) => {
 		canvas.on('selection:created', refreshMenu);
 		canvas.on('selection:updated', refreshMenu);
@@ -188,10 +227,12 @@ export const useShapeActionMenu = ({
 	return {
 		visible,
 		hasImage,
+		isGrayscale,
 		position,
 		deleteShape,
 		clearImage,
 		placeImage,
+		toggleGrayscale,
 		clearMenu,
 	};
 };
