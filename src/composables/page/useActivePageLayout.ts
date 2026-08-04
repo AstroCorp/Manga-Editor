@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia';
 import { useMangaStore } from '@/stores/manga';
 import type { PageMargins } from '@/types/page';
 
+/** Lectura derivada de la página activa (sin mutaciones). */
 export const useActivePageLayout = () => {
 	const { activePage } = storeToRefs(useMangaStore());
 
@@ -33,11 +34,16 @@ export const useActivePageLayout = () => {
 		return activePage.value.strokeWidth;
 	});
 
+	const pageHasDrawing = computed(() => {
+		return activePage.value.shapes.length > 0;
+	});
+
 	return {
 		activePage,
 		pageSize,
 		gridSize,
 		margins,
 		strokeWidth,
+		pageHasDrawing,
 	};
 };

@@ -3,8 +3,12 @@ import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import {
 	collectPanelIdsWithImage,
 	findPanelById,
+	getPanelId,
+	isGridGuide,
+	isGuide,
 	isPanel,
 	isPanelImage,
+	removeObjectsByPanelId,
 	stackPageContent,
 } from '@/lib/fabric/isGuide';
 import type { Canvas, FabricObject } from 'fabric';
@@ -13,9 +17,11 @@ const createObject = (props: {
 	objectType?: string;
 	panelId?: string;
 	isGuide?: boolean;
+	isGridGuide?: boolean;
 }) => {
 	return {
 		isGuide: props.isGuide,
+		isGridGuide: props.isGridGuide,
 		get: (key: string) => {
 			if (key === 'objectType') {
 				return props.objectType;
@@ -29,12 +35,59 @@ const createObject = (props: {
 				return props.isGuide;
 			}
 
+			if (key === 'isGridGuide') {
+				return props.isGridGuide;
+			}
+
 			return undefined;
 		},
 	} as unknown as FabricObject;
 };
 
 describe('panel fabric helpers', () => {
+	it('isGuide / isGridGuide / getPanelId read fabric markers', () => {
+		expect(isGuide(createObject({ isGuide: true }))).toBe(true);
+		expect(isGuide(createObject({}))).toBe(false);
+		expect(isGridGuide(createObject({ isGridGuide: true }))).toBe(true);
+		expect(getPanelId(createObject({ panelId: 'p1' }))).toBe('p1');
+		expect(getPanelId(createObject({ panelId: '' }))).toBeUndefined();
+		expect(getPanelId(createObject({}))).toBeUndefined();
+	});
+
+	it('removeObjectsByPanelId removes panel and image for that id', () => {
+		const keep = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 'keep',
+		});
+		const panel = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 'drop',
+		});
+		const image = createObject({
+			objectType: FABRIC_OBJECT_TYPE.PanelImage,
+			panelId: 'drop',
+		});
+		const objects = [keep, panel, image];
+		const remove = vi.fn((object: FabricObject) => {
+			const index = objects.indexOf(object);
+
+			if (index >= 0) {
+				objects.splice(index, 1);
+			}
+		});
+		const canvas = {
+			getObjects: () => {
+				return objects.slice();
+			},
+			remove,
+		} as unknown as Canvas;
+
+		removeObjectsByPanelId(canvas, 'drop');
+
+		expect(remove).toHaveBeenCalledTimes(2);
+		expect(objects).toEqual([keep]);
+	});
+
 	it('isPanelImage detects panelImage objectType', () => {
 		expect(
 			isPanelImage(

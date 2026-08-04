@@ -12,6 +12,7 @@ import {
 	clampStrokeWidth,
 } from '@/lib/page/pageLimits';
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
+import { rotatePageMargins } from '@/lib/page/rotatePageMargins';
 import { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { LayoutJSON } from '@/types/layouts';
@@ -94,29 +95,18 @@ export class Page {
 	 * No borra shapes (el store limpia al rotar).
 	 */
 	rotateOrientation(direction: PageRotateDirection) {
-		const nextWidth = this.height;
-		const nextHeight = this.width;
-		const nextCols = this.gridRows;
-		const nextRows = this.gridCols;
-		const { marginTop, marginRight, marginBottom, marginLeft } = this;
+		const nextMargins = rotatePageMargins(
+			{
+				marginTop: this.marginTop,
+				marginRight: this.marginRight,
+				marginBottom: this.marginBottom,
+				marginLeft: this.marginLeft,
+			},
+			direction,
+		);
 
-		const nextMargins: PageMargins =
-			direction === 'clockwise'
-				? {
-						marginTop: marginLeft,
-						marginRight: marginTop,
-						marginBottom: marginRight,
-						marginLeft: marginBottom,
-					}
-				: {
-						marginTop: marginRight,
-						marginRight: marginBottom,
-						marginBottom: marginLeft,
-						marginLeft: marginTop,
-					};
-
-		this.setSize(nextWidth, nextHeight);
-		this.setGrid(nextCols, nextRows);
+		this.setSize(this.height, this.width);
+		this.setGrid(this.gridRows, this.gridCols);
 		this.setMargins(nextMargins);
 	}
 

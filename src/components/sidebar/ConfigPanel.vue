@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
+import { usePageConfigActions } from '@/composables/page/usePageConfigActions';
 import {
 	MAX_GRID_POINTS,
 	MAX_PAGE_SIZE,
@@ -11,100 +11,51 @@ import {
 	MIN_PAGE_SIZE,
 	MIN_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
-import { useEditorStore } from '@/stores/editor';
-import { useMangaStore } from '@/stores/manga';
-import type { PageMarginSide, PageRotateDirection } from '@/types/page';
+import type { PageMarginSide } from '@/types/page';
 
-const mangaStore = useMangaStore();
-const editorStore = useEditorStore();
 const { activePage, pageSize, gridSize, margins, strokeWidth } =
 	useActivePageLayout();
 
-const pendingRotate = ref<PageRotateDirection | null>(null);
+const {
+	pendingRotate,
+	rotateMessage,
+	setWidth,
+	setHeight,
+	setCols,
+	setRows,
+	setMargin,
+	setStrokeWidth,
+	requestRotate,
+	cancelRotate,
+	confirmRotate,
+} = usePageConfigActions();
 
-const pageHasDrawing = computed(() => {
-	return activePage.value.shapes.length > 0;
-});
+const numberFromEvent = (event: Event) => {
+	return Number((event.target as HTMLInputElement).value);
+};
 
 const onWidthChange = (event: Event) => {
-	mangaStore.setActivePageSize(
-		Number((event.target as HTMLInputElement).value),
-		pageSize.value.height,
-	);
+	setWidth(numberFromEvent(event));
 };
 
 const onHeightChange = (event: Event) => {
-	mangaStore.setActivePageSize(
-		pageSize.value.width,
-		Number((event.target as HTMLInputElement).value),
-	);
+	setHeight(numberFromEvent(event));
 };
 
 const onColsChange = (event: Event) => {
-	mangaStore.setActivePageGrid(
-		Number((event.target as HTMLInputElement).value),
-		gridSize.value.rows,
-	);
+	setCols(numberFromEvent(event));
 };
 
 const onRowsChange = (event: Event) => {
-	mangaStore.setActivePageGrid(
-		gridSize.value.cols,
-		Number((event.target as HTMLInputElement).value),
-	);
+	setRows(numberFromEvent(event));
 };
 
 const onMarginChange = (side: PageMarginSide, event: Event) => {
-	const page = activePage.value;
-
-	mangaStore.setActivePageMargins({
-		marginTop: page.marginTop,
-		marginRight: page.marginRight,
-		marginBottom: page.marginBottom,
-		marginLeft: page.marginLeft,
-		[side]: Number((event.target as HTMLInputElement).value),
-	});
+	setMargin(side, numberFromEvent(event));
 };
 
 const onStrokeWidthChange = (event: Event) => {
-	const value = Number((event.target as HTMLInputElement).value);
-
-	if (!Number.isFinite(value)) {
-		return;
-	}
-
-	mangaStore.setActivePageStrokeWidth(value);
-};
-
-const applyRotate = (direction: PageRotateDirection) => {
-	editorStore.cancelStroke();
-	mangaStore.rotateActivePage(direction);
-};
-
-const requestRotate = (direction: PageRotateDirection) => {
-	if (pageHasDrawing.value) {
-		pendingRotate.value = direction;
-
-		return;
-	}
-
-	applyRotate(direction);
-};
-
-const cancelRotate = () => {
-	pendingRotate.value = null;
-};
-
-const confirmRotate = () => {
-	const direction = pendingRotate.value;
-
-	pendingRotate.value = null;
-
-	if (!direction) {
-		return;
-	}
-
-	applyRotate(direction);
+	setStrokeWidth(numberFromEvent(event));
 };
 </script>
 
@@ -298,7 +249,7 @@ const confirmRotate = () => {
 		<ConfirmModal
 			v-if="pendingRotate"
 			title="Rotate page"
-			:message="`Rotate '${activePage.name}'? Panels will be removed.`"
+			:message="rotateMessage"
 			confirm-label="Rotate"
 			cancel-label="Cancel"
 			@confirm="confirmRotate"

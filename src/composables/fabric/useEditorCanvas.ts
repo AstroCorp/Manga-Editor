@@ -9,15 +9,19 @@ import {
 	type Ref,
 } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useFabricCanvas } from '@/composables/fabric/useFabricCanvas';
-import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
+import { createFabricCanvasController } from '@/lib/fabric/createFabricCanvasController';
 import { createFeatureContext } from '@/features/createFeatureContext';
 import { canvasFeatures } from '@/features/index';
+import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import type { FeatureContext, FeatureOverlay } from '@/features/types';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import type { CanvasActions } from '@/types/editor';
 
+/**
+ * Orquestador del canvas: core Fabric (lib) + features + layout activo.
+ * Aquí sí se compone otro composable de lectura (`useActivePageLayout`).
+ */
 export const useEditorCanvas = (
 	canvasEl: Ref<HTMLCanvasElement | null>,
 	rootEl: Ref<HTMLElement | null>,
@@ -30,8 +34,8 @@ export const useEditorCanvas = (
 	/** Descarta hydrates obsoletos al cambiar de página / reset rápido. */
 	let hydrateGeneration = 0;
 
-	const { fabricCanvas, init, hydratePage, exportDataUrl } =
-		useFabricCanvas(canvasEl);
+	const { fabricCanvas, init, hydratePage, exportDataUrl, dispose } =
+		createFabricCanvasController(canvasEl);
 
 	const zoomFactor = ref(1);
 	const stageStyle = ref<CSSProperties>({ width: '0px', height: '0px' });
@@ -119,6 +123,7 @@ export const useEditorCanvas = (
 	});
 
 	onBeforeUnmount(() => {
+		dispose();
 		editorStore.unregisterCanvas();
 	});
 

@@ -91,6 +91,30 @@ describe('Page / Shape / ShapeImage', () => {
 		expect(shape.toLayoutJSON().image).toBeNull();
 	});
 
+	it('ShapeImage persists grayscale through JSON round-trip', () => {
+		const image = new ShapeImage({
+			src: 'data:image/png;base64,xx',
+			left: 1,
+			top: 2,
+			scaleX: 1.5,
+			scaleY: 1.5,
+			grayscale: true,
+		});
+		const restored = ShapeImage.fromJSON(image.toJSON());
+
+		expect(restored.grayscale).toBe(true);
+		expect(Shape.fromJSON({
+			id: 's1',
+			points: [
+				{ x: 0, y: 0 },
+				{ x: 1, y: 0 },
+				{ x: 1, y: 1 },
+			],
+			strokeWidth: 2,
+			image: image.toJSON(),
+		}).image?.grayscale).toBe(true);
+	});
+
 	it('setStrokeWidth applies to all shapes and setShapeImage refreshes the shapes array ref', () => {
 		const page = Page.createBlank(1);
 		const shape = Shape.create(

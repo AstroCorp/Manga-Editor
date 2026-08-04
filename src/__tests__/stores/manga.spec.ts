@@ -245,16 +245,40 @@ describe('useMangaStore config layout', () => {
 				top: 10,
 				scaleX: 1,
 				scaleY: 1,
+				grayscale: true,
 			}),
 		);
 
 		expect(store.shapes).toHaveLength(1);
 		expect(store.shapes[0]?.image?.src).toBe('data:image/png;base64,xx');
+		expect(store.shapes[0]?.image?.grayscale).toBe(true);
 
 		store.setShapeImage(shape.id, null);
 
 		expect(store.shapes).toHaveLength(1);
 		expect(store.shapes[0]?.image).toBeNull();
+	});
+
+	it('clearActivePage removes shapes and bumps contentResetEpoch', () => {
+		const store = useMangaStore();
+
+		store.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				3,
+			),
+		);
+
+		const epoch = store.contentResetEpoch;
+
+		store.clearActivePage();
+
+		expect(store.shapes).toHaveLength(0);
+		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
 	it('shape image mutations replace the shapes array reference', () => {

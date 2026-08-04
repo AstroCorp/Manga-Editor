@@ -1,88 +1,35 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import PagePreview from '@/components/page/PagePreview.vue';
-import { PRESETS_LOAD_STATUS } from '@/lib/layouts/presetsLoadStatus';
-import { useEditorStore } from '@/stores/editor';
-import { useLayoutsStore } from '@/stores/layouts';
-import { useMangaStore } from '@/stores/manga';
-import type { PresetLayout } from '@/types/layouts';
+import { useLayoutsPanelActions } from '@/composables/layouts/useLayoutsPanelActions';
 
 const PRESET_SKELETON_COUNT = 6;
 
-const mangaStore = useMangaStore();
-const editorStore = useEditorStore();
-const layoutsStore = useLayoutsStore();
-const { activePage } = storeToRefs(mangaStore);
-const { presets, presetsStatus, customLayouts } = storeToRefs(layoutsStore);
+const {
+	presets,
+	customLayouts,
+	presetsLoading,
+	pendingPreset,
+	pendingDeleteCustom,
+	applyMessage,
+	loadPresets,
+	requestApply,
+	cancelApply,
+	confirmApply,
+	requestDeleteCustom,
+	cancelDeleteCustom,
+	confirmDeleteCustom,
+	exportJson,
+	importJson,
+} = useLayoutsPanelActions();
 
-const pendingPreset = ref<PresetLayout | null>(null);
-const pendingDeleteCustom = ref<PresetLayout | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 
-const pageHasDrawing = computed(() => {
-	return activePage.value.shapes.length > 0;
-});
-
-const presetsLoading = computed(() => {
-	return presetsStatus.value === PRESETS_LOAD_STATUS.Loading;
-});
-
 onMounted(() => {
-	void layoutsStore.ensurePresetsLoaded();
+	void loadPresets();
 });
-
-const requestApply = (preset: PresetLayout) => {
-	if (pageHasDrawing.value) {
-		pendingPreset.value = preset;
-
-		return;
-	}
-
-	editorStore.applyPageLayout(preset.layout);
-};
-
-const cancelApply = () => {
-	pendingPreset.value = null;
-};
-
-const confirmApply = () => {
-	const preset = pendingPreset.value;
-
-	pendingPreset.value = null;
-
-	if (!preset) {
-		return;
-	}
-
-	editorStore.applyPageLayout(preset.layout);
-};
-
-const requestDeleteCustom = (preset: PresetLayout) => {
-	pendingDeleteCustom.value = preset;
-};
-
-const cancelDeleteCustom = () => {
-	pendingDeleteCustom.value = null;
-};
-
-const confirmDeleteCustom = () => {
-	const preset = pendingDeleteCustom.value;
-
-	pendingDeleteCustom.value = null;
-
-	if (!preset) {
-		return;
-	}
-
-	layoutsStore.removeCustomLayout(preset.id);
-};
-
-const onExportJson = () => {
-	editorStore.exportPageJson();
-};
 
 const onImportClick = () => {
 	fileInput.value?.click();
@@ -98,7 +45,7 @@ const onFileChange = (event: Event) => {
 		return;
 	}
 
-	void editorStore.importPageJson(file);
+	importJson(file);
 };
 </script>
 
@@ -239,7 +186,7 @@ const onFileChange = (event: Event) => {
 			<button
 				type="button"
 				class="inline-flex w-full items-center justify-center gap-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 transition hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-visible:border-blue-500"
-				@click="onExportJson"
+				@click="exportJson"
 			>
 				Export JSON
 			</button>
@@ -262,7 +209,7 @@ const onFileChange = (event: Event) => {
 		<ConfirmModal
 			v-if="pendingPreset"
 			title="Apply layout"
-			:message="`Replace the content of '${activePage.name}'?`"
+			:message="applyMessage"
 			confirm-label="Apply"
 			cancel-label="Cancel"
 			@confirm="confirmApply"

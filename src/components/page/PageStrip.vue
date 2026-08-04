@@ -1,109 +1,31 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import PageThumb from '@/components/page/PageThumb.vue';
 import ZoomControls from '@/components/toolbar/ZoomControls.vue';
-import { useMangaStore } from '@/stores/manga';
+import { usePageListActions } from '@/composables/page/usePageListActions';
 
-const mangaStore = useMangaStore();
-const { pages, activePageId } = storeToRefs(mangaStore);
-
-const pagesVisible = ref(true);
-const canRemove = computed(() => {
-	return pages.value.length > 1;
-});
-const pendingRemoveId = ref<string | null>(null);
-const dragFromIndex = ref<number | null>(null);
-const dropTargetIndex = ref<number | null>(null);
-
-const pendingPageName = computed(() => {
-	if (!pendingRemoveId.value) {
-		return '';
-	}
-
-	return (
-		pages.value.find((page) => {
-			return page.id === pendingRemoveId.value;
-		})?.name ?? 'this page'
-	);
-});
-
-const togglePagesVisible = () => {
-	pagesVisible.value = !pagesVisible.value;
-};
-
-const onSelect = (id: string) => {
-	if (id === activePageId.value) {
-		return;
-	}
-
-	mangaStore.selectPage(id);
-};
-
-const requestRemove = (id: string) => {
-	if (!canRemove.value) {
-		return;
-	}
-
-	pendingRemoveId.value = id;
-};
-
-const cancelRemove = () => {
-	pendingRemoveId.value = null;
-};
-
-const confirmRemove = () => {
-	const id = pendingRemoveId.value;
-
-	pendingRemoveId.value = null;
-
-	if (!id) {
-		return;
-	}
-
-	mangaStore.removePage(id);
-};
-
-const onDragStart = (index: number, event: DragEvent) => {
-	dragFromIndex.value = index;
-	dropTargetIndex.value = index;
-	event.dataTransfer?.setData('text/plain', String(index));
-
-	if (event.dataTransfer) {
-		event.dataTransfer.effectAllowed = 'move';
-	}
-};
-
-const onDragOver = (index: number, event: DragEvent) => {
-	event.preventDefault();
-
-	if (event.dataTransfer) {
-		event.dataTransfer.dropEffect = 'move';
-	}
-
-	dropTargetIndex.value = index;
-};
-
-const onDrop = (index: number, event: DragEvent) => {
-	event.preventDefault();
-
-	const from = dragFromIndex.value;
-
-	clearDragState();
-
-	if (from === null || from === index) {
-		return;
-	}
-
-	mangaStore.reorderPages(from, index);
-};
-
-const clearDragState = () => {
-	dragFromIndex.value = null;
-	dropTargetIndex.value = null;
-};
+const {
+	pages,
+	activePageId,
+	pagesVisible,
+	canRemove,
+	pendingRemoveId,
+	removeMessage,
+	dragFromIndex,
+	dropTargetIndex,
+	togglePagesVisible,
+	selectPage,
+	addPage,
+	renamePage,
+	requestRemove,
+	cancelRemove,
+	confirmRemove,
+	onDragStart,
+	onDragOver,
+	onDrop,
+	clearDragState,
+} = usePageListActions();
 </script>
 
 <template>
@@ -155,9 +77,9 @@ const clearDragState = () => {
 				:drop-target="
 					dropTargetIndex === index && dragFromIndex !== index
 				"
-				@select="onSelect(page.id)"
+				@select="selectPage(page.id)"
 				@remove="requestRemove(page.id)"
-				@rename="mangaStore.renamePage(page.id, $event)"
+				@rename="renamePage(page.id, $event)"
 				@dragstart="onDragStart(index, $event)"
 				@dragover="onDragOver(index, $event)"
 				@drop="onDrop(index, $event)"
@@ -168,7 +90,7 @@ const clearDragState = () => {
 				type="button"
 				class="group relative flex min-w-18 shrink-0 flex-col items-center rounded-md border border-dashed border-slate-200 bg-slate-50/40 px-1.5 pt-1.5 pb-1 text-slate-500 transition hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-slate-400 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 				aria-label="Add page"
-				@click="mangaStore.addPage()"
+				@click="addPage"
 			>
 				<span
 					class="grid h-[4.2rem] w-[4.2rem] place-items-center rounded-sm border border-dashed border-slate-200 bg-white text-lg text-inherit transition group-hover:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:group-hover:border-blue-500"
@@ -187,7 +109,7 @@ const clearDragState = () => {
 		<ConfirmModal
 			v-if="pendingRemoveId"
 			title="Delete page"
-			:message="`Delete '${pendingPageName}'? This cannot be undone.`"
+			:message="removeMessage"
 			confirm-label="Delete"
 			cancel-label="Cancel"
 			@confirm="confirmRemove"

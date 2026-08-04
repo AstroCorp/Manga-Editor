@@ -83,6 +83,11 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Png);
 		expect(link.download).toBe('untitled-page-1.png');
 		expect(click).toHaveBeenCalledOnce();
+
+		store.exportPage(EXPORT_IMAGE_FORMAT.Jpeg);
+
+		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Jpeg);
+		expect(link.download).toBe('untitled-page-1.jpg');
 	});
 
 	it('clamps zoom percent and steps in/out', () => {
