@@ -152,7 +152,7 @@ describe('Page / Shape / ShapeImage', () => {
 
 	it('clamps page size and margins', () => {
 		const page = Page.createBlank(1);
-		
+
 		page.setSize(50, 50);
 		page.setMargins({
 			marginTop: 9999,
@@ -163,5 +163,40 @@ describe('Page / Shape / ShapeImage', () => {
 
 		expect(page.width).toBe(100);
 		expect(page.marginTop).toBeLessThanOrEqual(20);
+	});
+
+	it('rotateOrientation cycles margins clockwise and counterclockwise', () => {
+		const page = Page.createBlank(1);
+
+		page.setSize(800, 1200);
+		page.setGrid(10, 20);
+		page.setMargins({
+			marginTop: 10,
+			marginRight: 20,
+			marginBottom: 30,
+			marginLeft: 40,
+		});
+
+		page.rotateOrientation('clockwise');
+
+		expect(page.width).toBe(1200);
+		expect(page.height).toBe(800);
+		expect(page.gridCols).toBe(20);
+		expect(page.gridRows).toBe(10);
+		expect(page.marginTop).toBe(40);
+		expect(page.marginRight).toBe(10);
+		expect(page.marginBottom).toBe(20);
+		expect(page.marginLeft).toBe(30);
+
+		page.rotateOrientation('counterclockwise');
+
+		expect(page.width).toBe(800);
+		expect(page.height).toBe(1200);
+		expect(page.gridCols).toBe(10);
+		expect(page.gridRows).toBe(20);
+		expect(page.marginTop).toBe(10);
+		expect(page.marginRight).toBe(20);
+		expect(page.marginBottom).toBe(30);
+		expect(page.marginLeft).toBe(40);
 	});
 });

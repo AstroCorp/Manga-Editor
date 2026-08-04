@@ -15,7 +15,7 @@ import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { LayoutJSON } from '@/types/layouts';
-import type { PageMargins, PageValue } from '@/types/page';
+import type { PageMargins, PageRotateDirection, PageValue } from '@/types/page';
 
 const findShapeOnPage = (page: Page, shapeId: string): Shape | undefined => {
 	return page.shapes.find((shape) => {
@@ -86,6 +86,38 @@ export class Page {
 	setGrid(cols: number, rows: number) {
 		this.gridCols = clampGridSize(cols);
 		this.gridRows = clampGridSize(rows);
+	}
+
+	/**
+	 * Orientación portrait ↔ landscape: width↔height, cols↔rows.
+	 * Márgenes en ciclo (clockwise: top→right→bottom→left).
+	 * No borra shapes (el store limpia al rotar).
+	 */
+	rotateOrientation(direction: PageRotateDirection) {
+		const nextWidth = this.height;
+		const nextHeight = this.width;
+		const nextCols = this.gridRows;
+		const nextRows = this.gridCols;
+		const { marginTop, marginRight, marginBottom, marginLeft } = this;
+
+		const nextMargins: PageMargins =
+			direction === 'clockwise'
+				? {
+						marginTop: marginLeft,
+						marginRight: marginTop,
+						marginBottom: marginRight,
+						marginLeft: marginBottom,
+					}
+				: {
+						marginTop: marginRight,
+						marginRight: marginBottom,
+						marginBottom: marginLeft,
+						marginLeft: marginTop,
+					};
+
+		this.setSize(nextWidth, nextHeight);
+		this.setGrid(nextCols, nextRows);
+		this.setMargins(nextMargins);
 	}
 
 	setMargins(margins: PageMargins) {

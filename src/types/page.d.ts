@@ -59,6 +59,8 @@ export type ContentResetDeps = {
 	discardSelection?: () => void;
 };
 
+export type PageRotateDirection = 'clockwise' | 'counterclockwise';
+
 export type PageMarginSide =
 	| 'marginTop'
 	| 'marginRight'

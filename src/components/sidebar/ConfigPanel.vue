@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
+import { Icon } from '@iconify/vue';
+import ConfirmModal from '@/components/ConfirmModal.vue';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import {
 	MAX_GRID_POINTS,
@@ -8,12 +11,20 @@ import {
 	MIN_PAGE_SIZE,
 	MIN_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
+import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
-import type { PageMarginSide } from '@/types/page';
+import type { PageMarginSide, PageRotateDirection } from '@/types/page';
 
 const mangaStore = useMangaStore();
+const editorStore = useEditorStore();
 const { activePage, pageSize, gridSize, margins, strokeWidth } =
 	useActivePageLayout();
+
+const pendingRotate = ref<PageRotateDirection | null>(null);
+
+const pageHasDrawing = computed(() => {
+	return activePage.value.shapes.length > 0;
+});
 
 const onWidthChange = (event: Event) => {
 	mangaStore.setActivePageSize(
@@ -64,6 +75,37 @@ const onStrokeWidthChange = (event: Event) => {
 
 	mangaStore.setActivePageStrokeWidth(value);
 };
+
+const applyRotate = (direction: PageRotateDirection) => {
+	editorStore.cancelStroke();
+	mangaStore.rotateActivePage(direction);
+};
+
+const requestRotate = (direction: PageRotateDirection) => {
+	if (pageHasDrawing.value) {
+		pendingRotate.value = direction;
+
+		return;
+	}
+
+	applyRotate(direction);
+};
+
+const cancelRotate = () => {
+	pendingRotate.value = null;
+};
+
+const confirmRotate = () => {
+	const direction = pendingRotate.value;
+
+	pendingRotate.value = null;
+
+	if (!direction) {
+		return;
+	}
+
+	applyRotate(direction);
+};
 </script>
 
 <template>
@@ -102,6 +144,38 @@ const onStrokeWidthChange = (event: Event) => {
 					@change="onHeightChange"
 				/>
 			</label>
+			<div
+				class="flex items-center justify-between gap-3"
+				aria-label="Rotate page"
+			>
+				<span class="text-sm text-slate-500 dark:text-slate-400">Rotate</span>
+				<div class="flex items-center gap-1.5">
+					<button
+						type="button"
+						class="inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-blue-600/50 hover:bg-blue-50 hover:text-blue-600 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200 dark:hover:border-blue-500/50 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+						aria-label="Rotate page counterclockwise"
+						title="Rotate page counterclockwise"
+						@click="requestRotate('counterclockwise')"
+					>
+						<Icon
+							icon="fluent:arrow-rotate-counterclockwise-24-regular"
+							class="size-5"
+						/>
+					</button>
+					<button
+						type="button"
+						class="inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-blue-600/50 hover:bg-blue-50 hover:text-blue-600 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200 dark:hover:border-blue-500/50 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+						aria-label="Rotate page clockwise"
+						title="Rotate page clockwise"
+						@click="requestRotate('clockwise')"
+					>
+						<Icon
+							icon="fluent:arrow-rotate-clockwise-24-regular"
+							class="size-5"
+						/>
+					</button>
+				</div>
+			</div>
 		</section>
 
 		<section
@@ -220,5 +294,15 @@ const onStrokeWidthChange = (event: Event) => {
 				/>
 			</label>
 		</section>
+
+		<ConfirmModal
+			v-if="pendingRotate"
+			title="Rotate page"
+			:message="`Rotate '${activePage.name}'? Panels will be removed.`"
+			confirm-label="Rotate"
+			cancel-label="Cancel"
+			@confirm="confirmRotate"
+			@cancel="cancelRotate"
+		/>
 	</div>
 </template>

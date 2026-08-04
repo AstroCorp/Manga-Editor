@@ -5,7 +5,7 @@ import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { PageLayoutMetrics } from '@/types/geometry';
 import type { LayoutJSON } from '@/types/layouts';
-import type { PageMargins } from '@/types/page';
+import type { PageMargins, PageRotateDirection } from '@/types/page';
 
 export const useMangaStore = defineStore('manga', () => {
 	const title = ref('Untitled');
@@ -199,6 +199,12 @@ export const useMangaStore = defineStore('manga', () => {
 		clearActivePage();
 	};
 
+	/** Portrait ↔ landscape; limpia paneles (la rejilla ya no encaja). */
+	const rotateActivePage = (direction: PageRotateDirection) => {
+		getActivePage().rotateOrientation(direction);
+		clearActivePage();
+	};
+
 	const setActivePageStrokeWidth = (width: number) => {
 		getActivePage().setStrokeWidth(width);
 	};
@@ -226,6 +232,7 @@ export const useMangaStore = defineStore('manga', () => {
 		setActivePageSize,
 		setActivePageGrid,
 		setActivePageMargins,
+		rotateActivePage,
 		setActivePageStrokeWidth,
 	};
 });

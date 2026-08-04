@@ -32,6 +32,44 @@ describe('useMangaStore config layout', () => {
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
+	it('rotateActivePage swaps orientation and clears shapes', () => {
+		const store = useMangaStore();
+
+		store.setActivePageSize(800, 1200);
+		store.setActivePageGrid(10, 20);
+		store.setActivePageMargins({
+			marginTop: 10,
+			marginRight: 20,
+			marginBottom: 30,
+			marginLeft: 40,
+		});
+		store.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				3,
+			),
+		);
+
+		const epoch = store.contentResetEpoch;
+
+		store.rotateActivePage('clockwise');
+
+		expect(store.activePage.width).toBe(1200);
+		expect(store.activePage.height).toBe(800);
+		expect(store.activePage.gridCols).toBe(20);
+		expect(store.activePage.gridRows).toBe(10);
+		expect(store.activePage.marginTop).toBe(40);
+		expect(store.activePage.marginRight).toBe(10);
+		expect(store.activePage.marginBottom).toBe(20);
+		expect(store.activePage.marginLeft).toBe(30);
+		expect(store.shapes).toHaveLength(0);
+		expect(store.contentResetEpoch).toBe(epoch + 1);
+	});
+
 	it('changing stroke width updates all shapes without clearing them', () => {
 		const store = useMangaStore();
 
