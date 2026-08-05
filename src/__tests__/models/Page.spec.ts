@@ -88,6 +88,12 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 
 		expect(shape.toJSON().image).not.toBeNull();
 		expect(shape.toLayoutJSON().image).toBeNull();
+
+		shape.setWhiteFill(true);
+		expect(shape.whiteFill).toBe(true);
+		expect(shape.toJSON()).not.toHaveProperty('whiteFill');
+		expect(shape.toLayoutJSON()).not.toHaveProperty('whiteFill');
+		expect(Shape.fromJSON(shape.toJSON()).whiteFill).toBe(false);
 	});
 
 	it('ShapeImage persists grayscale through JSON round-trip', () => {

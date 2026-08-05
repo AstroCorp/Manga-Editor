@@ -22,9 +22,9 @@ export const shapeMenuFeature: CanvasFeature = {
 				const stage = toStageCoords(api.position.value, ctx.zoomFactor.value);
 
 				return {
-					visible: api.visible.value,
 					hasImage: api.hasImage.value,
 					isGrayscale: api.isGrayscale.value,
+					whiteFill: api.whiteFill.value,
 					left: stage.left,
 					top: stage.top,
 				};
@@ -36,6 +36,7 @@ export const shapeMenuFeature: CanvasFeature = {
 					void api.placeImage(file);
 				}) as (...args: never[]) => unknown,
 				toggleGrayscale: api.toggleGrayscale,
+				toggleWhiteFill: api.toggleWhiteFill,
 			},
 		});
 	},

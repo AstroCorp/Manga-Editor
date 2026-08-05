@@ -39,7 +39,6 @@ const toImageJson = (image: ShapeLike['image']): ShapeImageJSON | null => {
 		return null;
 	}
 
-	// Shape de dominio → ShapeImage; JSON de layout → objeto plano.
 	if (image instanceof ShapeImage) {
 		return image.toJSON();
 	}
@@ -48,7 +47,11 @@ const toImageJson = (image: ShapeLike['image']): ShapeImageJSON | null => {
 };
 
 /** Modelo de preview ligero (paneles + imágenes) desde shapes de dominio. */
-export const buildPagePreview = (width: number, height: number, shapes: ShapeLike[] | null | undefined): PagePreviewModel => {
+export const buildPagePreview = (
+	width: number,
+	height: number,
+	shapes: ShapeLike[] | null | undefined,
+): PagePreviewModel => {
 	const safeWidth = Math.max(1, width);
 	const safeHeight = Math.max(1, height);
 	const panels: PagePreviewPanel[] = [];
@@ -59,6 +62,7 @@ export const buildPagePreview = (width: number, height: number, shapes: ShapeLik
 			panels.push({
 				points: toSvgPoints(shape.points),
 				strokeWidth: Math.max(1, shape.strokeWidth),
+				whiteFill: Boolean(shape.whiteFill),
 			});
 		}
 

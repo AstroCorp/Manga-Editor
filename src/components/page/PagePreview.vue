@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
 import { buildPagePreview } from '@/lib/page/pagePreview';
 import type { Shape } from '@/models/Shape';
 import type { ShapeJSON } from '@/types/page';
@@ -18,6 +19,12 @@ const props = withDefaults(
 const model = computed(() => {
 	return buildPagePreview(props.width, props.height, props.shapes);
 });
+
+const filledPanels = computed(() => {
+	return model.value.panels.filter((panel) => {
+		return panel.whiteFill;
+	});
+});
 </script>
 
 <template>
@@ -29,6 +36,14 @@ const model = computed(() => {
 		aria-hidden="true"
 	>
 		<rect :width="model.width" :height="model.height" fill="#ffffff" />
+		<!-- fill → image → stroke (imagen sobre fondo blanco) -->
+		<polygon
+			v-for="(panel, index) in filledPanels"
+			:key="`fill-${index}`"
+			:points="panel.points"
+			fill="#ffffff"
+			stroke="none"
+		/>
 		<image
 			v-for="(image, index) in model.images"
 			:key="`img-${index}`"
@@ -42,10 +57,10 @@ const model = computed(() => {
 		/>
 		<polygon
 			v-for="(panel, index) in model.panels"
-			:key="`panel-${index}`"
+			:key="`stroke-${index}`"
 			:points="panel.points"
-			fill="rgba(255,255,255,0.35)"
-			stroke="#111111"
+			fill="none"
+			:stroke="PANEL_STROKE_COLOR"
 			:stroke-width="panel.strokeWidth"
 			stroke-linejoin="miter"
 		/>

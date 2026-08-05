@@ -30,12 +30,15 @@ export type ShapeJSON = {
 };
 
 export type ShapeLike =
-	| Pick<ShapeJSON, 'points' | 'strokeWidth' | 'image'>
+	| (Pick<ShapeJSON, 'points' | 'strokeWidth' | 'image'> & {
+			whiteFill?: boolean;
+	  })
 	| Shape;
 
 export type PagePreviewPanel = {
 	points: string;
 	strokeWidth: number;
+	whiteFill: boolean;
 };
 
 export type PagePreviewImage = {
@@ -88,6 +91,7 @@ export type ShapeValue = {
 	points: PagePoint[];
 	strokeWidth: number;
 	image?: ShapeImage | null;
+	whiteFill?: boolean;
 };
 
 export type LayerValue = {

@@ -7,12 +7,15 @@ export class Shape {
 	public points: PagePoint[];
 	public strokeWidth: number;
 	public image: ShapeImage | null;
+	/** Preferencia de vista; no se serializa en JSON de layout. */
+	public whiteFill: boolean;
 
 	constructor(value: ShapeValue) {
 		this.id = value.id;
 		this.points = value.points;
 		this.strokeWidth = value.strokeWidth;
 		this.image = value.image ?? null;
+		this.whiteFill = Boolean(value.whiteFill);
 	}
 
 	static create(points: PagePoint[], strokeWidth: number): Shape {
@@ -20,7 +23,6 @@ export class Shape {
 			id: createId(),
 			points,
 			strokeWidth,
-			image: null,
 		});
 	}
 
@@ -28,10 +30,13 @@ export class Shape {
 		this.image = image;
 	}
 
+	setWhiteFill(whiteFill: boolean) {
+		this.whiteFill = whiteFill;
+	}
+
 	toJSON(): ShapeJSON {
 		return {
 			id: this.id,
-			// Copia defensiva para no compartir referencias mutables.
 			points: this.points.map((point) => {
 				return { x: point.x, y: point.y };
 			}),
@@ -40,14 +45,10 @@ export class Shape {
 		};
 	}
 
-	/** Solo geometría del panel (sin imagen); para export de layouts. */
+	/** Geometría del panel sin imagen (export de layouts). */
 	toLayoutJSON(): ShapeJSON {
 		return {
-			id: this.id,
-			points: this.points.map((point) => {
-				return { x: point.x, y: point.y };
-			}),
-			strokeWidth: this.strokeWidth,
+			...this.toJSON(),
 			image: null,
 		};
 	}

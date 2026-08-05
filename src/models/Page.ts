@@ -325,6 +325,10 @@ export class Page {
 		return this.getActiveLayer().setShapeImage(shapeId, image);
 	}
 
+	setShapeWhiteFill(shapeId: string, whiteFill: boolean): boolean {
+		return this.getActiveLayer().setShapeWhiteFill(shapeId, whiteFill);
+	}
+
 	/**
 	 * Si el tamaño del layout difiere, resetea a default y aplica ahí.
 	 * Si no, sustituye contenido de la capa activa.

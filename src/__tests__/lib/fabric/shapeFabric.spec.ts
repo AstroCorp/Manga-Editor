@@ -29,7 +29,28 @@ describe('shapeToPolygon', () => {
 		expect(polygon.perPixelTargetFind).toBe(true);
 		expect(polygon.selectable).toBe(true);
 		expect(polygon.evented).toBe(true);
+		expect(polygon.fill).toBe('rgba(255,255,255,0.01)');
 		expect(polygon.get('layerId')).toBe('layer-1');
+	});
+
+	it('applies white fill from the shape', () => {
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			2,
+		);
+
+		shape.setWhiteFill(true);
+
+		const polygon = shapeToPolygon(shape, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+
+		expect(polygon.fill).toBe('#ffffff');
 	});
 
 	it('disables selection when the shape already has an image', () => {

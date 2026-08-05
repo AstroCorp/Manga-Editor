@@ -206,6 +206,10 @@ export const useMangaStore = defineStore('manga', () => {
 		getActivePage().setShapeImage(shapeId, image);
 	};
 
+	const setShapeWhiteFill = (shapeId: string, whiteFill: boolean) => {
+		getActivePage().setShapeWhiteFill(shapeId, whiteFill);
+	};
+
 	const setActivePageSize = (width: number, height: number) => {
 		getActivePage().setSize(width, height);
 		bumpContent();
@@ -290,6 +294,7 @@ export const useMangaStore = defineStore('manga', () => {
 		addShape,
 		removeShape,
 		setShapeImage,
+		setShapeWhiteFill,
 		setActivePageSize,
 		setActiveLayerGrid,
 		setActiveLayerMargins,

@@ -1,7 +1,7 @@
 import { shallowRef, type Ref, type ShallowRef } from 'vue';
 import { Canvas } from 'fabric';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
-import { isGuide } from '@/lib/fabric/isGuide';
+import { isGuide, isPanel } from '@/lib/fabric/isGuide';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
@@ -67,9 +67,19 @@ export const createFabricCanvasController = (
 		const guides = canvas.getObjects().filter((object) => {
 			return isGuide(object);
 		});
+		const panels = canvas.getObjects().filter((object) => {
+			return isPanel(object);
+		});
+		const previousFills = panels.map((panel) => {
+			return panel.fill;
+		});
 
 		guides.forEach((guide) => {
 			guide.visible = false;
+		});
+		/* whiteFill es solo vista en editor; la descarga siempre sin relleno. */
+		panels.forEach((panel) => {
+			panel.set({ fill: 'transparent' });
 		});
 
 		try {
@@ -79,6 +89,9 @@ export const createFabricCanvasController = (
 				multiplier: 1,
 			});
 		} finally {
+			panels.forEach((panel, index) => {
+				panel.set({ fill: previousFills[index] });
+			});
 			guides.forEach((guide) => {
 				guide.visible = true;
 			});

@@ -74,7 +74,8 @@ export const removeObjectsByPanelId = (canvas: Canvas, panelId: string) => {
 };
 
 /**
- * Guías al fondo; por cada capa (abajo→arriba): imágenes luego paneles.
+ * Guías al fondo; por cada capa (abajo→arriba): paneles luego imágenes
+ * (la imagen queda sobre el relleno blanco del panel).
  * Reordena en un solo paso (evita N bringObjectToFront).
  */
 export const stackPageContent = (
@@ -102,13 +103,13 @@ export const stackPageContent = (
 	const placed = new Set<FabricObject>();
 
 	const pushLayerObjects = (layerId: string) => {
-		images.forEach((object) => {
+		panels.forEach((object) => {
 			if (getLayerId(object) === layerId) {
 				ordered.push(object);
 				placed.add(object);
 			}
 		});
-		panels.forEach((object) => {
+		images.forEach((object) => {
 			if (getLayerId(object) === layerId) {
 				ordered.push(object);
 				placed.add(object);
@@ -120,12 +121,12 @@ export const stackPageContent = (
 		layerOrder.forEach(pushLayerObjects);
 	}
 
-	images.forEach((object) => {
+	panels.forEach((object) => {
 		if (!placed.has(object)) {
 			ordered.push(object);
 		}
 	});
-	panels.forEach((object) => {
+	images.forEach((object) => {
 		if (!placed.has(object)) {
 			ordered.push(object);
 		}

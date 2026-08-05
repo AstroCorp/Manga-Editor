@@ -143,7 +143,7 @@ describe('panel fabric helpers', () => {
 		expect([...collectPanelIdsWithImage(canvas)].sort()).toEqual(['a', 'b']);
 	});
 
-	it('stackPageContent orders guides, other, images, then panels', () => {
+	it('stackPageContent orders guides, other, panels, then images', () => {
 		const guide = createObject({ isGuide: true });
 		const other = createObject({});
 		const image = createObject({
@@ -168,8 +168,8 @@ describe('panel fabric helpers', () => {
 		expect(moveObjectTo.mock.calls.map((call) => call[0])).toEqual([
 			guide,
 			other,
-			image,
 			panel,
+			image,
 		]);
 		expect(moveObjectTo.mock.calls.map((call) => call[1])).toEqual([
 			0, 1, 2, 3,

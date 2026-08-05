@@ -1,5 +1,6 @@
-import { computed, shallowRef, watch } from 'vue';
+import { shallowRef, watch } from 'vue';
 import { FabricImage, type Canvas, type FabricObject } from 'fabric';
+import { panelFillColor } from '@/lib/fabric/fabricColors';
 import {
 	findPanelById,
 	getPanelId,
@@ -31,16 +32,14 @@ export const useShapeActionMenu = ({
 	const panelId = shallowRef<string | null>(null);
 	const hasImage = shallowRef(false);
 	const isGrayscale = shallowRef(false);
+	const whiteFill = shallowRef(false);
 	const position = shallowRef<PageOverlayPosition | null>(null);
-
-	const visible = computed(() => {
-		return Boolean(panelId.value && position.value);
-	});
 
 	const clearMenu = () => {
 		panelId.value = null;
 		hasImage.value = false;
 		isGrayscale.value = false;
+		whiteFill.value = false;
 		position.value = null;
 	};
 
@@ -83,6 +82,7 @@ export const useShapeActionMenu = ({
 		panelId.value = nextPanelId;
 		hasImage.value = Boolean(shape?.image);
 		isGrayscale.value = Boolean(shape?.image?.grayscale);
+		whiteFill.value = Boolean(shape?.whiteFill);
 		position.value = {
 			left: bounds.left + bounds.width / 2,
 			top: Math.max(0, bounds.top - MENU_GAP),
@@ -187,6 +187,29 @@ export const useShapeActionMenu = ({
 		refreshMenu();
 	};
 
+	const toggleWhiteFill = () => {
+		const canvas = fabricCanvas.value;
+		const id = panelId.value;
+
+		if (!canvas || !id) {
+			return;
+		}
+
+		const next = !whiteFill.value;
+
+		mangaStore.setShapeWhiteFill(id, next);
+
+		const panel = findPanelById(canvas, id);
+
+		if (panel) {
+			panel.set({ fill: panelFillColor(next) });
+		}
+
+		onChanged?.();
+		canvas.requestRenderAll();
+		refreshMenu();
+	};
+
 	const bindCanvasEvents = (canvas: Canvas) => {
 		canvas.on('selection:created', refreshMenu);
 		canvas.on('selection:updated', refreshMenu);
@@ -225,14 +248,15 @@ export const useShapeActionMenu = ({
 	);
 
 	return {
-		visible,
 		hasImage,
 		isGrayscale,
+		whiteFill,
 		position,
 		deleteShape,
 		clearImage,
 		placeImage,
 		toggleGrayscale,
+		toggleWhiteFill,
 		clearMenu,
 	};
 };

@@ -22,6 +22,23 @@ const findShapeOnLayer = (layer: Layer, shapeId: string): Shape | undefined => {
 	});
 };
 
+const updateShapeOnLayer = (
+	layer: Layer,
+	shapeId: string,
+	mutate: (shape: Shape) => void,
+): boolean => {
+	const shape = findShapeOnLayer(layer, shapeId);
+
+	if (!shape) {
+		return false;
+	}
+
+	mutate(shape);
+	layer.shapes = layer.shapes.slice();
+
+	return true;
+};
+
 export class Layer {
 	public readonly id: string;
 	public name: string;
@@ -129,16 +146,15 @@ export class Layer {
 	}
 
 	setShapeImage(shapeId: string, image: ShapeImage | null): boolean {
-		const shape = findShapeOnLayer(this, shapeId);
+		return updateShapeOnLayer(this, shapeId, (shape) => {
+			shape.setImage(image);
+		});
+	}
 
-		if (!shape) {
-			return false;
-		}
-
-		shape.setImage(image);
-		this.shapes = this.shapes.slice();
-
-		return true;
+	setShapeWhiteFill(shapeId: string, whiteFill: boolean): boolean {
+		return updateShapeOnLayer(this, shapeId, (shape) => {
+			shape.setWhiteFill(whiteFill);
+		});
 	}
 
 	/** Aplica geometría de layout (sin tamaño de página). */

@@ -10,7 +10,7 @@ const emit = defineEmits<ShapeActionMenuEmits>();
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const style = computed(() => {
-	if (!props.visible || props.left === null || props.top === null) {
+	if (props.left === null || props.top === null) {
 		return null;
 	}
 
@@ -68,6 +68,22 @@ const onFileChange = (event: Event) => {
 				"
 				class="size-5"
 			/>
+		</button>
+		<button
+			type="button"
+			role="menuitem"
+			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
+			:class="
+				whiteFill
+					? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+					: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+			"
+			:aria-label="whiteFill ? 'Remove white fill' : 'White fill'"
+			:aria-pressed="whiteFill"
+			:title="whiteFill ? 'Remove white fill' : 'White fill'"
+			@click="emit('toggleWhiteFill')"
+		>
+			<Icon icon="fluent:paint-bucket-24-regular" class="size-5" />
 		</button>
 		<button
 			v-if="hasImage"

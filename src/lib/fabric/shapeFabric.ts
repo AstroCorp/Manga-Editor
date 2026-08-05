@@ -1,6 +1,9 @@
 import type { Canvas } from 'fabric';
 import { Polygon } from 'fabric';
-import { PANEL_FILL, PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
+import {
+	PANEL_STROKE_COLOR,
+	panelFillColor,
+} from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { stackPageContent } from '@/lib/fabric/isGuide';
 import { shapeImageToFabric } from '@/lib/fabric/panelImageFabric';
@@ -27,7 +30,7 @@ export const shapeToPolygon = (
 			return { x: point.x, y: point.y };
 		}),
 		{
-			fill: PANEL_FILL,
+			fill: panelFillColor(shape.whiteFill),
 			stroke: PANEL_STROKE_COLOR,
 			strokeWidth: shape.strokeWidth,
 			selectable: interactive,
@@ -53,7 +56,6 @@ export const shapeToPolygon = (
 	return polygon;
 };
 
-/** Vacía el canvas y pinta capas visibles (+ imágenes) desde el dominio. */
 export const hydrateCanvasFromPage = async (
 	canvas: Canvas,
 	page: Page,

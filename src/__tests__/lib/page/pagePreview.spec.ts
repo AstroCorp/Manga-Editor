@@ -26,6 +26,24 @@ describe('pagePreview', () => {
 		expect(preview.panels).toHaveLength(1);
 		expect(preview.panels[0]?.points).toBe('0,0 10,0 10,10');
 		expect(preview.panels[0]?.strokeWidth).toBe(2);
+		expect(preview.panels[0]?.whiteFill).toBe(false);
+	});
+
+	it('keeps whiteFill per panel in the preview model', () => {
+		const preview = buildPagePreview(200, 200, [
+			{
+				points: [
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				strokeWidth: 2,
+				image: null,
+				whiteFill: true,
+			},
+		]);
+
+		expect(preview.panels[0]?.whiteFill).toBe(true);
 	});
 
 	it('places images with center origin', () => {
