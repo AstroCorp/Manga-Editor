@@ -46,10 +46,14 @@ describe('presetLayouts', () => {
 		).toBe(true);
 		expect(
 			presets.every((preset: PresetLayout) => {
+				const layout = preset.layout;
+
 				return (
-					Array.isArray(preset.layout.shapes) &&
-					!('id' in preset.layout) &&
-					!('name' in preset.layout)
+					Array.isArray(layout.shapes) &&
+					Array.isArray(layout.layers) &&
+					layout.layers.length >= 1 &&
+					!('id' in layout) &&
+					!('name' in layout)
 				);
 			}),
 		).toBe(true);

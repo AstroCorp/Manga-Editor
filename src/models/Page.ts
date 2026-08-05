@@ -9,7 +9,7 @@ import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
 import { DEFAULT_LAYER_NAME, Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
-import type { LayoutJSON } from '@/types/layouts';
+import type { LayoutJSON, LayoutLayerJSON } from '@/types/layouts';
 import type {
 	PageMargins,
 	PageRotateDirection,
@@ -330,38 +330,74 @@ export class Page {
 	}
 
 	/**
-	 * Si el tamaño del layout difiere, resetea a default y aplica ahí.
-	 * Si no, sustituye contenido de la capa activa.
+	 * Sustituye tamaño y todas las capas por el layout.
+	 * Si `layers` tiene ítems, usa multi-capa; si no, una capa desde los campos raíz.
 	 */
 	applyLayout(data: LayoutJSON) {
-		const sizeChanged =
-			clampPageSize(data.width) !== this.width ||
-			clampPageSize(data.height) !== this.height;
+		this.width = clampPageSize(data.width);
+		this.height = clampPageSize(data.height);
 
-		if (sizeChanged) {
-			this.width = clampPageSize(data.width);
-			this.height = clampPageSize(data.height);
-			this.resetToDefaultLayer();
-		}
+		const sources: LayoutLayerJSON[] =
+			data.layers && data.layers.length > 0
+				? data.layers
+				: [
+						{
+							shapes: data.shapes ?? [],
+							gridCols: data.gridCols,
+							gridRows: data.gridRows,
+							marginTop: data.marginTop,
+							marginRight: data.marginRight,
+							marginBottom: data.marginBottom,
+							marginLeft: data.marginLeft,
+							strokeWidth: data.strokeWidth,
+						},
+					];
 
-		this.getActiveLayer().applyLayoutContent(
-			{
-				...data,
-				shapes: data.shapes ?? [],
-			},
-			this.width,
-			this.height,
-		);
+		const takenNames: string[] = [];
+		const nextLayers = sources.map((source, index) => {
+			const layer = Layer.createDefault(index + 1);
+			const desired =
+				source.name?.trim() ||
+				(index === 0 ? DEFAULT_LAYER_NAME : `Layer ${index + 1}`);
+
+			layer.name = findUniqueName(desired, takenNames);
+			takenNames.push(layer.name);
+			layer.visible = source.visible ?? true;
+			layer.applyLayoutContent(source, this.width, this.height);
+
+			return layer;
+		});
+
+		this.layers = nextLayers;
+		this.activeLayerId = nextLayers[0]!.id;
 	}
 
-	/** Layout exportable de la capa activa (+ tamaño de página). Sin imágenes. */
+	/**
+	 * Layout exportable. Raíz = capa inferior (compat); `layers` si hay más de una.
+	 * Sin imágenes.
+	 */
 	toLayoutJSON(): LayoutJSON {
-		const layer = this.getActiveLayer();
+		const layerPayloads: LayoutLayerJSON[] = this.layers.map((layer) => {
+			return {
+				name: layer.name,
+				visible: layer.visible,
+				...layer.toLayoutFields(),
+			};
+		});
+		const primary = layerPayloads[0]!;
 
 		return {
 			width: this.width,
 			height: this.height,
-			...layer.toLayoutFields(),
+			shapes: primary.shapes ?? [],
+			gridCols: primary.gridCols,
+			gridRows: primary.gridRows,
+			marginTop: primary.marginTop,
+			marginRight: primary.marginRight,
+			marginBottom: primary.marginBottom,
+			marginLeft: primary.marginLeft,
+			strokeWidth: primary.strokeWidth,
+			...(layerPayloads.length > 1 ? { layers: layerPayloads } : {}),
 		};
 	}
 }

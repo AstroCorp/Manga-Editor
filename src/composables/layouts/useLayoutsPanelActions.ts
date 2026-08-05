@@ -11,8 +11,7 @@ import type { PresetLayout } from '@/types/layouts';
 export const useLayoutsPanelActions = () => {
 	const editorStore = useEditorStore();
 	const layoutsStore = useLayoutsStore();
-	const { activePage, activeLayer, activeLayerHasDrawing } =
-		useActivePageLayout();
+	const { activePage, pageHasDrawing } = useActivePageLayout();
 	const { presets, presetsStatus, customLayouts } = storeToRefs(layoutsStore);
 
 	const {
@@ -33,8 +32,13 @@ export const useLayoutsPanelActions = () => {
 		return presetsStatus.value === PRESETS_LOAD_STATUS.Loading;
 	});
 
+	/** Confirmar si hay dibujo o más de una capa (el apply borra todo). */
+	const shouldConfirmApply = computed(() => {
+		return pageHasDrawing.value || activePage.value.layers.length > 1;
+	});
+
 	const applyMessage = computed(() => {
-		return `Replace the content of layer '${activeLayer.value.name}'?`;
+		return 'Replace all layers on this page with the selected layout?';
 	});
 
 	const applyLayout = (preset: PresetLayout) => {
@@ -42,7 +46,7 @@ export const useLayoutsPanelActions = () => {
 	};
 
 	const requestApply = (preset: PresetLayout) => {
-		if (activeLayerHasDrawing.value) {
+		if (shouldConfirmApply.value) {
 			requestPendingPreset(preset);
 
 			return;

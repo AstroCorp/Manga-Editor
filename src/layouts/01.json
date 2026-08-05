@@ -2,11 +2,18 @@
   "width": 1720,
   "height": 2580,
   "shapes": [],
-  "gridCols": 86,
-  "gridRows": 129,
-  "marginTop": 18,
-  "marginRight": 18,
-  "marginBottom": 18,
-  "marginLeft": 18,
-  "strokeWidth": 5
+  "layers": [
+    {
+      "name": "Layer 1",
+      "visible": true,
+      "shapes": [],
+      "gridCols": 86,
+      "gridRows": 129,
+      "marginTop": 18,
+      "marginRight": 18,
+      "marginBottom": 18,
+      "marginLeft": 18,
+      "strokeWidth": 5
+    }
+  ]
 }

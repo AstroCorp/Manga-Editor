@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
+import PagePreview from '@/components/page/PagePreview.vue';
+import type { Shape } from '@/models/Shape';
 
 const props = defineProps<{
 	name: string;
 	active: boolean;
 	visible: boolean;
 	canRemove: boolean;
+	width: number;
+	height: number;
+	shapes: Shape[];
 	dragging?: boolean;
 	dropTarget?: boolean;
 }>();
@@ -113,6 +118,23 @@ const onDragStart = (event: DragEvent) => {
 		>
 			<Icon icon="fluent:re-order-dots-vertical-24-regular" class="size-4" />
 		</span>
+
+		<button
+			type="button"
+			class="shrink-0 rounded-sm border border-slate-200 bg-white p-0 transition hover:border-blue-600/50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-blue-500/50"
+			:class="{
+				'border-blue-600/40 dark:border-blue-500/40': active,
+				'opacity-50': !visible,
+			}"
+			:aria-label="`Select ${name}`"
+			:title="name"
+			@click="$emit('select')"
+		>
+			<span class="block h-10 w-8 overflow-hidden" aria-hidden="true">
+				<PagePreview :width="width" :height="height" :shapes="shapes" />
+			</span>
+		</button>
+
 		<button
 			type="button"
 			class="inline-flex size-7 shrink-0 items-center justify-center rounded text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"

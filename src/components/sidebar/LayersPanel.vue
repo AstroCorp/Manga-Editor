@@ -2,7 +2,10 @@
 import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import LayerListItem from '@/components/sidebar/LayerListItem.vue';
+import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { useLayersPanelActions } from '@/composables/page/useLayersPanelActions';
+
+const { pageSize } = useActivePageLayout();
 
 const {
 	displayLayers,
@@ -60,6 +63,9 @@ const {
 					:active="layer.id === activeLayer.id"
 					:visible="layer.visible"
 					:can-remove="canRemove"
+					:width="pageSize.width"
+					:height="pageSize.height"
+					:shapes="layer.shapes"
 					:dragging="dragFromVisualIndex === visualIndex"
 					:drop-target="dropTargetVisualIndex === visualIndex"
 					@select="selectLayer(layer.id)"

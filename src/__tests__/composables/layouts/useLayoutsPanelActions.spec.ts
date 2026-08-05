@@ -79,6 +79,20 @@ describe('useLayoutsPanelActions', () => {
 		expect(applyPageLayout).toHaveBeenCalledExactlyOnceWith(preset.layout);
 	});
 
+	it('confirms apply when there are multiple layers even if empty', () => {
+		const mangaStore = useMangaStore();
+		const editorStore = useEditorStore();
+		const applyPageLayout = vi.spyOn(editorStore, 'applyPageLayout');
+		const { requestApply, pendingPreset } = useLayoutsPanelActions();
+		const preset = samplePreset('03');
+
+		mangaStore.addLayer();
+		requestApply(preset);
+
+		expect(pendingPreset.value).toEqual(preset);
+		expect(applyPageLayout).not.toHaveBeenCalled();
+	});
+
 	it('confirms custom layout deletion', () => {
 		const layoutsStore = useLayoutsStore();
 		const removeCustomLayout = vi.spyOn(layoutsStore, 'removeCustomLayout');

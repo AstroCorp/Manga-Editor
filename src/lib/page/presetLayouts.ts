@@ -1,6 +1,6 @@
 import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
-/** Type guard: width/height; shapes opcionales (se normalizan a []). */
+/** Type guard: width/height; shapes/layers opcionales. */
 export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
 	if (!value || typeof value !== 'object') {
 		return false;
@@ -12,7 +12,15 @@ export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
 		return false;
 	}
 
-	return data.shapes === undefined || Array.isArray(data.shapes);
+	if (data.shapes !== undefined && !Array.isArray(data.shapes)) {
+		return false;
+	}
+
+	if (data.layers !== undefined && !Array.isArray(data.layers)) {
+		return false;
+	}
+
+	return true;
 };
 
 const toLayoutJSON = (value: LayoutJSON): LayoutJSON => {
@@ -27,6 +35,7 @@ const toLayoutJSON = (value: LayoutJSON): LayoutJSON => {
 		marginBottom: value.marginBottom,
 		marginLeft: value.marginLeft,
 		strokeWidth: value.strokeWidth,
+		layers: value.layers,
 	};
 };
 

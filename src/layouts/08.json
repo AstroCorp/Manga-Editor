@@ -1,59 +1,66 @@
 {
   "width": 1720,
   "height": 2580,
-  "shapes": [
+  "shapes": [],
+  "layers": [
     {
-      "id": "b2cfd0f5-3bbb-44e0-a2bc-318024d6b1ab",
-      "points": [
+      "name": "Layer 1",
+      "visible": true,
+      "shapes": [
         {
-          "x": 1702,
-          "y": 18
+          "id": "b2cfd0f5-3bbb-44e0-a2bc-318024d6b1ab",
+          "points": [
+            {
+              "x": 1702,
+              "y": 18
+            },
+            {
+              "x": 1702,
+              "y": 634.125
+            },
+            {
+              "x": 18,
+              "y": 1250.25
+            },
+            {
+              "x": 18,
+              "y": 18
+            }
+          ],
+          "strokeWidth": 5,
+          "image": null
         },
         {
-          "x": 1702,
-          "y": 634.125
-        },
-        {
-          "x": 18,
-          "y": 1250.25
-        },
-        {
-          "x": 18,
-          "y": 18
+          "id": "51c5b7af-8984-4dc8-958c-9a1c68786907",
+          "points": [
+            {
+              "x": 1702,
+              "y": 654
+            },
+            {
+              "x": 18,
+              "y": 1270.125
+            },
+            {
+              "x": 18,
+              "y": 2562
+            },
+            {
+              "x": 1702,
+              "y": 2562
+            }
+          ],
+          "strokeWidth": 5,
+          "image": null
         }
       ],
-      "strokeWidth": 5,
-      "image": null
-    },
-    {
-      "id": "51c5b7af-8984-4dc8-958c-9a1c68786907",
-      "points": [
-        {
-          "x": 1702,
-          "y": 654
-        },
-        {
-          "x": 18,
-          "y": 1270.125
-        },
-        {
-          "x": 18,
-          "y": 2562
-        },
-        {
-          "x": 1702,
-          "y": 2562
-        }
-      ],
-      "strokeWidth": 5,
-      "image": null
+      "gridCols": 86,
+      "gridRows": 129,
+      "marginTop": 18,
+      "marginRight": 18,
+      "marginBottom": 18,
+      "marginLeft": 18,
+      "strokeWidth": 5
     }
-  ],
-  "gridCols": 86,
-  "gridRows": 129,
-  "marginTop": 18,
-  "marginRight": 18,
-  "marginBottom": 18,
-  "marginLeft": 18,
-  "strokeWidth": 5
+  ]
 }

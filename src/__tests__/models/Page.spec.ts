@@ -182,6 +182,86 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(page.getActiveLayer().shapes[0]?.strokeWidth).toBe(12);
 	});
 
+	it('applyLayout replaces every existing layer', () => {
+		const page = Page.createBlank(1);
+
+		page.addLayer();
+		page.addLayer();
+		expect(page.layers).toHaveLength(3);
+
+		page.applyLayout({
+			width: 600,
+			height: 900,
+			shapes: [
+				{
+					id: 'p1',
+					points: [
+						{ x: 0, y: 0 },
+						{ x: 10, y: 0 },
+						{ x: 10, y: 10 },
+					],
+					strokeWidth: 2,
+					image: null,
+				},
+			],
+		});
+
+		expect(page.layers).toHaveLength(1);
+		expect(page.getActiveLayer().shapes).toHaveLength(1);
+	});
+
+	it('applyLayout supports multi-layer payloads', () => {
+		const page = Page.createBlank(1);
+
+		page.applyLayout({
+			width: 600,
+			height: 900,
+			shapes: [],
+			layers: [
+				{
+					name: 'Base',
+					shapes: [
+						{
+							id: 'a',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 5, y: 0 },
+								{ x: 5, y: 5 },
+							],
+							strokeWidth: 2,
+							image: null,
+						},
+					],
+				},
+				{
+					name: 'Ink',
+					visible: false,
+					shapes: [
+						{
+							id: 'b',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 8, y: 0 },
+								{ x: 8, y: 8 },
+							],
+							strokeWidth: 2,
+							image: null,
+						},
+					],
+					strokeWidth: 4,
+				},
+			],
+		});
+
+		expect(page.layers).toHaveLength(2);
+		expect(page.layers[0]?.name).toBe('Base');
+		expect(page.layers[1]?.name).toBe('Ink');
+		expect(page.layers[1]?.visible).toBe(false);
+		expect(page.layers[1]?.strokeWidth).toBe(4);
+		expect(page.activeLayerId).toBe(page.layers[0]?.id);
+		expect(page.toLayoutJSON().layers).toHaveLength(2);
+	});
+
 	it('setSize resets to default layer and reclamps margins', () => {
 		const page = Page.createBlank(1);
 

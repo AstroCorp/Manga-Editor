@@ -11,7 +11,7 @@ import {
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
-import type { LayoutJSON } from '@/types/layouts';
+import type { LayoutLayerJSON } from '@/types/layouts';
 import type { LayerValue, PageMargins } from '@/types/page';
 
 export const DEFAULT_LAYER_NAME = 'Layer 1';
@@ -158,7 +158,11 @@ export class Layer {
 	}
 
 	/** Aplica geometría de layout (sin tamaño de página). */
-	applyLayoutContent(data: LayoutJSON, pageWidth: number, pageHeight: number) {
+	applyLayoutContent(
+		data: LayoutLayerJSON,
+		pageWidth: number,
+		pageHeight: number,
+	) {
 		const fields = resolveLayoutFields(data);
 		const layerStroke = clampStrokeWidth(fields.strokeWidth);
 
@@ -182,17 +186,9 @@ export class Layer {
 		});
 	}
 
-	toLayoutFields(): Pick<
-		LayoutJSON,
-		| 'shapes'
-		| 'gridCols'
-		| 'gridRows'
-		| 'marginTop'
-		| 'marginRight'
-		| 'marginBottom'
-		| 'marginLeft'
-		| 'strokeWidth'
-	> {
+	toLayoutFields(): Omit<LayoutLayerJSON, 'name' | 'visible'> & {
+		shapes: NonNullable<LayoutLayerJSON['shapes']>;
+	} {
 		return {
 			shapes: this.shapes.map((shape) => {
 				return {

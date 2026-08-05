@@ -1,63 +1,70 @@
 {
   "width": 1720,
   "height": 2580,
-  "shapes": [
+  "shapes": [],
+  "layers": [
     {
-      "id": "f4b6b4ad-bd5e-4aa0-b6c3-a3ec8c191090",
-      "points": [
+      "name": "Layer 1",
+      "visible": true,
+      "shapes": [
         {
-          "x": 18,
-          "y": 18
+          "id": "f4b6b4ad-bd5e-4aa0-b6c3-a3ec8c191090",
+          "points": [
+            {
+              "x": 18,
+              "y": 18
+            },
+            {
+              "x": 592.5411764705882,
+              "y": 18
+            },
+            {
+              "x": 1107.6470588235295,
+              "y": 2562
+            },
+            {
+              "x": 18,
+              "y": 2562
+            }
+          ],
+          "strokeWidth": 5,
+          "image": null
         },
         {
-          "x": 592.5411764705882,
-          "y": 18
-        },
-        {
-          "x": 1107.6470588235295,
-          "y": 2562
-        },
-        {
-          "x": 18,
-          "y": 2562
+          "id": "eb0e903f-13f5-406c-a2d9-6307092c60c1",
+          "points": [
+            {
+              "x": 1702,
+              "y": 2562
+            },
+            {
+              "x": 1127.4588235294118,
+              "y": 2562
+            },
+            {
+              "x": 612.3529411764706,
+              "y": 18
+            },
+            {
+              "x": 1702,
+              "y": 18
+            },
+            {
+              "x": 1702,
+              "y": 2542.125
+            }
+          ],
+          "strokeWidth": 5,
+          "image": null
         }
       ],
-      "strokeWidth": 5,
-      "image": null
-    },
-    {
-      "id": "eb0e903f-13f5-406c-a2d9-6307092c60c1",
-      "points": [
-        {
-          "x": 1702,
-          "y": 2562
-        },
-        {
-          "x": 1127.4588235294118,
-          "y": 2562
-        },
-        {
-          "x": 612.3529411764706,
-          "y": 18
-        },
-        {
-          "x": 1702,
-          "y": 18
-        },
-        {
-          "x": 1702,
-          "y": 2542.125
-        }
-      ],
-      "strokeWidth": 5,
-      "image": null
+      "gridCols": 86,
+      "gridRows": 129,
+      "marginTop": 18,
+      "marginRight": 18,
+      "marginBottom": 18,
+      "marginLeft": 18,
+      "strokeWidth": 5
     }
-  ],
-  "gridCols": 86,
-  "gridRows": 129,
-  "marginTop": 18,
-  "marginRight": 18,
-  "marginBottom": 18,
-  "marginLeft": 18,
-  "strokeWidth": 5
+  ]
 }

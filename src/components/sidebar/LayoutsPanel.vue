@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import PagePreview from '@/components/page/PagePreview.vue';
 import { useLayoutsPanelActions } from '@/composables/layouts/useLayoutsPanelActions';
+import { layoutPreviewShapes } from '@/lib/page/layoutPreviewShapes';
 
 const PRESET_SKELETON_COUNT = 6;
 
@@ -95,7 +96,7 @@ const onFileChange = (event: Event) => {
 								<PagePreview
 									:width="preset.layout.width"
 									:height="preset.layout.height"
-									:shapes="preset.layout.shapes ?? []"
+									:shapes="layoutPreviewShapes(preset.layout)"
 								/>
 							</span>
 						</button>
@@ -145,7 +146,7 @@ const onFileChange = (event: Event) => {
 								<PagePreview
 									:width="preset.layout.width"
 									:height="preset.layout.height"
-									:shapes="preset.layout.shapes ?? []"
+									:shapes="layoutPreviewShapes(preset.layout)"
 								/>
 							</span>
 						</button>
