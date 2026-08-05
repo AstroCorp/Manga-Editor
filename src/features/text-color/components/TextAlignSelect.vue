@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import CustomSelect from '@/components/ui/CustomSelect.vue';
 import {
 	TEXT_ALIGN_OPTIONS,
+	normalizeTextAlign,
 	textAlignIconName,
 } from '@/lib/fabric/textStyles';
 import type { TextTextAlign } from '@/types/page';
@@ -26,8 +27,12 @@ const options = computed((): ReadonlyArray<CustomSelectOption<TextTextAlign>> =>
 	});
 });
 
-const onUpdate = (value: TextTextAlign) => {
-	emit('update:modelValue', value);
+const onUpdate = (value: string) => {
+	const next = normalizeTextAlign(value);
+
+	if (next) {
+		emit('update:modelValue', next);
+	}
 };
 </script>
 
@@ -35,7 +40,7 @@ const onUpdate = (value: TextTextAlign) => {
 	<CustomSelect
 		:model-value="props.modelValue"
 		:options="options"
-		aria-label="Text align"
+		label="Text align"
 		title="Text align"
 		@update:model-value="onUpdate"
 	/>

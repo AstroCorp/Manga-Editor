@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends string">
+<script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { Icon } from '@iconify/vue';
@@ -6,20 +6,20 @@ import type { CustomSelectOption } from '@/types/ui';
 
 const props = withDefaults(
 	defineProps<{
-		modelValue: T;
-		options: ReadonlyArray<CustomSelectOption<T>>;
-		ariaLabel: string;
+		modelValue: string;
+		options: ReadonlyArray<CustomSelectOption>;
+		label: string;
 		title?: string;
-		listAriaLabel?: string;
+		listLabel?: string;
 	}>(),
 	{
 		title: undefined,
-		listAriaLabel: undefined,
+		listLabel: undefined,
 	},
 );
 
 const emit = defineEmits<{
-	'update:modelValue': [value: T];
+	'update:modelValue': [value: string];
 }>();
 
 const root = ref<HTMLElement | null>(null);
@@ -28,10 +28,9 @@ const listbox = ref<HTMLElement | null>(null);
 const open = ref(false);
 const activeIndex = ref(0);
 
-const resolvedListAriaLabel = computed(() => {
-	return props.listAriaLabel ?? `${props.ariaLabel} options`;
+const resolvedListLabel = computed(() => {
+	return props.listLabel ?? `${props.label} options`;
 });
-
 const selectedOption = computed(() => {
 	return (
 		props.options.find((option) => {
@@ -77,7 +76,7 @@ const close = () => {
 	trigger.value?.focus();
 };
 
-const selectOption = (value: T) => {
+const selectOption = (value: string) => {
 	emit('update:modelValue', value);
 	close();
 };
@@ -122,7 +121,7 @@ const onListKeydown = (event: KeyboardEvent) => {
 	}
 };
 
-const optionClass = (value: T, index: number) => {
+const optionClass = (value: string, index: number) => {
 	const selected = value === props.modelValue;
 	const active = index === activeIndex.value;
 
@@ -144,8 +143,8 @@ const optionClass = (value: T, index: number) => {
 			ref="trigger"
 			type="button"
 			class="inline-flex h-9 items-center gap-1 rounded-md px-1.5 text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
-			:title="title ?? ariaLabel"
-			:aria-label="ariaLabel"
+			:title="title ?? label"
+			:aria-label="label"
 			aria-haspopup="listbox"
 			:aria-expanded="open"
 			@click="toggleOpen"
@@ -175,7 +174,7 @@ const optionClass = (value: T, index: number) => {
 			class="absolute top-full left-0 z-40 mt-1 min-w-full overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
 			role="listbox"
 			tabindex="-1"
-			:aria-label="resolvedListAriaLabel"
+			:aria-label="resolvedListLabel"
 			@keydown="onListKeydown"
 		>
 			<li

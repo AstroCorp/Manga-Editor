@@ -14,7 +14,7 @@ describe('CustomSelect', () => {
 			props: {
 				modelValue: 'b',
 				options: [...OPTIONS],
-				ariaLabel: 'Pick letter',
+				label: 'Pick letter',
 			},
 			global: {
 				stubs: {
@@ -41,7 +41,7 @@ describe('CustomSelect', () => {
 			props: {
 				modelValue: 'a',
 				options: [...OPTIONS],
-				ariaLabel: 'Pick letter',
+				label: 'Pick letter',
 			},
 			global: {
 				stubs: {
@@ -62,7 +62,7 @@ describe('CustomSelect', () => {
 			props: {
 				modelValue: 'a',
 				options: [...OPTIONS],
-				ariaLabel: 'Pick letter',
+				label: 'Pick letter',
 			},
 			global: {
 				stubs: {
