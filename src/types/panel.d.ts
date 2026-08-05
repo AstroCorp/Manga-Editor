@@ -23,6 +23,12 @@ export type PageOverlayPosition = {
 	top: number;
 };
 
+export type OverlayPlacement = 'above' | 'below';
+
+export type PageOverlayAnchor = PageOverlayPosition & {
+	placement: OverlayPlacement;
+};
+
 export type GridLineDelta = {
 	x: number;
 	y: number;
@@ -40,6 +46,7 @@ export type ShapeActionMenuProps = {
 	whiteFill: boolean;
 	left: number | null;
 	top: number | null;
+	placement: OverlayPlacement;
 };
 
 export type ShapeActionMenuEmits = {
@@ -48,4 +55,26 @@ export type ShapeActionMenuEmits = {
 	placeImage: [file: File];
 	toggleGrayscale: [];
 	toggleWhiteFill: [];
+};
+
+export type TextColorToolbarProps = {
+	colors: string[];
+	bold: boolean;
+	italic: boolean;
+	underline: boolean;
+	linethrough: boolean;
+	fontSize: number | null;
+	dominantFontSize: number;
+	left: number | null;
+	top: number | null;
+	placement: OverlayPlacement;
+};
+
+export type TextColorToolbarEmits = {
+	setColor: [color: string];
+	toggleBold: [];
+	toggleItalic: [];
+	toggleUnderline: [];
+	toggleLinethrough: [];
+	setFontSize: [fontSize: number];
 };

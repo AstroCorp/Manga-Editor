@@ -14,6 +14,7 @@ export type FeatureActions = {
 	syncInteractionMode: () => void;
 	strokePath: ShallowRef<GridPoint[]>;
 	clearShapeMenu: () => void;
+	clearTextColorMenu: () => void;
 };
 
 export type FeatureActionsBus = FeatureActions & {

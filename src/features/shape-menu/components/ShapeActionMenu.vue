@@ -46,7 +46,8 @@ const onFileChange = (event: Event) => {
 <template>
 	<div
 		v-if="style"
-		class="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+		class="absolute z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+		:class="placement === 'above' ? '-translate-y-full' : undefined"
 		:style="style"
 		role="menu"
 		aria-label="Shape actions"

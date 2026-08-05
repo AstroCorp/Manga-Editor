@@ -1,6 +1,16 @@
 import { Textbox } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
-import type { TextBlock } from '@/models/TextBlock';
+import {
+	isBoldWeight,
+	normalizeFontStyle,
+	stylesFromFabric,
+	stylesToFabric,
+	toHexColor,
+} from '@/lib/fabric/textStyles';
+import {
+	DEFAULT_TEXT_FONT_SIZE,
+	type TextBlock,
+} from '@/models/TextBlock';
 import type { PageTextObject } from '@/types/fabric';
 import type { TextBlockPatch } from '@/types/page';
 
@@ -17,12 +27,17 @@ export const textBlockToFabric = (
 	},
 ): PageTextObject => {
 	const interactive = options.interactive;
+	const fabricStyles = stylesToFabric(text.styles);
 	const textbox = new Textbox(text.content, {
 		left: text.left,
 		top: text.top,
 		width: text.width,
 		fontSize: text.fontSize,
 		fill: text.fill,
+		fontWeight: text.fontWeight,
+		fontStyle: text.fontStyle,
+		underline: text.underline,
+		linethrough: text.linethrough,
 		angle: text.angle,
 		fontFamily: 'Arial, sans-serif',
 		editable: true,
@@ -36,6 +51,7 @@ export const textBlockToFabric = (
 		hasControls: interactive,
 		objectCaching: false,
 		splitByGrapheme: false,
+		...(fabricStyles ? { styles: fabricStyles } : {}),
 	}) as PageTextObject;
 
 	textbox.set({
@@ -53,7 +69,14 @@ export const textBlockFromFabric = (textbox: PageTextObject): TextBlockPatch => 
 		left: textbox.left ?? 0,
 		top: textbox.top ?? 0,
 		width: textbox.width ?? 0,
-		fontSize: textbox.fontSize ?? 24,
+		fontSize: textbox.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
 		angle: textbox.angle ?? 0,
+		fill: toHexColor(textbox.fill),
+		fontWeight: isBoldWeight(textbox.fontWeight) ? 'bold' : 'normal',
+		fontStyle:
+			normalizeFontStyle(textbox.fontStyle) === 'italic' ? 'italic' : 'normal',
+		underline: Boolean(textbox.underline),
+		linethrough: Boolean(textbox.linethrough),
+		styles: stylesFromFabric(textbox.styles) ?? null,
 	};
 };

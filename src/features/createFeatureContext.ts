@@ -31,6 +31,7 @@ export const createFeatureContext = (
 		syncInteractionMode: () => undefined,
 		strokePath: shallowRef<GridPoint[]>([]),
 		clearShapeMenu: () => undefined,
+		clearTextColorMenu: () => undefined,
 		register(partial: Partial<FeatureActions>) {
 			Object.assign(actions, partial);
 		},

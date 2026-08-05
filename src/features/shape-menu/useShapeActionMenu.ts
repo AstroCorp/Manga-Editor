@@ -9,6 +9,7 @@ import {
 	isPanelImage,
 	removeObjectsByPanelId,
 } from '@/lib/fabric/isGuide';
+import { getObjectOverlayAnchor } from '@/lib/fabric/overlayAnchor';
 import {
 	hasGrayscaleFilter,
 	setGrayscaleFilter,
@@ -19,9 +20,11 @@ import {
 	placeImageFileInPanel,
 } from '@/lib/fabric/panelImagePlace';
 import { useMangaStore } from '@/stores/manga';
-import type { PageOverlayPosition, ShapeActionMenuDeps } from '@/types/panel';
-
-const MENU_GAP = 8;
+import type {
+	OverlayPlacement,
+	PageOverlayPosition,
+	ShapeActionMenuDeps,
+} from '@/types/panel';
 
 export const useShapeActionMenu = ({
 	fabricCanvas,
@@ -34,6 +37,7 @@ export const useShapeActionMenu = ({
 	const isGrayscale = shallowRef(false);
 	const whiteFill = shallowRef(false);
 	const position = shallowRef<PageOverlayPosition | null>(null);
+	const placement = shallowRef<OverlayPlacement>('above');
 
 	const clearMenu = () => {
 		panelId.value = null;
@@ -41,6 +45,7 @@ export const useShapeActionMenu = ({
 		isGrayscale.value = false;
 		whiteFill.value = false;
 		position.value = null;
+		placement.value = 'above';
 	};
 
 	const resolvePanelId = (active: FabricObject | null): string | null => {
@@ -74,19 +79,17 @@ export const useShapeActionMenu = ({
 			return;
 		}
 
-		const bounds = active.getBoundingRect();
 		const shape = mangaStore.shapes.find((item) => {
 			return item.id === nextPanelId;
 		});
+		const anchor = getObjectOverlayAnchor(active);
 
 		panelId.value = nextPanelId;
 		hasImage.value = Boolean(shape?.image);
 		isGrayscale.value = Boolean(shape?.image?.grayscale);
 		whiteFill.value = Boolean(shape?.whiteFill);
-		position.value = {
-			left: bounds.left + bounds.width / 2,
-			top: Math.max(0, bounds.top - MENU_GAP),
-		};
+		position.value = { left: anchor.left, top: anchor.top };
+		placement.value = anchor.placement;
 	};
 
 	const deleteShape = () => {
@@ -252,6 +255,7 @@ export const useShapeActionMenu = ({
 		isGrayscale,
 		whiteFill,
 		position,
+		placement,
 		deleteShape,
 		clearImage,
 		placeImage,

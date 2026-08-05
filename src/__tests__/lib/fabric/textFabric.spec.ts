@@ -83,6 +83,16 @@ describe('textFabric', () => {
 			width: 180,
 			fontSize: 28,
 			angle: 33,
+			fill: '#112233',
+			fontWeight: 'bold',
+			fontStyle: 'italic',
+			underline: true,
+			linethrough: false,
+			styles: {
+				0: {
+					0: { fill: '#ff0000', fontWeight: 'bold' },
+				},
+			},
 		} as unknown as PageTextObject;
 
 		expect(textBlockFromFabric(fabricText)).toEqual({
@@ -92,6 +102,128 @@ describe('textFabric', () => {
 			width: 180,
 			fontSize: 28,
 			angle: 33,
+			fill: '#112233',
+			fontWeight: 'bold',
+			fontStyle: 'italic',
+			underline: true,
+			linethrough: false,
+			styles: {
+				'0': {
+					'0': { fill: '#ff0000', fontWeight: 'bold' },
+				},
+			},
+		});
+	});
+
+	it('clears styles when fabric has none', () => {
+		const fabricText = {
+			text: 'Plain',
+			left: 0,
+			top: 0,
+			width: 100,
+			fontSize: 24,
+			angle: 0,
+			fill: '#000000',
+			fontWeight: 'normal',
+			fontStyle: 'normal',
+			underline: false,
+			linethrough: false,
+			styles: {},
+		} as unknown as PageTextObject;
+
+		expect(textBlockFromFabric(fabricText).styles).toBeNull();
+	});
+
+	it('maps format props and char styles to fabric', () => {
+		const text = TextBlock.create(5, 6);
+
+		text.applyPatch({
+			fontWeight: 'bold',
+			fontStyle: 'italic',
+			underline: true,
+			linethrough: true,
+			fill: '#abcdef',
+			styles: {
+				'0': {
+					'0': { fill: '#ff0000', fontSize: 18 },
+				},
+			},
+		});
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+
+		expect(fabricText.fontWeight).toBe('bold');
+		expect(fabricText.fontStyle).toBe('italic');
+		expect(fabricText.underline).toBe(true);
+		expect(fabricText.linethrough).toBe(true);
+		expect(fabricText.fill).toBe('#abcdef');
+		expect(fabricText.styles).toEqual({
+			0: {
+				0: { fill: '#ff0000', fontSize: 18 },
+			},
+		});
+	});
+
+	it('normalizes numeric weight, oblique style and empty fill', () => {
+		const fabricText = {
+			text: 'Styled',
+			left: 1,
+			top: 2,
+			width: 90,
+			fontSize: 16,
+			angle: 0,
+			fill: '',
+			fontWeight: 700,
+			fontStyle: 'oblique',
+			underline: false,
+			linethrough: true,
+			styles: {},
+		} as unknown as PageTextObject;
+
+		expect(textBlockFromFabric(fabricText)).toMatchObject({
+			fill: '#000000',
+			fontWeight: 'bold',
+			fontStyle: 'italic',
+			linethrough: true,
+			styles: null,
+		});
+	});
+
+	it('round-trips a formatted text block through fabric', () => {
+		const text = TextBlock.create(12, 24);
+
+		text.applyPatch({
+			content: 'Hello',
+			fontWeight: 'bold',
+			fontStyle: 'italic',
+			underline: true,
+			styles: {
+				'0': {
+					'1': { fill: '#00ff00' },
+				},
+			},
+		});
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+		const patch = textBlockFromFabric(fabricText);
+		const restored = TextBlock.create(0, 0);
+
+		restored.applyPatch(patch);
+
+		expect(restored.content).toBe('Hello');
+		expect(restored.fontWeight).toBe('bold');
+		expect(restored.fontStyle).toBe('italic');
+		expect(restored.underline).toBe(true);
+		expect(restored.styles).toEqual({
+			'0': {
+				'1': { fill: '#00ff00' },
+			},
 		});
 	});
 });

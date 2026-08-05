@@ -1,0 +1,270 @@
+import { describe, expect, it } from 'vitest';
+import { mount } from '@vue/test-utils';
+import TextColorToolbar from '@/features/text-color/components/TextColorToolbar.vue';
+
+const baseProps = {
+	colors: ['#112233'],
+	bold: false,
+	italic: false,
+	underline: false,
+	linethrough: false,
+	fontSize: 24 as number | null,
+	dominantFontSize: 24,
+	left: 100,
+	top: 50,
+	placement: 'above' as const,
+};
+
+describe('TextColorToolbar', () => {
+	it('emits setFontSize from spinner buttons', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Increase font size"]').trigger('click');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([25]);
+
+		await wrapper.get('button[aria-label="Decrease font size"]').trigger('click');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([23]);
+	});
+
+	it('emits setFontSize from the number input value', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Font size"]');
+
+		await input.setValue('36');
+		await input.trigger('input');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([36]);
+	});
+
+	it('ignores out-of-range font size while typing', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Font size"]');
+
+		await input.setValue('3');
+		await input.trigger('input');
+
+		expect(wrapper.emitted('setFontSize')).toBeUndefined();
+	});
+
+	it('emits format toggles and color changes', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				bold: true,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Bold"]').trigger('click');
+		await wrapper.get('button[aria-label="Italic"]').trigger('click');
+		await wrapper.get('button[aria-label="Underline"]').trigger('click');
+		await wrapper.get('button[aria-label="Strikethrough"]').trigger('click');
+		await wrapper.get('input[aria-label="Text color"]').setValue('#ff0000');
+		await wrapper.get('input[aria-label="Text color"]').trigger('input');
+
+		expect(wrapper.emitted('toggleBold')).toHaveLength(1);
+		expect(wrapper.emitted('toggleItalic')).toHaveLength(1);
+		expect(wrapper.emitted('toggleUnderline')).toHaveLength(1);
+		expect(wrapper.emitted('toggleLinethrough')).toHaveLength(1);
+		expect(wrapper.emitted('setColor')?.at(-1)).toEqual(['#ff0000']);
+		expect(wrapper.get('button[aria-label="Bold"]').attributes('aria-pressed')).toBe(
+			'true',
+		);
+	});
+
+	it('commits font size on blur and Enter', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Font size"]');
+
+		await input.setValue('40');
+		await input.trigger('change');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([40]);
+
+		await input.setValue('42');
+		await input.trigger('keydown', { key: 'Enter' });
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([42]);
+	});
+
+	it('reverts the draft when committing mix without a new value', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				fontSize: null,
+				dominantFontSize: 18,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Font size (mixed)"]');
+
+		await input.setValue('mix');
+		await input.trigger('blur');
+
+		expect((input.element as HTMLInputElement).value).toBe('mix');
+		expect(wrapper.emitted('setFontSize')).toBeUndefined();
+	});
+
+	it('clamps font size nudges to min and max', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				fontSize: 9,
+				dominantFontSize: 9,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Decrease font size"]').trigger('click');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([8]);
+
+		await wrapper.setProps({ fontSize: 199, dominantFontSize: 199 });
+		await wrapper.get('button[aria-label="Increase font size"]').trigger('click');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([200]);
+	});
+
+	it('renders a multi-color swatch background', () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				colors: ['#ff0000', '#00ff00'],
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const swatch = wrapper.get('span[aria-hidden="true"]');
+
+		expect(swatch.attributes('style')).toContain('conic-gradient');
+	});
+
+	it('places the toolbar below without the above translate class', () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				placement: 'below',
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		expect(wrapper.get('[role="toolbar"]').classes()).not.toContain(
+			'-translate-y-full',
+		);
+	});
+
+	it('shows mix and nudges from the dominant font size', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				fontSize: null,
+				dominantFontSize: 18,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Font size (mixed)"]');
+
+		expect((input.element as HTMLInputElement).value).toBe('mix');
+
+		await wrapper.get('button[aria-label="Increase font size"]').trigger('click');
+
+		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([19]);
+	});
+
+	it('replaces mix with the dominant size on focus', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				fontSize: null,
+				dominantFontSize: 22,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Font size (mixed)"]');
+
+		await input.trigger('focus');
+
+		expect((input.element as HTMLInputElement).value).toBe('22');
+	});
+
+	it('hides when position is missing', () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				left: null,
+				top: null,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		expect(wrapper.find('[role="toolbar"]').exists()).toBe(false);
+	});
+});

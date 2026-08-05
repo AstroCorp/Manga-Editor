@@ -10,6 +10,7 @@ describe('createFeatureContext', () => {
 			cancelStroke: () => undefined,
 			exportDataUrl: () => null,
 			resetZoomView: () => undefined,
+			addSimpleText: () => undefined,
 		};
 		const afterPageApplyHooks: Array<() => void> = [];
 		const overlays: Array<{ id: string }> = [];

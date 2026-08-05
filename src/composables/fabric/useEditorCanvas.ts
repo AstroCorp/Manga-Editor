@@ -60,6 +60,7 @@ export const useEditorCanvas = (
 	const discardSelection = () => {
 		fabricCanvas.value?.discardActiveObject();
 		ctx.actions.clearShapeMenu();
+		ctx.actions.clearTextColorMenu();
 	};
 
 	const applyActivePage = async () => {

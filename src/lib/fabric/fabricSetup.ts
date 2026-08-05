@@ -8,8 +8,8 @@ import {
 } from 'fabric';
 import { ACCENT_COLOR } from '@/lib/fabric/fabricColors';
 
-const ROTATE_ICON_SIZE = 30;
-const ROTATE_OFFSET_Y = 44;
+export const ROTATE_ICON_SIZE = 30;
+export const ROTATE_OFFSET_Y = 44;
 
 const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: ControlRenderingStyleOverride, fabricObject: FabricObject) => {
 	const size = ROTATE_ICON_SIZE;

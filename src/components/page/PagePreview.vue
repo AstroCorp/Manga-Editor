@@ -102,6 +102,13 @@ const clipPathId = (index: number) => {
 			:y="text.y"
 			:font-size="text.fontSize"
 			:fill="text.fill"
+			:font-weight="text.fontWeight"
+			:font-style="text.fontStyle"
+			:text-decoration="
+				[text.underline ? 'underline' : '', text.linethrough ? 'line-through' : '']
+					.filter(Boolean)
+					.join(' ') || undefined
+			"
 			:transform="rotateTransform(text.angle, text.originX, text.originY)"
 			font-family="Arial, sans-serif"
 			xml:space="preserve"

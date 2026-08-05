@@ -27,6 +27,7 @@ export const shapeMenuFeature: CanvasFeature = {
 					whiteFill: api.whiteFill.value,
 					left: stage.left,
 					top: stage.top,
+					placement: api.placement.value,
 				};
 			}),
 			listeners: {
