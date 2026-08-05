@@ -93,7 +93,7 @@ const onDragStart = (event: DragEvent) => {
 
 <template>
 	<div
-		class="group relative flex min-w-18 flex-col items-stretch rounded-md border border-slate-200 bg-slate-50/70 text-slate-900 transition hover:bg-blue-50/60 dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-slate-100 dark:hover:bg-blue-950/60"
+		class="group relative flex w-18 shrink-0 flex-col items-stretch rounded-md border border-slate-200 bg-slate-50/70 text-slate-900 transition hover:bg-blue-50/60 dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-slate-100 dark:hover:bg-blue-950/60"
 		:class="{
 			'border-blue-600 bg-blue-50 text-blue-600 ring-1 ring-blue-600 ring-inset dark:border-blue-500 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-500':
 				active,
@@ -156,13 +156,13 @@ const onDragStart = (event: DragEvent) => {
 		<button
 			v-else
 			type="button"
-			class="mx-1 mb-2 max-w-18 truncate bg-transparent px-1.5 py-1 text-center text-sm leading-snug text-inherit transition hover:text-blue-600 dark:hover:text-blue-400"
+			class="mx-1 mb-2 block w-[calc(100%-0.5rem)] overflow-hidden bg-transparent px-1.5 py-1 text-center text-sm leading-snug text-inherit transition hover:text-blue-600 dark:hover:text-blue-400"
 			:class="editing ? 'cursor-default' : 'cursor-grab'"
-			:title="`${name} (double-click to rename)`"
+			:title="name"
 			@click="$emit('select')"
 			@dblclick.stop.prevent="startEdit"
 		>
-			{{ name }}
+			<span class="block truncate">{{ name }}</span>
 		</button>
 
 		<button

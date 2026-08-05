@@ -17,11 +17,13 @@ export type FabricObjectType = 'panel' | 'panelImage';
 export type PanelPolygon = Polygon & {
 	objectType?: FabricObjectType;
 	panelId?: string;
+	layerId?: string;
 };
 
 export type PanelLikeObject = FabricObject & {
 	objectType?: FabricObjectType;
 	panelId?: string;
+	layerId?: string;
 	isGuide?: boolean;
 };
 

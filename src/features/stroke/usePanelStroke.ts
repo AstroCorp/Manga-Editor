@@ -15,6 +15,7 @@ import {
 import { shapeToPolygon } from '@/lib/fabric/shapeFabric';
 import {
 	collectPanelIdsWithImage,
+	getLayerId,
 	getPanelId,
 	isGuide,
 	isPanel,
@@ -59,6 +60,7 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 		}
 
 		const drawing = path.value.length > 0;
+		const activeLayerId = mangaStore.activeLayer.id;
 		const filledPanelIds = drawing
 			? new Set<string>()
 			: collectPanelIdsWithImage(canvas);
@@ -76,8 +78,10 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 				return;
 			}
 
-			// En dibujo, el resto del canvas no debe “comerse” los clicks.
-			if (drawing) {
+			const onActiveLayer = getLayerId(object) === activeLayerId;
+
+			// En dibujo / capas inactivas: no deben “comerse” los clicks.
+			if (drawing || !onActiveLayer) {
 				object.selectable = false;
 				object.evented = false;
 
@@ -334,7 +338,10 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 
 		mangaStore.addShape(shape);
 
-		const panel = shapeToPolygon(shape);
+		const panel = shapeToPolygon(shape, {
+			layerId: mangaStore.activeLayer.id,
+			interactive: true,
+		});
 
 		canvas.add(panel);
 		canvas.bringObjectToFront(panel);

@@ -72,7 +72,7 @@ const {
 				:can-remove="canRemove"
 				:width="page.width"
 				:height="page.height"
-				:shapes="page.shapes"
+				:shapes="page.getVisibleShapes()"
 				:dragging="dragFromIndex === index"
 				:drop-target="
 					dropTargetIndex === index && dragFromIndex !== index

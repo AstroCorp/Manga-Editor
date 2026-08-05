@@ -70,9 +70,16 @@ export const clonePanelClip = async (panel: FabricObject): Promise<FabricObject>
  * Crea FabricImage con clipPath = clon del panel (recorte a la forma).
  * El hit-test usa el polígono del panel (el bbox de la imagen suele sobresalir del clip).
  */
-export const shapeImageToFabric = async (shape: Shape, image: ShapeImage, panel: FabricObject): Promise<FabricImage> => {
+export const shapeImageToFabric = async (
+	shape: Shape,
+	image: ShapeImage,
+	panel: FabricObject,
+	options?: { interactive?: boolean },
+): Promise<FabricImage> => {
 	const fabricImage = await FabricImage.fromURL(image.src);
 	const clip = await clonePanelClip(panel);
+	const interactive = options?.interactive ?? true;
+	const layerId = panel.get('layerId');
 
 	fabricImage.set({
 		left: image.left,
@@ -81,16 +88,16 @@ export const shapeImageToFabric = async (shape: Shape, image: ShapeImage, panel:
 		originY: image.originY,
 		scaleX: image.scaleX,
 		scaleY: image.scaleY,
-		selectable: true,
-		evented: true,
-		hasControls: true,
-		lockMovementX: false,
-		lockMovementY: false,
+		selectable: interactive,
+		evented: interactive,
+		hasControls: interactive,
+		lockMovementX: !interactive,
+		lockMovementY: !interactive,
 		clipPath: clip,
-		// Fabric 7 hit-testea por bbox; con clip el píxel fuera de la forma es transparente.
 		perPixelTargetFind: true,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId: shape.id,
+		...(typeof layerId === 'string' ? { layerId } : {}),
 	});
 
 	bindPanelImageHitTest(fabricImage, panel);

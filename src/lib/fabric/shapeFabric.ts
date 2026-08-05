@@ -8,8 +8,20 @@ import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
 
-export const shapeToPolygon = (shape: Shape): PanelPolygon => {
+type ShapeToPolygonOptions = {
+	layerId: string;
+	interactive: boolean;
+};
+
+export const shapeToPolygon = (
+	shape: Shape,
+	options: ShapeToPolygonOptions = {
+		layerId: 'layer',
+		interactive: true,
+	},
+): PanelPolygon => {
 	const hasImage = Boolean(shape.image);
+	const interactive = options.interactive && !hasImage;
 	const polygon = new Polygon(
 		shape.points.map((point) => {
 			return { x: point.x, y: point.y };
@@ -18,17 +30,16 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 			fill: PANEL_FILL,
 			stroke: PANEL_STROKE_COLOR,
 			strokeWidth: shape.strokeWidth,
-			selectable: !hasImage,
-			evented: !hasImage,
+			selectable: interactive,
+			evented: interactive,
 			lockMovementX: true,
 			lockMovementY: true,
 			lockRotation: true,
 			lockScalingX: true,
 			lockScalingY: true,
 			hasControls: false,
-			hoverCursor: 'pointer',
+			hoverCursor: interactive ? 'pointer' : 'default',
 			objectCaching: true,
-			// Hit-test por forma real, no por bounding box (permite dibujar en huecos cóncavos).
 			perPixelTargetFind: true,
 		},
 	) as PanelPolygon;
@@ -36,16 +47,19 @@ export const shapeToPolygon = (shape: Shape): PanelPolygon => {
 	polygon.set({
 		objectType: FABRIC_OBJECT_TYPE.Panel,
 		panelId: shape.id,
+		layerId: options.layerId,
 	});
 
 	return polygon;
 };
 
-/** Vacía el canvas y pinta shapes (+ imágenes) desde el dominio. */
-export const hydrateCanvasFromPage = async (canvas: Canvas, page: Page): Promise<void> => {
+/** Vacía el canvas y pinta capas visibles (+ imágenes) desde el dominio. */
+export const hydrateCanvasFromPage = async (
+	canvas: Canvas,
+	page: Page,
+): Promise<void> => {
 	canvas.setDimensions({ width: page.width, height: page.height });
 
-	// Incluye draft/rubber (línea azul discontinua): no deben sobrevivir un cambio de página.
 	canvas
 		.getObjects()
 		.slice()
@@ -55,22 +69,36 @@ export const hydrateCanvasFromPage = async (canvas: Canvas, page: Page): Promise
 
 	canvas.backgroundColor = '#ffffff';
 
-	for (const shape of page.shapes) {
-		const polygon = shapeToPolygon(shape);
+	const activeLayerId = page.activeLayerId;
 
-		canvas.add(polygon);
+	for (const layer of page.layers) {
+		if (!layer.visible) {
+			continue;
+		}
 
-		if (shape.image) {
-			const fabricImage = await shapeImageToFabric(
-				shape,
-				shape.image,
-				polygon,
-			);
+		const interactive = layer.id === activeLayerId;
 
-			canvas.add(fabricImage);
+		for (const shape of layer.shapes) {
+			const polygon = shapeToPolygon(shape, {
+				layerId: layer.id,
+				interactive,
+			});
+
+			canvas.add(polygon);
+
+			if (shape.image) {
+				const fabricImage = await shapeImageToFabric(
+					shape,
+					shape.image,
+					polygon,
+					{ interactive },
+				);
+
+				canvas.add(fabricImage);
+			}
 		}
 	}
 
-	stackPageContent(canvas);
+	stackPageContent(canvas, page.visibleLayerIds());
 	canvas.requestRenderAll();
 };

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import ConfigPanel from '@/components/sidebar/ConfigPanel.vue';
 import LayoutsPanel from '@/components/sidebar/LayoutsPanel.vue';
+import LayersPanel from '@/components/sidebar/LayersPanel.vue';
 import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
 import type { SidebarTab, SidebarTabDef } from '@/types/sidebar';
 
@@ -18,6 +19,12 @@ const tabs: SidebarTabDef[] = [
 		label: 'Layouts',
 		icon: 'fluent:grid-24-regular',
 		panel: LayoutsPanel,
+	},
+	{
+		id: SIDEBAR_TAB.Layers,
+		label: 'Layers',
+		icon: 'fluent:layer-24-regular',
+		panel: LayersPanel,
 	},
 ];
 

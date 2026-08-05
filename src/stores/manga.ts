@@ -1,6 +1,8 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
+import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
 import { Page } from '@/models/Page';
+import type { Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { PageLayoutMetrics } from '@/types/geometry';
@@ -14,8 +16,8 @@ export const useMangaStore = defineStore('manga', () => {
 	const activePageId = ref(firstPage.id);
 
 	/**
-	 * Sube cuando hay que vaciar el dibujo del canvas
-	 * (cambio de tamaño, rejilla o márgenes).
+	 * Sube cuando hay que rehidratar el canvas
+	 * (tamaño, capa activa, rejilla/márgenes, layouts…).
 	 */
 	const contentResetEpoch = ref(0);
 
@@ -25,10 +27,6 @@ export const useMangaStore = defineStore('manga', () => {
 		});
 	};
 
-	/**
-	 * Siempre hay ≥1 página y activePageId apunta a una válida
-	 * (o caemos a la primera).
-	 */
 	const getActivePage = (): Page => {
 		const page = findPage(activePageId.value) ?? pages.value[0];
 
@@ -39,39 +37,53 @@ export const useMangaStore = defineStore('manga', () => {
 		return page;
 	};
 
+	const bumpContent = () => {
+		contentResetEpoch.value += 1;
+	};
+
 	const activePage = computed((): Page => {
 		return getActivePage();
 	});
 
+	const activeLayer = computed((): Layer => {
+		return getActivePage().getActiveLayer();
+	});
+
+	const layers = computed((): Layer[] => {
+		return getActivePage().layers;
+	});
+
+	/** Métricas de dibujo = capa activa + tamaño de página. */
 	const layout = computed((): PageLayoutMetrics => {
 		const page = getActivePage();
+		const layer = page.getActiveLayer();
 
 		return {
 			width: page.width,
 			height: page.height,
-			cols: page.gridCols,
-			rows: page.gridRows,
+			cols: layer.gridCols,
+			rows: layer.gridRows,
 			margins: {
-				marginTop: page.marginTop,
-				marginRight: page.marginRight,
-				marginBottom: page.marginBottom,
-				marginLeft: page.marginLeft,
+				marginTop: layer.marginTop,
+				marginRight: layer.marginRight,
+				marginBottom: layer.marginBottom,
+				marginLeft: layer.marginLeft,
 			},
 		};
 	});
 
 	const strokeWidth = computed(() => {
-		return getActivePage().strokeWidth;
+		return getActivePage().getActiveLayer().strokeWidth;
 	});
 
 	const shapes = computed(() => {
-		return getActivePage().shapes;
+		return getActivePage().getActiveLayer().shapes;
 	});
 
-	/** Vacía paneles de la página activa y avisa al canvas. */
+	/** Vacía la página a la capa default y avisa al canvas. */
 	const clearActivePage = () => {
-		getActivePage().clearShapes();
-		contentResetEpoch.value += 1;
+		getActivePage().resetToDefaultLayer();
+		bumpContent();
 	};
 
 	const addPage = () => {
@@ -81,12 +93,15 @@ export const useMangaStore = defineStore('manga', () => {
 			active.width,
 			active.height,
 		);
+		const taken = pages.value.map((item) => {
+			return item.name;
+		});
 
+		page.name = findUniqueName(page.name, taken);
 		pages.value.push(page);
 		activePageId.value = page.id;
 	};
 
-	/** Siempre queda al menos una página; si borras la activa, selecciona vecina. */
 	const removePage = (pageId: string) => {
 		if (pages.value.length <= 1) {
 			return;
@@ -146,29 +161,37 @@ export const useMangaStore = defineStore('manga', () => {
 		pages.value.splice(toIndex, 0, page);
 	};
 
-	const renamePage = (pageId: string, name: string) => {
+	const renamePage = (pageId: string, name: string): boolean => {
 		const trimmed = name.trim();
 		const page = findPage(pageId);
 
 		if (!page || !trimmed || trimmed === page.name) {
-			return;
+			return false;
+		}
+
+		const taken = pages.value.map((item) => {
+			return item.name;
+		});
+
+		if (isDuplicateName(trimmed, taken, page.name)) {
+			return false;
 		}
 
 		page.name = trimmed;
+
+		return true;
 	};
 
 	const getActivePageLayout = (): LayoutJSON => {
 		return getActivePage().toLayoutJSON();
 	};
 
-	/** Sustituye geometría de la página activa; conserva name/id. */
 	const applyActivePageLayout = (layoutJson: LayoutJSON) => {
 		getActivePage().applyLayout({
 			...layoutJson,
 			shapes: layoutJson.shapes ?? [],
 		});
-
-		contentResetEpoch.value += 1;
+		bumpContent();
 	};
 
 	const addShape = (shape: Shape) => {
@@ -183,30 +206,66 @@ export const useMangaStore = defineStore('manga', () => {
 		getActivePage().setShapeImage(shapeId, image);
 	};
 
-	// Cambiar geometría invalida el dibujo (la rejilla ya no encaja).
 	const setActivePageSize = (width: number, height: number) => {
 		getActivePage().setSize(width, height);
-		clearActivePage();
+		bumpContent();
 	};
 
-	const setActivePageGrid = (cols: number, rows: number) => {
-		getActivePage().setGrid(cols, rows);
-		clearActivePage();
+	const setActiveLayerGrid = (cols: number, rows: number) => {
+		getActivePage().setActiveLayerGrid(cols, rows);
+		bumpContent();
 	};
 
-	const setActivePageMargins = (margins: PageMargins) => {
-		getActivePage().setMargins(margins);
-		clearActivePage();
+	const setActiveLayerMargins = (margins: PageMargins) => {
+		getActivePage().setActiveLayerMargins(margins);
+		bumpContent();
 	};
 
-	/** Portrait ↔ landscape; limpia paneles (la rejilla ya no encaja). */
 	const rotateActivePage = (direction: PageRotateDirection) => {
 		getActivePage().rotateOrientation(direction);
-		clearActivePage();
+		bumpContent();
 	};
 
-	const setActivePageStrokeWidth = (width: number) => {
-		getActivePage().setStrokeWidth(width);
+	const setActiveLayerStrokeWidth = (width: number) => {
+		getActivePage().setActiveLayerStrokeWidth(width);
+	};
+
+	const selectLayer = (layerId: string) => {
+		if (!getActivePage().selectLayer(layerId)) {
+			return;
+		}
+
+		bumpContent();
+	};
+
+	const addLayer = () => {
+		getActivePage().addLayer();
+		bumpContent();
+	};
+
+	const removeLayer = (layerId: string) => {
+		if (!getActivePage().removeLayer(layerId)) {
+			return;
+		}
+
+		bumpContent();
+	};
+
+	const reorderLayers = (fromIndex: number, toIndex: number) => {
+		getActivePage().reorderLayers(fromIndex, toIndex);
+		bumpContent();
+	};
+
+	const renameLayer = (layerId: string, name: string): boolean => {
+		return getActivePage().renameLayer(layerId, name);
+	};
+
+	const setLayerVisible = (layerId: string, visible: boolean) => {
+		if (!getActivePage().setLayerVisible(layerId, visible)) {
+			return;
+		}
+
+		bumpContent();
 	};
 
 	return {
@@ -215,6 +274,8 @@ export const useMangaStore = defineStore('manga', () => {
 		activePageId,
 		contentResetEpoch,
 		activePage,
+		activeLayer,
+		layers,
 		layout,
 		strokeWidth,
 		shapes,
@@ -230,9 +291,15 @@ export const useMangaStore = defineStore('manga', () => {
 		removeShape,
 		setShapeImage,
 		setActivePageSize,
-		setActivePageGrid,
-		setActivePageMargins,
+		setActiveLayerGrid,
+		setActiveLayerMargins,
 		rotateActivePage,
-		setActivePageStrokeWidth,
+		setActiveLayerStrokeWidth,
+		selectLayer,
+		addLayer,
+		removeLayer,
+		reorderLayers,
+		renameLayer,
+		setLayerVisible,
 	};
 });

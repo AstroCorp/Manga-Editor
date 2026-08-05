@@ -3,11 +3,11 @@ import { storeToRefs } from 'pinia';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
-import type { PageMarginSide, PageRotateDirection } from '@/types/page';
+import type { PageRotateDirection } from '@/types/page';
 
 /**
- * Mutaciones de config de página + rotación confirmada.
- * La UI combina esto con `useActivePageLayout` para lecturas.
+ * Mutaciones de tamaño/rotación de página.
+ * Grid/márgenes/stroke viven en la capa (ver useLayerConfigActions).
  */
 export const usePageConfigActions = () => {
 	const mangaStore = useMangaStore();
@@ -21,7 +21,7 @@ export const usePageConfigActions = () => {
 	} = createConfirmPayload<PageRotateDirection>();
 
 	const rotateMessage = computed(() => {
-		return `Rotate '${activePage.value.name}'? Panels will be removed.`;
+		return `Rotate '${activePage.value.name}'? Layers reset to default and panels are removed.`;
 	});
 
 	const setWidth = (width: number) => {
@@ -32,41 +32,13 @@ export const usePageConfigActions = () => {
 		mangaStore.setActivePageSize(activePage.value.width, height);
 	};
 
-	const setCols = (cols: number) => {
-		mangaStore.setActivePageGrid(cols, activePage.value.gridRows);
-	};
-
-	const setRows = (rows: number) => {
-		mangaStore.setActivePageGrid(activePage.value.gridCols, rows);
-	};
-
-	const setMargin = (side: PageMarginSide, value: number) => {
-		const page = activePage.value;
-
-		mangaStore.setActivePageMargins({
-			marginTop: page.marginTop,
-			marginRight: page.marginRight,
-			marginBottom: page.marginBottom,
-			marginLeft: page.marginLeft,
-			[side]: value,
-		});
-	};
-
-	const setStrokeWidth = (width: number) => {
-		if (!Number.isFinite(width)) {
-			return;
-		}
-
-		mangaStore.setActivePageStrokeWidth(width);
-	};
-
 	const applyRotate = (direction: PageRotateDirection) => {
 		editorStore.cancelStroke();
 		mangaStore.rotateActivePage(direction);
 	};
 
 	const requestRotate = (direction: PageRotateDirection) => {
-		if (activePage.value.shapes.length > 0) {
+		if (activePage.value.hasDrawing() || activePage.value.layers.length > 1) {
 			request(direction);
 
 			return;
@@ -84,10 +56,6 @@ export const usePageConfigActions = () => {
 		rotateMessage,
 		setWidth,
 		setHeight,
-		setCols,
-		setRows,
-		setMargin,
-		setStrokeWidth,
 		requestRotate,
 		cancelRotate,
 		confirmRotate,

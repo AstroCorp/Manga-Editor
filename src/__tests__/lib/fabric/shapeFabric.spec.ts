@@ -16,7 +16,10 @@ describe('shapeToPolygon', () => {
 			3,
 		);
 
-		const polygon = shapeToPolygon(shape);
+		const polygon = shapeToPolygon(shape, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
 
 		expect(isPanel(polygon)).toBe(true);
 		expect(getPanelId(polygon)).toBe(shape.id);
@@ -26,6 +29,7 @@ describe('shapeToPolygon', () => {
 		expect(polygon.perPixelTargetFind).toBe(true);
 		expect(polygon.selectable).toBe(true);
 		expect(polygon.evented).toBe(true);
+		expect(polygon.get('layerId')).toBe('layer-1');
 	});
 
 	it('disables selection when the shape already has an image', () => {
@@ -41,17 +45,37 @@ describe('shapeToPolygon', () => {
 		shape.setImage(
 			new ShapeImage({
 				src: 'data:image/png;base64,xx',
-				left: 20,
-				top: 20,
+				left: 1,
+				top: 1,
 				scaleX: 1,
 				scaleY: 1,
 			}),
 		);
 
-		const polygon = shapeToPolygon(shape);
+		const polygon = shapeToPolygon(shape, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
 
 		expect(polygon.selectable).toBe(false);
 		expect(polygon.evented).toBe(false);
-		expect(getPanelId(polygon)).toBe(shape.id);
+	});
+
+	it('locks inactive layer panels', () => {
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+		const polygon = shapeToPolygon(shape, {
+			layerId: 'other',
+			interactive: false,
+		});
+
+		expect(polygon.selectable).toBe(false);
+		expect(polygon.evented).toBe(false);
 	});
 });

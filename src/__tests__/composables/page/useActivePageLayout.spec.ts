@@ -9,20 +9,20 @@ describe('useActivePageLayout', () => {
 		setActivePinia(createPinia());
 	});
 
-	it('exposes derived size, grid, margins and stroke', () => {
+	it('exposes page size and active layer grid, margins and stroke', () => {
 		const mangaStore = useMangaStore();
 		const { pageSize, gridSize, margins, strokeWidth, pageHasDrawing } =
 			useActivePageLayout();
 
 		mangaStore.setActivePageSize(900, 1100);
-		mangaStore.setActivePageGrid(12, 18);
-		mangaStore.setActivePageMargins({
+		mangaStore.setActiveLayerGrid(12, 18);
+		mangaStore.setActiveLayerMargins({
 			marginTop: 10,
 			marginRight: 20,
 			marginBottom: 30,
 			marginLeft: 40,
 		});
-		mangaStore.setActivePageStrokeWidth(6);
+		mangaStore.setActiveLayerStrokeWidth(6);
 
 		expect(pageSize.value).toEqual({ width: 900, height: 1100 });
 		expect(gridSize.value).toEqual({ cols: 12, rows: 18 });

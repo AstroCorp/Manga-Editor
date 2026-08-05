@@ -24,4 +24,5 @@ export const THEME_PREFERENCE = {
 export const SIDEBAR_TAB = {
 	Config: 'config',
 	Layouts: 'layouts',
+	Layers: 'layers',
 } as const satisfies Record<string, SidebarTab>;

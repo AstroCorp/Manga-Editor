@@ -3,9 +3,12 @@ import { storeToRefs } from 'pinia';
 import { useMangaStore } from '@/stores/manga';
 import type { PageMargins } from '@/types/page';
 
-/** Lectura derivada de la página activa (sin mutaciones). */
+/**
+ * Lecturas: tamaño de página + config de la capa activa.
+ */
 export const useActivePageLayout = () => {
-	const { activePage } = storeToRefs(useMangaStore());
+	const mangaStore = useMangaStore();
+	const { activePage, activeLayer } = storeToRefs(mangaStore);
 
 	const pageSize = computed(() => {
 		return {
@@ -16,34 +19,40 @@ export const useActivePageLayout = () => {
 
 	const gridSize = computed(() => {
 		return {
-			cols: activePage.value.gridCols,
-			rows: activePage.value.gridRows,
+			cols: activeLayer.value.gridCols,
+			rows: activeLayer.value.gridRows,
 		};
 	});
 
 	const margins = computed((): PageMargins => {
 		return {
-			marginTop: activePage.value.marginTop,
-			marginRight: activePage.value.marginRight,
-			marginBottom: activePage.value.marginBottom,
-			marginLeft: activePage.value.marginLeft,
+			marginTop: activeLayer.value.marginTop,
+			marginRight: activeLayer.value.marginRight,
+			marginBottom: activeLayer.value.marginBottom,
+			marginLeft: activeLayer.value.marginLeft,
 		};
 	});
 
 	const strokeWidth = computed(() => {
-		return activePage.value.strokeWidth;
+		return activeLayer.value.strokeWidth;
 	});
 
 	const pageHasDrawing = computed(() => {
-		return activePage.value.shapes.length > 0;
+		return activePage.value.hasDrawing();
+	});
+
+	const activeLayerHasDrawing = computed(() => {
+		return activeLayer.value.shapes.length > 0;
 	});
 
 	return {
 		activePage,
+		activeLayer,
 		pageSize,
 		gridSize,
 		margins,
 		strokeWidth,
 		pageHasDrawing,
+		activeLayerHasDrawing,
 	};
 };

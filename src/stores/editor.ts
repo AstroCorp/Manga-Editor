@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import { toast } from 'vue3-toastify';
 import {
 	downloadDataUrl,
 	downloadText,
@@ -16,6 +17,18 @@ import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { CanvasActions, ExportImageFormat } from '@/types/editor';
 import type { LayoutJSON } from '@/types/layouts';
+
+const warnHiddenLayersIfNeeded = () => {
+	const mangaStore = useMangaStore();
+
+	if (!mangaStore.activePage.hasHiddenLayers()) {
+		return;
+	}
+
+	toast.warn('Hidden layers are not included in the export.', {
+		autoClose: 4000,
+	});
+};
 
 export const useEditorStore = defineStore('editor', () => {
 	const showGridGuides = ref(true);
@@ -65,6 +78,7 @@ export const useEditorStore = defineStore('editor', () => {
 	const exportPage = (format: ExportImageFormat) => {
 		// Como Escape: no exportar un trazo a medias ni el rubber.
 		canvasActions.cancelStroke();
+		warnHiddenLayersIfNeeded();
 
 		const dataUrl = canvasActions.exportDataUrl(format);
 

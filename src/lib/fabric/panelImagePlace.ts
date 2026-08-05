@@ -133,11 +133,15 @@ export const placeImageFileInPanel = async ({
 		perPixelTargetFind: true,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId,
+		layerId: livePanel.get('layerId'),
 	});
 
 	canvas.add(image);
 	bindPanelImageHitTest(image, livePanel);
-	stackPageContent(canvas);
+	stackPageContent(
+		canvas,
+		mangaStore.activePage.visibleLayerIds(),
+	);
 
 	livePanel.evented = false;
 	livePanel.selectable = false;

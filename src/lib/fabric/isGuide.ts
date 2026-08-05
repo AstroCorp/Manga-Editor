@@ -29,6 +29,12 @@ export const getPanelId = (object: FabricObject): string | undefined => {
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
 };
 
+export const getLayerId = (object: FabricObject): string | undefined => {
+	const value = object.get('layerId');
+
+	return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
 export const findPanelById = (canvas: Canvas, panelId: string): PanelLikeObject | null => {
 	return (
 		(canvas.getObjects().find((object) => {
@@ -68,10 +74,13 @@ export const removeObjectsByPanelId = (canvas: Canvas, panelId: string) => {
 };
 
 /**
- * Guías al fondo; paneles encima de imágenes.
+ * Guías al fondo; por cada capa (abajo→arriba): imágenes luego paneles.
  * Reordena en un solo paso (evita N bringObjectToFront).
  */
-export const stackPageContent = (canvas: Canvas) => {
+export const stackPageContent = (
+	canvas: Canvas,
+	layerOrder: string[] = [],
+) => {
 	const objects = canvas.getObjects().slice();
 	const guides = objects.filter((object) => {
 		return isGuide(object);
@@ -88,7 +97,39 @@ export const stackPageContent = (canvas: Canvas) => {
 	const other = content.filter((object) => {
 		return !isPanel(object) && !isPanelImage(object);
 	});
-	const ordered = [...guides, ...other, ...images, ...panels];
+
+	const ordered: FabricObject[] = [...guides, ...other];
+	const placed = new Set<FabricObject>();
+
+	const pushLayerObjects = (layerId: string) => {
+		images.forEach((object) => {
+			if (getLayerId(object) === layerId) {
+				ordered.push(object);
+				placed.add(object);
+			}
+		});
+		panels.forEach((object) => {
+			if (getLayerId(object) === layerId) {
+				ordered.push(object);
+				placed.add(object);
+			}
+		});
+	};
+
+	if (layerOrder.length > 0) {
+		layerOrder.forEach(pushLayerObjects);
+	}
+
+	images.forEach((object) => {
+		if (!placed.has(object)) {
+			ordered.push(object);
+		}
+	});
+	panels.forEach((object) => {
+		if (!placed.has(object)) {
+			ordered.push(object);
+		}
+	});
 
 	ordered.forEach((object, index) => {
 		canvas.moveObjectTo(object, index);

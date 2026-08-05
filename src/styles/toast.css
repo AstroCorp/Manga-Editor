@@ -1,0 +1,65 @@
+/* Compactación + sync con .dark (vars light→dark).
+   Docs: https://vue3-toastify.js-bridge.com/usage/how-to-style.html
+   Importar DESPUÉS de vue3-toastify/dist/index.css. */
+
+:root {
+	--toastify-font-family: inherit;
+	--toastify-toast-width: 280px;
+	--toastify-toast-min-height: 48px;
+}
+
+.dark {
+	--toastify-color-light: var(--toastify-color-dark);
+	--toastify-text-color-light: var(--toastify-text-color-dark);
+	--toastify-color-progress-light: var(--toastify-color-progress-dark);
+	--toastify-spinner-color: #e0e0e0;
+	--toastify-spinner-color-empty-area: #616161;
+}
+
+.Toastify__toast-container--bottom-right {
+	bottom: 0.75rem;
+	right: 0.75rem;
+}
+
+.Toastify__toast {
+	margin-bottom: 0.5rem;
+	padding: 0.5rem 0.75rem;
+	font-size: 0.8125rem;
+	line-height: 1.25rem;
+	border-radius: 6px;
+}
+
+.Toastify__toast-icon {
+	width: 18px;
+	margin-inline-end: 0.5rem;
+}
+
+.Toastify__toast-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+.Toastify__toast-body {
+	padding: 0.125rem 0;
+	margin: 0;
+	align-items: center;
+}
+
+.Toastify__close-button {
+	align-self: center;
+}
+
+.Toastify__close-button > svg {
+	width: 12px;
+	height: 14px;
+}
+
+.dark .Toastify__close-button--light {
+	color: #fff;
+	opacity: 0.7;
+}
+
+.dark .Toastify__close-button--light:hover,
+.dark .Toastify__close-button--light:focus {
+	opacity: 1;
+}

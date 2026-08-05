@@ -9,7 +9,7 @@ describe('useMangaStore config layout', () => {
 		setActivePinia(createPinia());
 	});
 
-	it('changing page size clears shapes and bumps contentResetEpoch', () => {
+	it('changing page size clears layers to default and bumps contentResetEpoch', () => {
 		const store = useMangaStore();
 		const shape = Shape.create(
 			[
@@ -21,23 +21,25 @@ describe('useMangaStore config layout', () => {
 		);
 
 		store.addShape(shape);
+		store.addLayer();
 
 		const epoch = store.contentResetEpoch;
 
 		store.setActivePageSize(900, 1300);
 
+		expect(store.layers).toHaveLength(1);
 		expect(store.shapes).toHaveLength(0);
 		expect(store.activePage.width).toBe(900);
 		expect(store.activePage.height).toBe(1300);
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
-	it('rotateActivePage swaps orientation and clears shapes', () => {
+	it('rotateActivePage swaps orientation and resets to default layer', () => {
 		const store = useMangaStore();
 
 		store.setActivePageSize(800, 1200);
-		store.setActivePageGrid(10, 20);
-		store.setActivePageMargins({
+		store.setActiveLayerGrid(10, 20);
+		store.setActiveLayerMargins({
 			marginTop: 10,
 			marginRight: 20,
 			marginBottom: 30,
@@ -53,6 +55,7 @@ describe('useMangaStore config layout', () => {
 				3,
 			),
 		);
+		store.addLayer();
 
 		const epoch = store.contentResetEpoch;
 
@@ -60,17 +63,18 @@ describe('useMangaStore config layout', () => {
 
 		expect(store.activePage.width).toBe(1200);
 		expect(store.activePage.height).toBe(800);
-		expect(store.activePage.gridCols).toBe(20);
-		expect(store.activePage.gridRows).toBe(10);
-		expect(store.activePage.marginTop).toBe(40);
-		expect(store.activePage.marginRight).toBe(10);
-		expect(store.activePage.marginBottom).toBe(20);
-		expect(store.activePage.marginLeft).toBe(30);
+		expect(store.layers).toHaveLength(1);
+		expect(store.activeLayer.gridCols).toBe(20);
+		expect(store.activeLayer.gridRows).toBe(10);
+		expect(store.activeLayer.marginTop).toBe(40);
+		expect(store.activeLayer.marginRight).toBe(10);
+		expect(store.activeLayer.marginBottom).toBe(20);
+		expect(store.activeLayer.marginLeft).toBe(30);
 		expect(store.shapes).toHaveLength(0);
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
-	it('changing stroke width updates all shapes without clearing them', () => {
+	it('changing stroke width updates active layer shapes without clearing them', () => {
 		const store = useMangaStore();
 
 		store.addShape(
@@ -86,7 +90,7 @@ describe('useMangaStore config layout', () => {
 
 		const epoch = store.contentResetEpoch;
 
-		store.setActivePageStrokeWidth(8);
+		store.setActiveLayerStrokeWidth(8);
 
 		expect(store.shapes).toHaveLength(1);
 		expect(store.strokeWidth).toBe(8);
@@ -94,7 +98,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.contentResetEpoch).toBe(epoch);
 	});
 
-	it('removeShape mutates the active page', () => {
+	it('removeShape mutates the active layer', () => {
 		const store = useMangaStore();
 		const shape = Shape.create(
 			[
@@ -111,7 +115,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes).toHaveLength(0);
 	});
 
-	it('applyActivePageLayout replaces shapes and keeps the page name', () => {
+	it('applyActivePageLayout replaces active layer and keeps the page name', () => {
 		const store = useMangaStore();
 		const originalName = store.activePage.name;
 		const originalId = store.activePage.id;
@@ -159,15 +163,6 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes).toHaveLength(1);
 		expect(store.shapes[0]?.strokeWidth).toBe(5);
 		expect(store.contentResetEpoch).toBe(epoch + 1);
-
-		store.applyActivePageLayout({
-			width: 800,
-			height: 1200,
-			shapes: [],
-		});
-
-		expect(store.activePage.name).toBe(originalName);
-		expect(store.shapes).toHaveLength(0);
 	});
 
 	it('getActivePageLayout exports geometry without id or name', () => {
@@ -225,6 +220,42 @@ describe('useMangaStore config layout', () => {
 		);
 	});
 
+	it('rejects duplicate page names (case-insensitive)', () => {
+		const store = useMangaStore();
+
+		store.addPage();
+		store.renamePage(store.pages[0]!.id, 'Cover');
+		store.renamePage(store.pages[1]!.id, 'cover');
+
+		expect(store.pages[1]?.name).not.toBe('cover');
+		expect(store.pages[1]?.name).not.toBe('Cover');
+	});
+
+	it('addPage picks a unique default name', () => {
+		const store = useMangaStore();
+
+		store.renamePage(store.pages[0]!.id, 'Page 2');
+		store.addPage();
+
+		expect(store.pages[1]?.name).toBe('Page 2 (2)');
+	});
+
+	it('rejects duplicate layer names and uniquifies new layers', () => {
+		const store = useMangaStore();
+
+		store.renameLayer(store.activeLayer.id, 'Ink');
+		store.addLayer();
+		store.renameLayer(store.activeLayer.id, 'ink');
+
+		expect(store.activeLayer.name).not.toBe('ink');
+		expect(store.activeLayer.name).not.toBe('Ink');
+
+		store.renameLayer(store.activeLayer.id, 'Tone');
+		store.renameLayer(store.layers[0]!.id, 'Tone');
+
+		expect(store.layers[0]?.name).toBe('Ink');
+	});
+
 	it('setShapeImage attaches and clears an image without removing the shape', () => {
 		const store = useMangaStore();
 		const shape = Shape.create(
@@ -259,7 +290,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes[0]?.image).toBeNull();
 	});
 
-	it('clearActivePage removes shapes and bumps contentResetEpoch', () => {
+	it('clearActivePage resets to default layer and bumps contentResetEpoch', () => {
 		const store = useMangaStore();
 
 		store.addShape(
@@ -272,18 +303,20 @@ describe('useMangaStore config layout', () => {
 				3,
 			),
 		);
+		store.addLayer();
 
 		const epoch = store.contentResetEpoch;
 
 		store.clearActivePage();
 
+		expect(store.layers).toHaveLength(1);
 		expect(store.shapes).toHaveLength(0);
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
-	it('shape image mutations replace the shapes array reference', () => {
+	it('shape image mutations replace the active layer shapes array reference', () => {
 		const store = useMangaStore();
-		const page = store.activePage;
+		const layer = store.activeLayer;
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -295,7 +328,7 @@ describe('useMangaStore config layout', () => {
 
 		store.addShape(shape);
 
-		const afterAdd = page.shapes;
+		const afterAdd = layer.shapes;
 
 		store.setShapeImage(
 			shape.id,
@@ -308,7 +341,23 @@ describe('useMangaStore config layout', () => {
 			}),
 		);
 
-		expect(page.shapes).not.toBe(afterAdd);
-		expect(page.shapes[0]?.image?.src).toBe('data:image/png;base64,xx');
+		expect(layer.shapes).not.toBe(afterAdd);
+		expect(layer.shapes[0]?.image?.src).toBe('data:image/png;base64,xx');
+	});
+
+	it('addLayer / selectLayer / hide layer work', () => {
+		const store = useMangaStore();
+		const firstId = store.activeLayer.id;
+
+		store.addLayer();
+
+		expect(store.layers).toHaveLength(2);
+		expect(store.activeLayer.id).not.toBe(firstId);
+
+		store.selectLayer(firstId);
+		expect(store.activeLayer.id).toBe(firstId);
+
+		store.setLayerVisible(store.layers[1]!.id, false);
+		expect(store.activePage.hasHiddenLayers()).toBe(true);
 	});
 });

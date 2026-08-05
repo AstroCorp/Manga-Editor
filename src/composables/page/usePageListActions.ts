@@ -1,13 +1,10 @@
 import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { toast } from 'vue3-toastify';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
+import { setDragMoveEffect } from '@/lib/ui/setDragMoveEffect';
+import { normalizeNameKey } from '@/lib/ui/uniqueName';
 import { useMangaStore } from '@/stores/manga';
-
-const setMoveEffect = (event: DragEvent) => {
-	if (event.dataTransfer) {
-		event.dataTransfer.dropEffect = 'move';
-	}
-};
 
 /** CRUD + reorder + confirmación de borrado del listado de páginas. */
 export const usePageListActions = () => {
@@ -82,7 +79,7 @@ export const usePageListActions = () => {
 
 	const onDragOver = (index: number, event: DragEvent) => {
 		event.preventDefault();
-		setMoveEffect(event);
+		setDragMoveEffect(event);
 		dropTargetIndex.value = index;
 	};
 
@@ -100,6 +97,25 @@ export const usePageListActions = () => {
 		mangaStore.reorderPages(from, index);
 	};
 
+	const renamePage = (id: string, name: string) => {
+		const page = pages.value.find((item) => {
+			return item.id === id;
+		});
+		const trimmed = name.trim();
+
+		if (!page || !trimmed) {
+			return;
+		}
+
+		if (normalizeNameKey(trimmed) === normalizeNameKey(page.name)) {
+			return;
+		}
+
+		if (!mangaStore.renamePage(id, name)) {
+			toast.warn('A page with that name already exists.');
+		}
+	};
+
 	return {
 		pages,
 		activePageId,
@@ -114,9 +130,7 @@ export const usePageListActions = () => {
 		addPage: () => {
 			mangaStore.addPage();
 		},
-		renamePage: (id: string, name: string) => {
-			mangaStore.renamePage(id, name);
-		},
+		renamePage,
 		requestRemove,
 		cancelRemove,
 		confirmRemove,

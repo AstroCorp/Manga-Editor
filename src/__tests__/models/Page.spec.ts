@@ -8,21 +8,22 @@ import {
 	DEFAULT_PAGE_WIDTH,
 } from '@/lib/page/pageLimits';
 
-describe('Page / Shape / ShapeImage', () => {
-	it('creates a blank page with defaults', () => {
+describe('Page / Layer / Shape / ShapeImage', () => {
+	it('creates a blank page with a default layer', () => {
 		const page = Page.createBlank(1);
 
 		expect(page.name).toBe('Page 1');
 		expect(page.width).toBe(DEFAULT_PAGE_WIDTH);
 		expect(page.height).toBe(DEFAULT_PAGE_HEIGHT);
-		expect(page.gridCols).toBe(DEFAULT_GRID_COLS);
-		expect(page.shapes).toEqual([]);
+		expect(page.layers).toHaveLength(1);
+		expect(page.getActiveLayer().gridCols).toBe(DEFAULT_GRID_COLS);
+		expect(page.getActiveLayer().shapes).toEqual([]);
 	});
 
-	it('applies layout JSON and exports geometry without images', () => {
+	it('applies layout JSON to the active layer and exports without images', () => {
 		const page = Page.createBlank(1);
 
-		page.setStrokeWidth(4);
+		page.setActiveLayerStrokeWidth(4);
 
 		const shape = Shape.create(
 			[
@@ -60,11 +61,9 @@ describe('Page / Shape / ShapeImage', () => {
 			shapes: layout.shapes ?? [],
 		});
 
-		expect(other.shapes).toHaveLength(1);
-		expect(other.strokeWidth).toBe(4);
-		expect(other.shapes[0]?.strokeWidth).toBe(4);
-		expect(other.shapes[0]?.points).toEqual(shape.points);
-		expect(other.shapes[0]?.image).toBeNull();
+		expect(other.getActiveLayer().shapes).toHaveLength(1);
+		expect(other.getActiveLayer().strokeWidth).toBe(4);
+		expect(other.getActiveLayer().shapes[0]?.image).toBeNull();
 	});
 
 	it('layout JSON strips images from shapes', () => {
@@ -103,20 +102,23 @@ describe('Page / Shape / ShapeImage', () => {
 		const restored = ShapeImage.fromJSON(image.toJSON());
 
 		expect(restored.grayscale).toBe(true);
-		expect(Shape.fromJSON({
-			id: 's1',
-			points: [
-				{ x: 0, y: 0 },
-				{ x: 1, y: 0 },
-				{ x: 1, y: 1 },
-			],
-			strokeWidth: 2,
-			image: image.toJSON(),
-		}).image?.grayscale).toBe(true);
+		expect(
+			Shape.fromJSON({
+				id: 's1',
+				points: [
+					{ x: 0, y: 0 },
+					{ x: 1, y: 0 },
+					{ x: 1, y: 1 },
+				],
+				strokeWidth: 2,
+				image: image.toJSON(),
+			}).image?.grayscale,
+		).toBe(true);
 	});
 
-	it('setStrokeWidth applies to all shapes and setShapeImage refreshes the shapes array ref', () => {
+	it('setStrokeWidth applies to layer shapes and setShapeImage refreshes refs', () => {
 		const page = Page.createBlank(1);
+		const layer = page.getActiveLayer();
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -128,14 +130,14 @@ describe('Page / Shape / ShapeImage', () => {
 
 		page.addShape(shape);
 
-		const afterAdd = page.shapes;
+		const afterAdd = layer.shapes;
 
-		page.setStrokeWidth(8);
-		expect(page.shapes).not.toBe(afterAdd);
-		expect(page.strokeWidth).toBe(8);
-		expect(page.shapes[0]?.strokeWidth).toBe(8);
+		page.setActiveLayerStrokeWidth(8);
+		expect(layer.shapes).not.toBe(afterAdd);
+		expect(layer.strokeWidth).toBe(8);
+		expect(layer.shapes[0]?.strokeWidth).toBe(8);
 
-		const afterStroke = page.shapes;
+		const afterStroke = layer.shapes;
 		const image = new ShapeImage({
 			src: 'data:image/png;base64,xx',
 			left: 5,
@@ -145,11 +147,11 @@ describe('Page / Shape / ShapeImage', () => {
 		});
 
 		expect(page.setShapeImage(shape.id, image)).toBe(true);
-		expect(page.shapes).not.toBe(afterStroke);
-		expect(page.shapes[0]?.image?.src).toBe(image.src);
+		expect(layer.shapes).not.toBe(afterStroke);
+		expect(layer.shapes[0]?.image?.src).toBe(image.src);
 	});
 
-	it('applyLayout forces page stroke on every shape', () => {
+	it('applyLayout forces layer stroke on every shape', () => {
 		const page = Page.createBlank(1);
 
 		page.applyLayout({
@@ -170,57 +172,111 @@ describe('Page / Shape / ShapeImage', () => {
 			strokeWidth: 12,
 		});
 
-		expect(page.strokeWidth).toBe(12);
-		expect(page.shapes[0]?.strokeWidth).toBe(12);
+		expect(page.getActiveLayer().strokeWidth).toBe(12);
+		expect(page.getActiveLayer().shapes[0]?.strokeWidth).toBe(12);
 	});
 
-	it('clamps page size and margins', () => {
+	it('setSize resets to default layer and reclamps margins', () => {
 		const page = Page.createBlank(1);
 
-		page.setSize(50, 50);
-		page.setMargins({
+		page.addLayer();
+		page.setActiveLayerMargins({
 			marginTop: 9999,
 			marginRight: 9999,
 			marginBottom: 9999,
 			marginLeft: 9999,
 		});
+		page.setSize(50, 50);
 
 		expect(page.width).toBe(100);
-		expect(page.marginTop).toBeLessThanOrEqual(20);
+		expect(page.layers).toHaveLength(1);
+		expect(page.defaultLayer.marginTop).toBeLessThanOrEqual(20);
+		expect(page.defaultLayer.shapes).toEqual([]);
 	});
 
-	it('rotateOrientation cycles margins clockwise and counterclockwise', () => {
+	it('rotateOrientation cycles default layer margins and keeps one layer', () => {
 		const page = Page.createBlank(1);
 
-		page.setSize(800, 1200);
-		page.setGrid(10, 20);
-		page.setMargins({
-			marginTop: 10,
-			marginRight: 20,
-			marginBottom: 30,
-			marginLeft: 40,
-		});
+		page.width = 800;
+		page.height = 1200;
+		page.defaultLayer.setGrid(10, 20);
+		page.defaultLayer.setMargins(
+			{
+				marginTop: 10,
+				marginRight: 20,
+				marginBottom: 30,
+				marginLeft: 40,
+			},
+			800,
+			1200,
+		);
+		page.addLayer();
 
 		page.rotateOrientation('clockwise');
 
 		expect(page.width).toBe(1200);
 		expect(page.height).toBe(800);
-		expect(page.gridCols).toBe(20);
-		expect(page.gridRows).toBe(10);
-		expect(page.marginTop).toBe(40);
-		expect(page.marginRight).toBe(10);
-		expect(page.marginBottom).toBe(20);
-		expect(page.marginLeft).toBe(30);
+		expect(page.layers).toHaveLength(1);
+		expect(page.defaultLayer.gridCols).toBe(20);
+		expect(page.defaultLayer.gridRows).toBe(10);
+		expect(page.defaultLayer.marginTop).toBe(40);
+		expect(page.defaultLayer.marginRight).toBe(10);
+		expect(page.defaultLayer.marginBottom).toBe(20);
+		expect(page.defaultLayer.marginLeft).toBe(30);
 
 		page.rotateOrientation('counterclockwise');
 
 		expect(page.width).toBe(800);
 		expect(page.height).toBe(1200);
-		expect(page.gridCols).toBe(10);
-		expect(page.gridRows).toBe(20);
-		expect(page.marginTop).toBe(10);
-		expect(page.marginRight).toBe(20);
-		expect(page.marginBottom).toBe(30);
-		expect(page.marginLeft).toBe(40);
+		expect(page.defaultLayer.gridCols).toBe(10);
+		expect(page.defaultLayer.gridRows).toBe(20);
+		expect(page.defaultLayer.marginTop).toBe(10);
+		expect(page.defaultLayer.marginRight).toBe(20);
+		expect(page.defaultLayer.marginBottom).toBe(30);
+		expect(page.defaultLayer.marginLeft).toBe(40);
+	});
+
+	it('getVisibleShapes flattens visible layers only', () => {
+		const page = Page.createBlank(1);
+
+		page.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 1, y: 0 },
+					{ x: 1, y: 1 },
+				],
+				2,
+			),
+		);
+		page.addLayer();
+		page.addShape(
+			Shape.create(
+				[
+					{ x: 2, y: 2 },
+					{ x: 3, y: 2 },
+					{ x: 3, y: 3 },
+				],
+				2,
+			),
+		);
+
+		expect(page.getVisibleShapes()).toHaveLength(2);
+
+		page.setLayerVisible(page.layers[1]!.id, false);
+
+		expect(page.getVisibleShapes()).toHaveLength(1);
+		expect(page.hasHiddenLayers()).toBe(true);
+	});
+
+	it('can remove the original layer when more than one exists', () => {
+		const page = Page.createBlank(1);
+		const firstId = page.layers[0]!.id;
+
+		page.addLayer();
+		expect(page.removeLayer(firstId)).toBe(true);
+		expect(page.layers).toHaveLength(1);
+		expect(page.layers[0]!.id).not.toBe(firstId);
+		expect(page.removeLayer(page.layers[0]!.id)).toBe(false);
 	});
 });

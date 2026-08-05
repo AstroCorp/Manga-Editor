@@ -1,65 +1,54 @@
 import { createId } from '@/lib/id';
 import {
-	DEFAULT_GRID_COLS,
-	DEFAULT_GRID_ROWS,
-	DEFAULT_MARGIN,
 	DEFAULT_PAGE_HEIGHT,
 	DEFAULT_PAGE_WIDTH,
-	DEFAULT_STROKE_WIDTH,
-	clampGridSize,
-	clampMargin,
 	clampPageSize,
-	clampStrokeWidth,
 } from '@/lib/page/pageLimits';
-import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { rotatePageMargins } from '@/lib/page/rotatePageMargins';
-import { Shape } from '@/models/Shape';
+import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
+import { DEFAULT_LAYER_NAME, Layer } from '@/models/Layer';
+import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { LayoutJSON } from '@/types/layouts';
-import type { PageMargins, PageRotateDirection, PageValue } from '@/types/page';
-
-const findShapeOnPage = (page: Page, shapeId: string): Shape | undefined => {
-	return page.shapes.find((shape) => {
-		return shape.id === shapeId;
-	});
-};
+import type {
+	PageMargins,
+	PageRotateDirection,
+	PageValue,
+	ResetLayerOptions,
+} from '@/types/page';
 
 export class Page {
 	public readonly id: string;
 	public name: string;
 	public width: number;
 	public height: number;
-	public shapes: Shape[];
-	public gridCols: number;
-	public gridRows: number;
-	public marginTop: number;
-	public marginRight: number;
-	public marginBottom: number;
-	public marginLeft: number;
-	public strokeWidth: number;
+	public layers: Layer[];
+	public activeLayerId: string;
 
 	constructor(value: PageValue) {
 		this.id = value.id;
 		this.name = value.name;
-		this.shapes = value.shapes ?? [];
-		// Todo valor entrante se clampéa para no romper la rejilla ni el canvas.
 		this.width = clampPageSize(value.width);
 		this.height = clampPageSize(value.height);
-		this.gridCols = clampGridSize(value.gridCols ?? DEFAULT_GRID_COLS);
-		this.gridRows = clampGridSize(value.gridRows ?? DEFAULT_GRID_ROWS);
-		this.strokeWidth = clampStrokeWidth(
-			value.strokeWidth ?? DEFAULT_STROKE_WIDTH,
-		);
-		this.marginTop = 0;
-		this.marginRight = 0;
-		this.marginBottom = 0;
-		this.marginLeft = 0;
-		this.setMargins({
-			marginTop: value.marginTop ?? DEFAULT_MARGIN,
-			marginRight: value.marginRight ?? DEFAULT_MARGIN,
-			marginBottom: value.marginBottom ?? DEFAULT_MARGIN,
-			marginLeft: value.marginLeft ?? DEFAULT_MARGIN,
-		});
+
+		if (value.layers && value.layers.length > 0) {
+			this.layers = value.layers;
+			const activeExists = value.activeLayerId
+				? this.layers.some((layer) => {
+						return layer.id === value.activeLayerId;
+					})
+				: false;
+
+			this.activeLayerId = activeExists
+				? value.activeLayerId!
+				: this.layers[0]!.id;
+		} else {
+			const layer = Layer.createDefault(1);
+
+			layer.applyDefaultMargins(this.width, this.height);
+			this.layers = [layer];
+			this.activeLayerId = layer.id;
+		}
 	}
 
 	/** Página vacía numerada; hereda tamaño de otra página si se indica. */
@@ -72,159 +61,303 @@ export class Page {
 		});
 	}
 
-	/** Al cambiar tamaño se re-clampan los márgenes (dependen del lado menor). */
+	get defaultLayer(): Layer {
+		return this.layers[0]!;
+	}
+
+	getActiveLayer(): Layer {
+		return (
+			this.layers.find((layer) => {
+				return layer.id === this.activeLayerId;
+			}) ?? this.defaultLayer
+		);
+	}
+
+	/** Shapes de capas visibles, de abajo a arriba (flatten preview/export). */
+	getVisibleShapes(): Shape[] {
+		return this.layers
+			.filter((layer) => {
+				return layer.visible;
+			})
+			.flatMap((layer) => {
+				return layer.shapes;
+			});
+	}
+
+	hasDrawing(): boolean {
+		return this.layers.some((layer) => {
+			return layer.shapes.length > 0;
+		});
+	}
+
+	hasHiddenLayers(): boolean {
+		return this.layers.some((layer) => {
+			return !layer.visible;
+		});
+	}
+
+	visibleLayerIds(): string[] {
+		return this.layers
+			.filter((layer) => {
+				return layer.visible;
+			})
+			.map((layer) => {
+				return layer.id;
+			});
+	}
+
+	/**
+	 * Deja solo la capa default (limpia shapes; config opcional).
+	 * Usado al cambiar tamaño / rotar / clear página.
+	 */
+	resetToDefaultLayer(options?: ResetLayerOptions) {
+		const defaultLayer = this.defaultLayer;
+
+		defaultLayer.clearShapes();
+		defaultLayer.visible = true;
+		defaultLayer.name = DEFAULT_LAYER_NAME;
+
+		if (options?.gridCols != null && options.gridRows != null) {
+			defaultLayer.setGrid(options.gridCols, options.gridRows);
+		}
+
+		if (options?.strokeWidth != null) {
+			defaultLayer.strokeWidth = options.strokeWidth;
+		}
+
+		if (options?.margins) {
+			defaultLayer.setMargins(options.margins, this.width, this.height);
+		} else {
+			defaultLayer.setMargins(
+				{
+					marginTop: defaultLayer.marginTop,
+					marginRight: defaultLayer.marginRight,
+					marginBottom: defaultLayer.marginBottom,
+					marginLeft: defaultLayer.marginLeft,
+				},
+				this.width,
+				this.height,
+			);
+		}
+
+		this.layers = [defaultLayer];
+		this.activeLayerId = defaultLayer.id;
+	}
+
+	/** Al cambiar tamaño se resetea a la capa default (márgenes re-clamp). */
 	setSize(width: number, height: number) {
 		this.width = clampPageSize(width);
 		this.height = clampPageSize(height);
-		this.setMargins({
-			marginTop: this.marginTop,
-			marginRight: this.marginRight,
-			marginBottom: this.marginBottom,
-			marginLeft: this.marginLeft,
-		});
-	}
-
-	setGrid(cols: number, rows: number) {
-		this.gridCols = clampGridSize(cols);
-		this.gridRows = clampGridSize(rows);
+		this.resetToDefaultLayer();
 	}
 
 	/**
-	 * Orientación portrait ↔ landscape: width↔height, cols↔rows.
-	 * Márgenes en ciclo (clockwise: top→right→bottom→left).
-	 * No borra shapes (el store limpia al rotar).
+	 * Portrait ↔ landscape: width↔height; grid/margins de default ciclan.
+	 * Otras capas se eliminan.
 	 */
 	rotateOrientation(direction: PageRotateDirection) {
+		const layer = this.defaultLayer;
 		const nextMargins = rotatePageMargins(
 			{
-				marginTop: this.marginTop,
-				marginRight: this.marginRight,
-				marginBottom: this.marginBottom,
-				marginLeft: this.marginLeft,
+				marginTop: layer.marginTop,
+				marginRight: layer.marginRight,
+				marginBottom: layer.marginBottom,
+				marginLeft: layer.marginLeft,
 			},
 			direction,
 		);
+		const nextWidth = this.height;
+		const nextHeight = this.width;
+		const nextCols = layer.gridRows;
+		const nextRows = layer.gridCols;
+		const strokeWidth = layer.strokeWidth;
 
-		this.setSize(this.height, this.width);
-		this.setGrid(this.gridRows, this.gridCols);
-		this.setMargins(nextMargins);
+		this.width = clampPageSize(nextWidth);
+		this.height = clampPageSize(nextHeight);
+		this.resetToDefaultLayer({
+			gridCols: nextCols,
+			gridRows: nextRows,
+			margins: nextMargins,
+			strokeWidth,
+		});
 	}
 
-	setMargins(margins: PageMargins) {
-		this.marginTop = clampMargin(
-			margins.marginTop,
-			this.width,
-			this.height,
-		);
-		this.marginRight = clampMargin(
-			margins.marginRight,
-			this.width,
-			this.height,
-		);
-		this.marginBottom = clampMargin(
-			margins.marginBottom,
-			this.width,
-			this.height,
-		);
-		this.marginLeft = clampMargin(
-			margins.marginLeft,
-			this.width,
-			this.height,
-		);
-	}
+	selectLayer(layerId: string): boolean {
+		const exists = this.layers.some((layer) => {
+			return layer.id === layerId;
+		});
 
-	/** Stroke global de la página: aplica a todos los paneles. */
-	setStrokeWidth(width: number) {
-		this.strokeWidth = clampStrokeWidth(width);
-
-		for (const shape of this.shapes) {
-			shape.strokeWidth = this.strokeWidth;
+		if (!exists) {
+			return false;
 		}
 
-		if (this.shapes.length > 0) {
-			this.shapes = this.shapes.slice();
-		}
+		this.activeLayerId = layerId;
+
+		return true;
 	}
 
-	clearShapes() {
-		this.shapes = [];
+	addLayer(): Layer {
+		const taken = this.layers.map((layer) => {
+			return layer.name;
+		});
+		const layer = Layer.createDefault(this.layers.length + 1);
+
+		layer.name = findUniqueName(layer.name, taken);
+		layer.applyDefaultMargins(this.width, this.height);
+		this.layers = [...this.layers, layer];
+		this.activeLayerId = layer.id;
+
+		return layer;
+	}
+
+	removeLayer(layerId: string): boolean {
+		if (this.layers.length <= 1) {
+			return false;
+		}
+
+		const index = this.layers.findIndex((layer) => {
+			return layer.id === layerId;
+		});
+
+		if (index === -1) {
+			return false;
+		}
+
+		const next = this.layers.filter((layer) => {
+			return layer.id !== layerId;
+		});
+
+		this.layers = next;
+
+		if (this.activeLayerId === layerId) {
+			this.activeLayerId = next[Math.min(index, next.length - 1)]!.id;
+		}
+
+		return true;
+	}
+
+	reorderLayers(fromIndex: number, toIndex: number) {
+		if (
+			fromIndex === toIndex ||
+			fromIndex < 0 ||
+			toIndex < 0 ||
+			fromIndex >= this.layers.length ||
+			toIndex >= this.layers.length
+		) {
+			return;
+		}
+
+		const next = this.layers.slice();
+		const [layer] = next.splice(fromIndex, 1);
+
+		if (!layer) {
+			return;
+		}
+
+		next.splice(toIndex, 0, layer);
+		this.layers = next;
+	}
+
+	renameLayer(layerId: string, name: string): boolean {
+		const trimmed = name.trim();
+		const layer = this.layers.find((item) => {
+			return item.id === layerId;
+		});
+
+		if (!layer || !trimmed || trimmed === layer.name) {
+			return false;
+		}
+
+		const taken = this.layers.map((item) => {
+			return item.name;
+		});
+
+		if (isDuplicateName(trimmed, taken, layer.name)) {
+			return false;
+		}
+
+		layer.name = trimmed;
+
+		return true;
+	}
+
+	setLayerVisible(layerId: string, visible: boolean): boolean {
+		const layer = this.layers.find((item) => {
+			return item.id === layerId;
+		});
+
+		if (!layer) {
+			return false;
+		}
+
+		layer.visible = visible;
+
+		return true;
+	}
+
+	setActiveLayerGrid(cols: number, rows: number) {
+		const layer = this.getActiveLayer();
+
+		layer.setGrid(cols, rows);
+		layer.clearShapes();
+	}
+
+	setActiveLayerMargins(margins: PageMargins) {
+		const layer = this.getActiveLayer();
+
+		layer.setMargins(margins, this.width, this.height);
+		layer.clearShapes();
+	}
+
+	setActiveLayerStrokeWidth(width: number) {
+		this.getActiveLayer().setStrokeWidth(width);
 	}
 
 	addShape(shape: Shape) {
-		shape.strokeWidth = this.strokeWidth;
-		this.shapes = [...this.shapes, shape];
+		this.getActiveLayer().addShape(shape);
 	}
 
 	removeShape(shapeId: string): boolean {
-		const next = this.shapes.filter((shape) => {
-			return shape.id !== shapeId;
-		});
-
-		if (next.length === this.shapes.length) {
-			return false;
-		}
-
-		this.shapes = next;
-
-		return true;
+		return this.getActiveLayer().removeShape(shapeId);
 	}
 
 	setShapeImage(shapeId: string, image: ShapeImage | null): boolean {
-		const shape = findShapeOnPage(this, shapeId);
-
-		if (!shape) {
-			return false;
-		}
-
-		shape.setImage(image);
-		// Nueva ref del array: Vue detecta mutaciones in-place en miniaturas.
-		this.shapes = this.shapes.slice();
-
-		return true;
-	}
-
-	applyLayout(data: LayoutJSON) {
-		const fields = resolveLayoutFields(data);
-		const pageStroke = clampStrokeWidth(fields.strokeWidth);
-
-		this.setSize(data.width, data.height);
-		this.setGrid(fields.gridCols, fields.gridRows);
-		this.setMargins({
-			marginTop: fields.marginTop,
-			marginRight: fields.marginRight,
-			marginBottom: fields.marginBottom,
-			marginLeft: fields.marginLeft,
-		});
-		this.strokeWidth = pageStroke;
-		this.shapes = data.shapes.map((shapeJson) => {
-			return Shape.fromJSON({
-				...shapeJson,
-				strokeWidth: pageStroke,
-			});
-		});
+		return this.getActiveLayer().setShapeImage(shapeId, image);
 	}
 
 	/**
-	 * Layout exportable: página + formas geométricas.
-	 * Sin imágenes.
+	 * Si el tamaño del layout difiere, resetea a default y aplica ahí.
+	 * Si no, sustituye contenido de la capa activa.
 	 */
+	applyLayout(data: LayoutJSON) {
+		const sizeChanged =
+			clampPageSize(data.width) !== this.width ||
+			clampPageSize(data.height) !== this.height;
+
+		if (sizeChanged) {
+			this.width = clampPageSize(data.width);
+			this.height = clampPageSize(data.height);
+			this.resetToDefaultLayer();
+		}
+
+		this.getActiveLayer().applyLayoutContent(
+			{
+				...data,
+				shapes: data.shapes ?? [],
+			},
+			this.width,
+			this.height,
+		);
+	}
+
+	/** Layout exportable de la capa activa (+ tamaño de página). Sin imágenes. */
 	toLayoutJSON(): LayoutJSON {
+		const layer = this.getActiveLayer();
+
 		return {
 			width: this.width,
 			height: this.height,
-			shapes: this.shapes.map((shape) => {
-				return {
-					...shape.toLayoutJSON(),
-					strokeWidth: this.strokeWidth,
-				};
-			}),
-			gridCols: this.gridCols,
-			gridRows: this.gridRows,
-			marginTop: this.marginTop,
-			marginRight: this.marginRight,
-			marginBottom: this.marginBottom,
-			marginLeft: this.marginLeft,
-			strokeWidth: this.strokeWidth,
+			...layer.toLayoutFields(),
 		};
 	}
 }

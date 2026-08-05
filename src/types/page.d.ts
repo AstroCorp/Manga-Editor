@@ -1,6 +1,7 @@
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { Ref } from 'vue';
+import type { Layer } from '@/models/Layer';
 
 export type PagePoint = {
 	x: number;
@@ -89,18 +90,29 @@ export type ShapeValue = {
 	image?: ShapeImage | null;
 };
 
+export type LayerValue = {
+	id: string;
+	name: string;
+	visible?: boolean;
+	shapes?: Shape[];
+	gridCols?: number;
+	gridRows?: number;
+	strokeWidth?: number;
+};
+
+export type ResetLayerOptions = {
+	gridCols?: number;
+	gridRows?: number;
+	margins?: PageMargins;
+	strokeWidth?: number;
+};
+
 export type PageValue = {
 	id: string;
 	name: string;
 	width: number;
 	height: number;
-	shapes?: Shape[];
-	gridCols?: number;
-	gridRows?: number;
-	marginTop?: number;
-	marginRight?: number;
-	marginBottom?: number;
-	marginLeft?: number;
-	strokeWidth?: number;
+	layers?: Layer[];
+	activeLayerId?: string;
 };
 

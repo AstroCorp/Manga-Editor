@@ -10,7 +10,7 @@ const { pendingClear, requestClear, cancelClear, confirmClear } =
 	useClearActivePage();
 
 const clearMessage = computed(() => {
-	return `Clear '${activePage.value.name}'? Panels will be removed.`;
+	return `Clear '${activePage.value.name}'? Layers reset to default and panels are removed.`;
 });
 </script>
 
