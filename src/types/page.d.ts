@@ -1,11 +1,36 @@
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
+import type { TextBlock } from '@/models/TextBlock';
 import type { Ref } from 'vue';
 import type { Layer } from '@/models/Layer';
 
 export type PagePoint = {
 	x: number;
 	y: number;
+};
+
+export type TextBlockJSON = {
+	id: string;
+	content: string;
+	left: number;
+	top: number;
+	width: number;
+	fontSize: number;
+	fill: string;
+	angle?: number;
+};
+
+export type TextBlockPatch = Partial<Omit<TextBlockJSON, 'id'>>;
+
+export type PagePreviewText = {
+	content: string;
+	x: number;
+	y: number;
+	fontSize: number;
+	fill: string;
+	angle: number;
+	originX: number;
+	originY: number;
 };
 
 export type ShapeImageJSON = {
@@ -18,6 +43,7 @@ export type ShapeImageJSON = {
 	originY: 'center' | 'top';
 	width: number;
 	height: number;
+	angle?: number;
 	/** Filtro B/N (opcional para layouts antiguos). */
 	grayscale?: boolean;
 };
@@ -47,6 +73,10 @@ export type PagePreviewImage = {
 	y: number;
 	width: number;
 	height: number;
+	angle: number;
+	originX: number;
+	originY: number;
+	clipPoints: string;
 	grayscale: boolean;
 };
 
@@ -55,6 +85,7 @@ export type PagePreviewModel = {
 	height: number;
 	panels: PagePreviewPanel[];
 	images: PagePreviewImage[];
+	texts: PagePreviewText[];
 };
 
 export type ContentResetDeps = {
@@ -83,6 +114,7 @@ export type ShapeImageValue = {
 	originY?: 'center' | 'top';
 	width?: number;
 	height?: number;
+	angle?: number;
 	grayscale?: boolean;
 };
 
@@ -99,6 +131,7 @@ export type LayerValue = {
 	name: string;
 	visible?: boolean;
 	shapes?: Shape[];
+	texts?: TextBlock[];
 	gridCols?: number;
 	gridRows?: number;
 	strokeWidth?: number;

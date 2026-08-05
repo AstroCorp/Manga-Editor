@@ -1,16 +1,20 @@
 import { watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { FabricImage, type Canvas, type FabricObject } from 'fabric';
+import { FabricImage, Textbox, type Canvas, type FabricObject } from 'fabric';
 import {
 	getPanelId,
+	getTextId,
 	isGuide,
+	isPageText,
 	isPanel,
 	isPanelImage,
 	removeObjectsByPanelId,
 } from '@/lib/fabric/isGuide';
 import { shapeImageFromFabric } from '@/lib/fabric/panelImageFabric';
+import { textBlockFromFabric } from '@/lib/fabric/textFabric';
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
 import { useMangaStore } from '@/stores/manga';
+import type { PageTextObject } from '@/types/fabric';
 import type { SelectionDeps } from '@/types/panel';
 
 export const usePanelSelection = ({
@@ -20,7 +24,15 @@ export const usePanelSelection = ({
 }: SelectionDeps) => {
 	const mangaStore = useMangaStore();
 
-	/** Borra panel (+ imagen) o solo la imagen activa. */
+	const isEditingText = (object: FabricObject | null | undefined): boolean => {
+		if (!object || !isPageText(object)) {
+			return false;
+		}
+
+		return Boolean((object as Textbox).isEditing);
+	};
+
+	/** Borra panel (+ imagen), solo la imagen activa, o un texto. */
 	const removeActive = (): boolean => {
 		const canvas = fabricCanvas.value;
 
@@ -30,7 +42,7 @@ export const usePanelSelection = ({
 
 		const active = canvas.getActiveObject() as FabricObject | null;
 
-		if (!active || isGuide(active)) {
+		if (!active || isGuide(active) || isEditingText(active)) {
 			return false;
 		}
 
@@ -52,6 +64,20 @@ export const usePanelSelection = ({
 		if (isPanelImage(active) && panelId) {
 			mangaStore.setShapeImage(panelId, null);
 
+			canvas.remove(active);
+			canvas.discardActiveObject();
+
+			syncInteractionMode();
+
+			canvas.requestRenderAll();
+
+			return true;
+		}
+
+		const textId = getTextId(active);
+
+		if (isPageText(active) && textId) {
+			mangaStore.removeText(textId);
 			canvas.remove(active);
 			canvas.discardActiveObject();
 
@@ -86,12 +112,38 @@ export const usePanelSelection = ({
 		canvas.requestRenderAll();
 	};
 
-	/** Tras mover/escalar imagen en Fabric, persiste transform en el dominio. */
-	const onObjectModified = () => {
-		const canvas = fabricCanvas.value;
-		const active = canvas?.getActiveObject() as FabricObject | null;
+	const persistTextObject = (object: FabricObject) => {
+		if (!isPageText(object)) {
+			return;
+		}
 
-		if (!active || !isPanelImage(active) || !(active instanceof FabricImage)) {
+		const textId = getTextId(object);
+
+		if (!textId) {
+			return;
+		}
+
+		mangaStore.updateText(
+			textId,
+			textBlockFromFabric(object as PageTextObject),
+		);
+	};
+
+	/** Tras mover/escalar imagen o texto en Fabric, persiste transform en el dominio. */
+	const onObjectModified = (event: { target?: FabricObject }) => {
+		const active = event.target ?? fabricCanvas.value?.getActiveObject();
+
+		if (!active) {
+			return;
+		}
+
+		if (isPageText(active)) {
+			persistTextObject(active);
+
+			return;
+		}
+
+		if (!(active instanceof FabricImage) || !isPanelImage(active)) {
 			return;
 		}
 
@@ -104,11 +156,50 @@ export const usePanelSelection = ({
 		mangaStore.setShapeImage(panelId, shapeImageFromFabric(active));
 	};
 
+	const onTextChanged = (event: { target?: FabricObject }) => {
+		if (event.target) {
+			persistTextObject(event.target);
+		}
+	};
+
+	const onEditingEntered = (event: { target?: FabricObject }) => {
+		cancelStroke();
+
+		const target = event.target;
+
+		if (!target || !isPageText(target)) {
+			return;
+		}
+
+		target.set({
+			lockMovementX: true,
+			lockMovementY: true,
+			lockRotation: true,
+			lockScalingX: true,
+			hasControls: false,
+		});
+		fabricCanvas.value?.requestRenderAll();
+	};
+
+	const onEditingExited = (event: { target?: FabricObject }) => {
+		if (event.target) {
+			persistTextObject(event.target);
+		}
+
+		syncInteractionMode();
+	};
+
 	const onKeyDown = (event: KeyboardEvent) => {
 		if (
 			event.target instanceof HTMLInputElement ||
 			event.target instanceof HTMLTextAreaElement
 		) {
+			return;
+		}
+
+		const canvas = fabricCanvas.value;
+
+		if (isEditingText(canvas?.getActiveObject() ?? null)) {
 			return;
 		}
 
@@ -127,10 +218,16 @@ export const usePanelSelection = ({
 
 	const bindSelectionEvents = (canvas: Canvas) => {
 		canvas.on('object:modified', onObjectModified);
+		canvas.on('text:changed', onTextChanged);
+		canvas.on('text:editing:entered', onEditingEntered);
+		canvas.on('text:editing:exited', onEditingExited);
 	};
 
 	const unbindSelectionEvents = (canvas: Canvas) => {
 		canvas.off('object:modified', onObjectModified);
+		canvas.off('text:changed', onTextChanged);
+		canvas.off('text:editing:entered', onEditingEntered);
+		canvas.off('text:editing:exited', onEditingExited);
 	};
 
 	watch(

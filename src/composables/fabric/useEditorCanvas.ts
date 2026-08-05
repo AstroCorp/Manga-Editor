@@ -49,6 +49,7 @@ export const useEditorCanvas = (
 		cancelStroke: () => undefined,
 		exportDataUrl,
 		resetZoomView: () => undefined,
+		addSimpleText: () => undefined,
 	};
 
 	const afterPageApplyHooks: Array<() => void> = [];

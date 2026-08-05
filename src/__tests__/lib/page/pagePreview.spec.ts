@@ -7,6 +7,7 @@ describe('pagePreview', () => {
 
 		expect(preview.panels).toEqual([]);
 		expect(preview.images).toEqual([]);
+		expect(preview.texts).toEqual([]);
 		expect(preview.height).toBe(200);
 	});
 
@@ -76,6 +77,10 @@ describe('pagePreview', () => {
 			y: 40,
 			width: 100,
 			height: 80,
+			angle: 0,
+			originX: 100,
+			originY: 80,
+			clipPoints: '0,0 10,0 10,10',
 			grayscale: false,
 		});
 	});

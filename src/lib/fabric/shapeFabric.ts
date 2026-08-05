@@ -7,6 +7,7 @@ import {
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { stackPageContent } from '@/lib/fabric/isGuide';
 import { shapeImageToFabric } from '@/lib/fabric/panelImageFabric';
+import { textBlockToFabric } from '@/lib/fabric/textFabric';
 import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
@@ -98,6 +99,15 @@ export const hydrateCanvasFromPage = async (
 
 				canvas.add(fabricImage);
 			}
+		}
+
+		for (const text of layer.texts) {
+			canvas.add(
+				textBlockToFabric(text, {
+					layerId: layer.id,
+					interactive,
+				}),
+			);
 		}
 	}
 

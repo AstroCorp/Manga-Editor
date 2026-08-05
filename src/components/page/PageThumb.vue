@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import PagePreview from '@/components/page/PagePreview.vue';
 import type { Shape } from '@/models/Shape';
+import type { TextBlock } from '@/models/TextBlock';
 
 const props = defineProps<{
 	name: string;
@@ -12,6 +13,7 @@ const props = defineProps<{
 	width: number;
 	height: number;
 	shapes: Shape[];
+	texts?: TextBlock[];
 	dragging?: boolean;
 	dropTarget?: boolean;
 }>();
@@ -130,6 +132,7 @@ const onDragStart = (event: DragEvent) => {
 					:width="width"
 					:height="height"
 					:shapes="shapes"
+					:texts="texts"
 				/>
 				<span
 					class="absolute right-0.5 bottom-0.5 rounded bg-black/55 px-1 text-[0.65rem] leading-4 font-medium text-white"

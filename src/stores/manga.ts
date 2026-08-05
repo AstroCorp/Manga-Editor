@@ -5,9 +5,10 @@ import { Page } from '@/models/Page';
 import type { Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
+import type { TextBlock } from '@/models/TextBlock';
 import type { PageLayoutMetrics } from '@/types/geometry';
 import type { LayoutJSON } from '@/types/layouts';
-import type { PageMargins, PageRotateDirection } from '@/types/page';
+import type { PageMargins, PageRotateDirection, TextBlockPatch } from '@/types/page';
 
 export const useMangaStore = defineStore('manga', () => {
 	const title = ref('Untitled');
@@ -78,6 +79,10 @@ export const useMangaStore = defineStore('manga', () => {
 
 	const shapes = computed(() => {
 		return getActivePage().getActiveLayer().shapes;
+	});
+
+	const texts = computed(() => {
+		return getActivePage().getActiveLayer().texts;
 	});
 
 	/** Vacía la página a la capa default y avisa al canvas. */
@@ -202,6 +207,18 @@ export const useMangaStore = defineStore('manga', () => {
 		getActivePage().removeShape(shapeId);
 	};
 
+	const addText = (text: TextBlock) => {
+		getActivePage().addText(text);
+	};
+
+	const removeText = (textId: string) => {
+		getActivePage().removeText(textId);
+	};
+
+	const updateText = (textId: string, patch: TextBlockPatch) => {
+		getActivePage().updateText(textId, patch);
+	};
+
 	const setShapeImage = (shapeId: string, image: ShapeImage | null) => {
 		getActivePage().setShapeImage(shapeId, image);
 	};
@@ -283,6 +300,7 @@ export const useMangaStore = defineStore('manga', () => {
 		layout,
 		strokeWidth,
 		shapes,
+		texts,
 		addPage,
 		removePage,
 		selectPage,
@@ -293,6 +311,9 @@ export const useMangaStore = defineStore('manga', () => {
 		clearActivePage,
 		addShape,
 		removeShape,
+		addText,
+		removeText,
+		updateText,
 		setShapeImage,
 		setShapeWhiteFill,
 		setActivePageSize,

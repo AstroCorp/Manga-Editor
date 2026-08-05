@@ -6,6 +6,7 @@ import { imageDropFeature } from '@/features/image-drop';
 import { selectionFeature } from '@/features/selection';
 import { shapeMenuFeature } from '@/features/shape-menu';
 import { strokeFeature } from '@/features/stroke';
+import { textFeature } from '@/features/text';
 import { zoomFeature } from '@/features/zoom';
 
 /**
@@ -16,6 +17,7 @@ export const canvasFeatures: CanvasFeature[] = [
 	guidesFeature,
 	strokeFeature,
 	selectionFeature,
+	textFeature,
 	imageDropFeature,
 	gridHoverFeature,
 	shapeMenuFeature,

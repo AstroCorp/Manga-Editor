@@ -10,9 +10,10 @@ import {
 } from '@/lib/page/pageLimits';
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
 import { Shape } from '@/models/Shape';
+import { TextBlock } from '@/models/TextBlock';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { LayoutLayerJSON } from '@/types/layouts';
-import type { LayerValue, PageMargins } from '@/types/page';
+import type { LayerValue, PageMargins, TextBlockPatch } from '@/types/page';
 
 export const DEFAULT_LAYER_NAME = 'Layer 1';
 
@@ -39,11 +40,31 @@ const updateShapeOnLayer = (
 	return true;
 };
 
+const updateTextOnLayer = (
+	layer: Layer,
+	textId: string,
+	mutate: (text: TextBlock) => void,
+): boolean => {
+	const text = layer.texts.find((item) => {
+		return item.id === textId;
+	});
+
+	if (!text) {
+		return false;
+	}
+
+	mutate(text);
+	layer.texts = layer.texts.slice();
+
+	return true;
+};
+
 export class Layer {
 	public readonly id: string;
 	public name: string;
 	public visible: boolean;
 	public shapes: Shape[];
+	public texts: TextBlock[];
 	public gridCols: number;
 	public gridRows: number;
 	public marginTop: number;
@@ -57,6 +78,7 @@ export class Layer {
 		this.name = value.name;
 		this.visible = value.visible ?? true;
 		this.shapes = value.shapes ?? [];
+		this.texts = value.texts ?? [];
 		this.gridCols = clampGridSize(value.gridCols ?? DEFAULT_GRID_COLS);
 		this.gridRows = clampGridSize(value.gridRows ?? DEFAULT_GRID_ROWS);
 		this.strokeWidth = clampStrokeWidth(
@@ -126,6 +148,10 @@ export class Layer {
 		this.shapes = [];
 	}
 
+	clearTexts() {
+		this.texts = [];
+	}
+
 	addShape(shape: Shape) {
 		shape.strokeWidth = this.strokeWidth;
 		this.shapes = [...this.shapes, shape];
@@ -143,6 +169,30 @@ export class Layer {
 		this.shapes = next;
 
 		return true;
+	}
+
+	addText(text: TextBlock) {
+		this.texts = [...this.texts, text];
+	}
+
+	removeText(textId: string): boolean {
+		const next = this.texts.filter((text) => {
+			return text.id !== textId;
+		});
+
+		if (next.length === this.texts.length) {
+			return false;
+		}
+
+		this.texts = next;
+
+		return true;
+	}
+
+	updateText(textId: string, patch: TextBlockPatch): boolean {
+		return updateTextOnLayer(this, textId, (text) => {
+			text.applyPatch(patch);
+		});
 	}
 
 	setShapeImage(shapeId: string, image: ShapeImage | null): boolean {
@@ -184,6 +234,7 @@ export class Layer {
 				strokeWidth: layerStroke,
 			});
 		});
+		this.texts = [];
 	}
 
 	toLayoutFields(): Omit<LayoutLayerJSON, 'name' | 'visible'> & {

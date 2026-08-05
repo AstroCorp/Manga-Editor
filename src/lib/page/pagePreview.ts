@@ -1,9 +1,11 @@
 import { ShapeImage } from '@/models/ShapeImage';
+import type { TextBlock } from '@/models/TextBlock';
 import type {
 	PagePoint,
 	PagePreviewImage,
 	PagePreviewModel,
 	PagePreviewPanel,
+	PagePreviewText,
 	ShapeImageJSON,
 	ShapeLike,
 } from '@/types/page';
@@ -16,20 +18,29 @@ const toSvgPoints = (points: PagePoint[]): string => {
 		.join(' ');
 };
 
-const imagePlacement = (image: ShapeImageJSON): PagePreviewImage | null => {
-	if (!image.src) {
+const imagePlacement = (
+	image: ShapeImageJSON,
+	clipPoints: string,
+): PagePreviewImage | null => {
+	if (!image.src || !clipPoints) {
 		return null;
 	}
 
 	const imgWidth = Math.max(1, image.width * image.scaleX);
 	const imgHeight = Math.max(1, image.height * image.scaleY);
+	const x = image.originX === 'center' ? image.left - imgWidth / 2 : image.left;
+	const y = image.originY === 'center' ? image.top - imgHeight / 2 : image.top;
 
 	return {
 		href: image.src,
-		x: image.originX === 'center' ? image.left - imgWidth / 2 : image.left,
-		y: image.originY === 'center' ? image.top - imgHeight / 2 : image.top,
+		x,
+		y,
 		width: imgWidth,
 		height: imgHeight,
+		angle: image.angle ?? 0,
+		originX: image.originX === 'center' ? image.left : x,
+		originY: image.originY === 'center' ? image.top : y,
+		clipPoints,
 		grayscale: Boolean(image.grayscale),
 	};
 };
@@ -46,11 +57,29 @@ const toImageJson = (image: ShapeLike['image']): ShapeImageJSON | null => {
 	return image;
 };
 
-/** Modelo de preview ligero (paneles + imágenes) desde shapes de dominio. */
+const toPreviewTexts = (
+	texts: TextBlock[] | null | undefined,
+): PagePreviewText[] => {
+	return (texts ?? []).map((text) => {
+		return {
+			content: text.content.replace(/\n/g, ' '),
+			x: text.left,
+			y: text.top + text.fontSize,
+			fontSize: text.fontSize,
+			fill: text.fill,
+			angle: text.angle,
+			originX: text.left,
+			originY: text.top,
+		};
+	});
+};
+
+/** Modelo de preview ligero (paneles + imágenes + textos) desde shapes de dominio. */
 export const buildPagePreview = (
 	width: number,
 	height: number,
 	shapes: ShapeLike[] | null | undefined,
+	texts?: TextBlock[] | null,
 ): PagePreviewModel => {
 	const safeWidth = Math.max(1, width);
 	const safeHeight = Math.max(1, height);
@@ -58,9 +87,12 @@ export const buildPagePreview = (
 	const images: PagePreviewImage[] = [];
 
 	for (const shape of shapes ?? []) {
-		if (shape.points.length >= 3) {
+		const clipPoints =
+			shape.points.length >= 3 ? toSvgPoints(shape.points) : '';
+
+		if (clipPoints) {
 			panels.push({
-				points: toSvgPoints(shape.points),
+				points: clipPoints,
 				strokeWidth: Math.max(1, shape.strokeWidth),
 				whiteFill: Boolean(shape.whiteFill),
 			});
@@ -68,8 +100,8 @@ export const buildPagePreview = (
 
 		const imageJson = toImageJson(shape.image);
 
-		if (imageJson) {
-			const placed = imagePlacement(imageJson);
+		if (imageJson && clipPoints) {
+			const placed = imagePlacement(imageJson, clipPoints);
 
 			if (placed) {
 				images.push(placed);
@@ -77,5 +109,11 @@ export const buildPagePreview = (
 		}
 	}
 
-	return { width: safeWidth, height: safeHeight, panels, images };
+	return {
+		width: safeWidth,
+		height: safeHeight,
+		panels,
+		images,
+		texts: toPreviewTexts(texts),
+	};
 };

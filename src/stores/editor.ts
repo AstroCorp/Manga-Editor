@@ -40,6 +40,7 @@ export const useEditorStore = defineStore('editor', () => {
 			cancelStroke: () => undefined,
 			exportDataUrl: () => null,
 			resetZoomView: () => undefined,
+			addSimpleText: () => undefined,
 		};
 	};
 
@@ -146,6 +147,9 @@ export const useEditorStore = defineStore('editor', () => {
 		unregisterCanvas,
 		cancelStroke: () => {
 			return canvasActions.cancelStroke();
+		},
+		addSimpleText: () => {
+			return canvasActions.addSimpleText();
 		},
 		exportPage,
 		exportPageJson,

@@ -23,8 +23,18 @@ export const isPanelImage = (object: FabricObject): boolean => {
 	return object.get('objectType') === FABRIC_OBJECT_TYPE.PanelImage;
 };
 
+export const isPageText = (object: FabricObject): boolean => {
+	return object.get('objectType') === FABRIC_OBJECT_TYPE.Text;
+};
+
 export const getPanelId = (object: FabricObject): string | undefined => {
 	const value = object.get('panelId');
+
+	return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+export const getTextId = (object: FabricObject): string | undefined => {
+	const value = object.get('textId');
 
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
 };
@@ -74,8 +84,7 @@ export const removeObjectsByPanelId = (canvas: Canvas, panelId: string) => {
 };
 
 /**
- * Guías al fondo; por cada capa (abajo→arriba): paneles luego imágenes
- * (la imagen queda sobre el relleno blanco del panel).
+ * Guías al fondo; por cada capa (abajo→arriba): paneles, imágenes, textos.
  * Reordena en un solo paso (evita N bringObjectToFront).
  */
 export const stackPageContent = (
@@ -95,8 +104,11 @@ export const stackPageContent = (
 	const panels = content.filter((object) => {
 		return isPanel(object);
 	});
+	const texts = content.filter((object) => {
+		return isPageText(object);
+	});
 	const other = content.filter((object) => {
-		return !isPanel(object) && !isPanelImage(object);
+		return !isPanel(object) && !isPanelImage(object) && !isPageText(object);
 	});
 
 	const ordered: FabricObject[] = [...guides, ...other];
@@ -115,6 +127,12 @@ export const stackPageContent = (
 				placed.add(object);
 			}
 		});
+		texts.forEach((object) => {
+			if (getLayerId(object) === layerId) {
+				ordered.push(object);
+				placed.add(object);
+			}
+		});
 	};
 
 	if (layerOrder.length > 0) {
@@ -127,6 +145,11 @@ export const stackPageContent = (
 		}
 	});
 	images.forEach((object) => {
+		if (!placed.has(object)) {
+			ordered.push(object);
+		}
+	});
+	texts.forEach((object) => {
 		if (!placed.has(object)) {
 			ordered.push(object);
 		}

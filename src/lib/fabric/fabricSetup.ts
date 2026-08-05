@@ -1,6 +1,7 @@
 import {
 	Control,
 	FabricObject,
+	Textbox,
 	controlsUtils,
 	util,
 	type ControlRenderingStyleOverride,
@@ -63,7 +64,7 @@ const createBottomRotateControl = (): Control => {
 };
 
 export const setupFabricCustomProperties = () => {
-	FabricObject.customProperties = ['objectType', 'panelId'];
+	FabricObject.customProperties = ['objectType', 'panelId', 'textId', 'layerId'];
 	FabricObject.ownDefaults.borderColor = ACCENT_COLOR;
 	FabricObject.ownDefaults.cornerColor = ACCENT_COLOR;
 	FabricObject.ownDefaults.cornerStrokeColor = ACCENT_COLOR;
@@ -75,5 +76,14 @@ export const setupFabricCustomProperties = () => {
 		controls.mtr = createBottomRotateControl();
 
 		return { controls };
+	};
+
+	Textbox.createControls = () => {
+		return {
+			controls: {
+				...controlsUtils.createResizeControls(),
+				mtr: createBottomRotateControl(),
+			},
+		};
 	};
 };

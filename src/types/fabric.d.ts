@@ -1,4 +1,4 @@
-import type { Canvas, FabricImage, FabricObject, Point, Polygon, Polyline } from 'fabric';
+import type { Canvas, FabricImage, FabricObject, Point, Polygon, Polyline, Textbox } from 'fabric';
 
 export type GridGuideImage = FabricImage & {
 	isGuide?: boolean;
@@ -12,7 +12,7 @@ export type GuideMarkedObject = FabricObject & {
 
 export type GuidedPolyline = Polyline & GuideMarkedObject;
 
-export type FabricObjectType = 'panel' | 'panelImage';
+export type FabricObjectType = 'panel' | 'panelImage' | 'text';
 
 export type PanelPolygon = Polygon & {
 	objectType?: FabricObjectType;
@@ -25,6 +25,12 @@ export type PanelLikeObject = FabricObject & {
 	panelId?: string;
 	layerId?: string;
 	isGuide?: boolean;
+};
+
+export type PageTextObject = Textbox & {
+	objectType?: FabricObjectType;
+	textId?: string;
+	layerId?: string;
 };
 
 export type PanelBounds = {

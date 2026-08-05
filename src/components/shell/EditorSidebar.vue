@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import ConfigPanel from '@/components/sidebar/ConfigPanel.vue';
 import LayoutsPanel from '@/components/sidebar/LayoutsPanel.vue';
 import LayersPanel from '@/components/sidebar/LayersPanel.vue';
+import TextsPanel from '@/components/sidebar/TextsPanel.vue';
 import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
 import type { SidebarTab, SidebarTabDef } from '@/types/sidebar';
 
@@ -25,6 +26,12 @@ const tabs: SidebarTabDef[] = [
 		label: 'Layers',
 		icon: 'fluent:layer-24-regular',
 		panel: LayersPanel,
+	},
+	{
+		id: SIDEBAR_TAB.Texts,
+		label: 'Texts',
+		icon: 'fluent:text-font-24-regular',
+		panel: TextsPanel,
 	},
 ];
 

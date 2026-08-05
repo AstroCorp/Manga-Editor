@@ -2,6 +2,7 @@ import { storeToRefs } from 'pinia';
 import { onBeforeUnmount, shallowRef, watch, type ShallowRef } from 'vue';
 import {
 	Polyline,
+	Textbox,
 	type Canvas,
 	type TPointerEvent,
 	type TPointerEventInfo,
@@ -18,6 +19,7 @@ import {
 	getLayerId,
 	getPanelId,
 	isGuide,
+	isPageText,
 	isPanel,
 	isPanelImage,
 } from '@/lib/fabric/isGuide';
@@ -116,6 +118,21 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 				object.lockScalingY = false;
 				object.hasControls = true;
 				object.perPixelTargetFind = true;
+
+				return;
+			}
+
+			if (isPageText(object)) {
+				const editing = Boolean((object as Textbox).isEditing);
+
+				object.selectable = true;
+				object.evented = true;
+				object.lockMovementX = editing;
+				object.lockMovementY = editing;
+				object.lockRotation = editing;
+				object.lockScalingX = editing;
+				object.lockScalingY = true;
+				object.hasControls = !editing;
 
 				return;
 			}
@@ -395,34 +412,44 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 		);
 	};
 
-	const onCanvasMouseDown = (event: TPointerEventInfo<TPointerEvent>) => {
-		const canvas = fabricCanvas.value;
+	/** Había selección al empezar el click → el vacío solo quita foco. */
+	let clearFocusOnly = false;
 
+	const onCanvasMouseDownBefore = () => {
+		clearFocusOnly = Boolean(fabricCanvas.value?.getActiveObject());
+	};
+
+	const onCanvasMouseDown = (event: TPointerEventInfo<TPointerEvent>) => {
 		// Trazo en curso: cualquier click intenta añadir punto.
 		if (path.value.length > 0) {
+			clearFocusOnly = false;
 			addPoint(pointFromEvent(event));
 
 			return;
 		}
 
 		const target = event.target;
+		const wasClearingFocus = clearFocusOnly;
 
-		// Click sobre un panel/imagen existente → dejar selección (no empezar trazo).
+		clearFocusOnly = false;
+
+		// Click sobre un panel/imagen/texto existente → dejar selección (no empezar trazo).
 		// Con perPixelTargetFind, fuera de la forma el target ya no es la imagen.
-		if (target && (isPanel(target) || isPanelImage(target))) {
+		if (
+			target &&
+			(isPanel(target) || isPanelImage(target) || isPageText(target))
+		) {
+			return;
+		}
+
+		// Había foco: este click vacío solo lo quita, no inicia el trazado.
+		if (wasClearingFocus) {
 			return;
 		}
 
 		// Hace falta ver la guía para empezar a dibujar.
 		if (!showGridGuides.value) {
 			return;
-		}
-
-		// Si Fabric aún tenía una imagen activa por bbox, soltarla al empezar trazo.
-		const active = canvas?.getActiveObject();
-
-		if (active && isPanelImage(active)) {
-			canvas?.discardActiveObject();
 		}
 
 		addPoint(pointFromEvent(event));
@@ -438,11 +465,13 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 	};
 
 	const bindCanvasEvents = (canvas: Canvas) => {
+		canvas.on('mouse:down:before', onCanvasMouseDownBefore);
 		canvas.on('mouse:down', onCanvasMouseDown);
 		canvas.on('mouse:move', onCanvasMouseMove);
 	};
 
 	const unbindCanvasEvents = (canvas: Canvas) => {
+		canvas.off('mouse:down:before', onCanvasMouseDownBefore);
 		canvas.off('mouse:down', onCanvasMouseDown);
 		canvas.off('mouse:move', onCanvasMouseMove);
 	};

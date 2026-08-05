@@ -73,6 +73,7 @@ const {
 				:width="page.width"
 				:height="page.height"
 				:shapes="page.getVisibleShapes()"
+				:texts="page.getVisibleTexts()"
 				:dragging="dragFromIndex === index"
 				:drop-target="
 					dropTargetIndex === index && dragFromIndex !== index

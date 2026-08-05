@@ -45,6 +45,7 @@ export const shapeImageFromFabric = (image: FabricImage): ShapeImage => {
 		originY: image.originY === 'top' ? 'top' : 'center',
 		width: Math.max(1, image.width ?? 1),
 		height: Math.max(1, image.height ?? 1),
+		angle: image.angle ?? 0,
 		grayscale: hasGrayscaleFilter(image),
 	});
 };
@@ -88,6 +89,7 @@ export const shapeImageToFabric = async (
 		originY: image.originY,
 		scaleX: image.scaleX,
 		scaleY: image.scaleY,
+		angle: image.angle,
 		selectable: interactive,
 		evented: interactive,
 		hasControls: interactive,

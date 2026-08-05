@@ -9,12 +9,14 @@ import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
 import { DEFAULT_LAYER_NAME, Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
+import type { TextBlock } from '@/models/TextBlock';
 import type { LayoutJSON, LayoutLayerJSON } from '@/types/layouts';
 import type {
 	PageMargins,
 	PageRotateDirection,
 	PageValue,
 	ResetLayerOptions,
+	TextBlockPatch,
 } from '@/types/page';
 
 export class Page {
@@ -84,9 +86,20 @@ export class Page {
 			});
 	}
 
+	/** Textos de capas visibles, de abajo a arriba (flatten preview). */
+	getVisibleTexts(): TextBlock[] {
+		return this.layers
+			.filter((layer) => {
+				return layer.visible;
+			})
+			.flatMap((layer) => {
+				return layer.texts;
+			});
+	}
+
 	hasDrawing(): boolean {
 		return this.layers.some((layer) => {
-			return layer.shapes.length > 0;
+			return layer.shapes.length > 0 || layer.texts.length > 0;
 		});
 	}
 
@@ -114,6 +127,7 @@ export class Page {
 		const defaultLayer = this.defaultLayer;
 
 		defaultLayer.clearShapes();
+		defaultLayer.clearTexts();
 		defaultLayer.visible = true;
 		defaultLayer.name = DEFAULT_LAYER_NAME;
 
@@ -319,6 +333,18 @@ export class Page {
 
 	removeShape(shapeId: string): boolean {
 		return this.getActiveLayer().removeShape(shapeId);
+	}
+
+	addText(text: TextBlock) {
+		this.getActiveLayer().addText(text);
+	}
+
+	removeText(textId: string): boolean {
+		return this.getActiveLayer().removeText(textId);
+	}
+
+	updateText(textId: string, patch: TextBlockPatch): boolean {
+		return this.getActiveLayer().updateText(textId, patch);
 	}
 
 	setShapeImage(shapeId: string, image: ShapeImage | null): boolean {
