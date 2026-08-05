@@ -1,5 +1,6 @@
 import type { TextStyle } from 'fabric';
 import {
+	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
 	DEFAULT_TEXT_STROKE,
@@ -10,11 +11,39 @@ import type {
 	TextFontStyle,
 	TextFontWeight,
 	TextStylesJSON,
+	TextTextAlign,
 } from '@/types/page';
 
 export const MIN_TEXT_FONT_SIZE = 8;
 export const MAX_TEXT_FONT_SIZE = 200;
 export const MIN_TEXT_STROKE_WIDTH = 0;
+
+export const TEXT_ALIGN_VALUES = [
+	'left',
+	'center',
+	'right',
+	'justify',
+	'justify-left',
+	'justify-center',
+	'justify-right',
+] as const satisfies ReadonlyArray<TextTextAlign>;
+
+export const TEXT_ALIGN_OPTIONS: ReadonlyArray<{
+	value: TextTextAlign;
+	label: string;
+}> = [
+	{ value: 'left', label: 'Left' },
+	{ value: 'center', label: 'Center' },
+	{ value: 'right', label: 'Right' },
+	{ value: 'justify', label: 'Justify' },
+	{ value: 'justify-left', label: 'Justify left' },
+	{ value: 'justify-center', label: 'Justify center' },
+	{ value: 'justify-right', label: 'Justify right' },
+];
+
+const TEXT_ALIGN_VALUE_SET: ReadonlySet<TextTextAlign> = new Set(
+	TEXT_ALIGN_VALUES,
+);
 
 type FabricStyleSample = {
 	fill?: unknown;
@@ -37,6 +66,7 @@ export type TextStyleSource = {
 	linethrough?: unknown;
 	stroke?: unknown;
 	strokeWidth?: unknown;
+	textAlign?: unknown;
 	isEditing?: boolean;
 	selectionStart?: number;
 	selectionEnd?: number;
@@ -85,6 +115,7 @@ export type TextFormatFlags = {
 	dominantFontSize: number;
 	strokeWidth: number | null;
 	dominantStrokeWidth: number;
+	textAlign: TextTextAlign;
 };
 
 const toCharStyle = (style: Record<string, unknown>): TextCharStyle | null => {
@@ -185,6 +216,34 @@ export const normalizeFontStyle = (value: unknown): TextFontStyle | null => {
 	}
 
 	return null;
+};
+
+export const normalizeTextAlign = (value: unknown): TextTextAlign | null => {
+	if (typeof value !== 'string') {
+		return null;
+	}
+
+	return TEXT_ALIGN_VALUE_SET.has(value as TextTextAlign)
+		? (value as TextTextAlign)
+		: null;
+};
+
+/** Icono Fluent que representa el textAlign actual (solo UI). */
+export const textAlignIconName = (textAlign: TextTextAlign): string => {
+	switch (textAlign) {
+		case 'center':
+			return 'fluent:text-align-center-24-regular';
+		case 'right':
+			return 'fluent:text-align-right-24-regular';
+		case 'justify':
+		case 'justify-left':
+		case 'justify-center':
+		case 'justify-right':
+			return 'fluent:text-align-justify-24-regular';
+		case 'left':
+		default:
+			return 'fluent:text-align-left-24-regular';
+	}
 };
 
 /** Parsea el valor tipado en el input; null si vacío o fuera de rango. */
@@ -569,6 +628,7 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		strokeWidth:
 			strokeWidths.length === 0 ? null : resolveUnique(strokeWidths),
 		dominantStrokeWidth,
+		textAlign: normalizeTextAlign(textbox.textAlign) ?? DEFAULT_TEXT_ALIGN,
 	};
 };
 
@@ -643,6 +703,19 @@ export const applyTextStrokeWidth = (
 	});
 
 	ensureSmoothTextStroke(textbox);
+};
+
+/** textAlign es propiedad de objeto (no por carácter). */
+export const applyTextAlign = (
+	textbox: TextStyleMutable,
+	textAlign: TextTextAlign,
+) => {
+	textbox.set('textAlign', textAlign);
+	(textbox as TextStyleMutable & { _forceClearCache?: boolean })._forceClearCache =
+		true;
+	textbox.dirty = true;
+	textbox.initDimensions?.();
+	textbox.setCoords?.();
 };
 
 /** Evita picos de miter en contornos gruesos del texto. */

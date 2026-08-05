@@ -11,6 +11,14 @@ export type PagePoint = {
 
 export type TextFontWeight = 'normal' | 'bold';
 export type TextFontStyle = 'normal' | 'italic';
+export type TextTextAlign =
+	| 'left'
+	| 'center'
+	| 'right'
+	| 'justify'
+	| 'justify-left'
+	| 'justify-center'
+	| 'justify-right';
 
 export type TextCharStyle = {
 	fill?: string;
@@ -43,6 +51,7 @@ export type TextBlockJSON = {
 	linethrough?: boolean;
 	stroke?: string | null;
 	strokeWidth?: number;
+	textAlign?: TextTextAlign;
 	angle?: number;
 	styles?: TextStylesJSON | null;
 };
@@ -61,6 +70,8 @@ export type PagePreviewText = {
 	linethrough: boolean;
 	stroke: string | null;
 	strokeWidth: number;
+	textAlign: TextTextAlign;
+	width: number;
 	angle: number;
 	originX: number;
 	originY: number;

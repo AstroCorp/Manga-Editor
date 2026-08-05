@@ -4,6 +4,7 @@ import { getTextId, isGuide, isPageText } from '@/lib/fabric/isGuide';
 import { getObjectOverlayAnchor } from '@/lib/fabric/overlayAnchor';
 import { textBlockFromFabric } from '@/lib/fabric/textFabric';
 import {
+	applyTextAlign,
 	applyTextFontSize,
 	applyTextStrokeWidth,
 	applyTextStyle,
@@ -12,10 +13,12 @@ import {
 	collectTextStrokeColors,
 	normalizeFontSize,
 	normalizeStrokeWidth,
+	normalizeTextAlign,
 	toHexColor,
 	type TextFormatFlags,
 } from '@/lib/fabric/textStyles';
 import {
+	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
 	DEFAULT_TEXT_STROKE,
@@ -25,7 +28,7 @@ import { useMangaStore } from '@/stores/manga';
 import type { PageTextObject } from '@/types/fabric';
 import type { OverlayPlacement, PageOverlayPosition } from '@/types/panel';
 import type { ShallowRef } from 'vue';
-import type { TextCharStyle } from '@/types/page';
+import type { TextCharStyle, TextTextAlign } from '@/types/page';
 
 type TextColorToolbarDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
@@ -41,6 +44,7 @@ const DEFAULT_FLAGS: TextFormatFlags = {
 	dominantFontSize: DEFAULT_TEXT_FONT_SIZE,
 	strokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
 	dominantStrokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
+	textAlign: DEFAULT_TEXT_ALIGN,
 };
 
 const REFRESH_EVENTS = [
@@ -71,6 +75,7 @@ export const useTextColorToolbar = ({
 	const dominantFontSize = shallowRef(DEFAULT_FLAGS.dominantFontSize);
 	const strokeWidth = shallowRef<number | null>(DEFAULT_FLAGS.strokeWidth);
 	const dominantStrokeWidth = shallowRef(DEFAULT_FLAGS.dominantStrokeWidth);
+	const textAlign = shallowRef<TextTextAlign>(DEFAULT_FLAGS.textAlign);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
 
@@ -89,6 +94,7 @@ export const useTextColorToolbar = ({
 		dominantFontSize.value = DEFAULT_FLAGS.dominantFontSize;
 		strokeWidth.value = DEFAULT_FLAGS.strokeWidth;
 		dominantStrokeWidth.value = DEFAULT_FLAGS.dominantStrokeWidth;
+		textAlign.value = DEFAULT_FLAGS.textAlign;
 		position.value = null;
 		placement.value = 'above';
 	};
@@ -122,6 +128,7 @@ export const useTextColorToolbar = ({
 		dominantFontSize.value = flags.dominantFontSize;
 		strokeWidth.value = flags.strokeWidth;
 		dominantStrokeWidth.value = flags.dominantStrokeWidth;
+		textAlign.value = flags.textAlign;
 	};
 
 	const refreshMenu = () => {
@@ -215,6 +222,18 @@ export const useTextColorToolbar = ({
 		});
 	};
 
+	const setTextAlign = (nextAlign: TextTextAlign) => {
+		const align = normalizeTextAlign(nextAlign);
+
+		if (!align) {
+			return;
+		}
+
+		withActiveText((textbox) => {
+			applyTextAlign(textbox, align);
+		});
+	};
+
 	const deleteText = () => {
 		const canvas = fabricCanvas.value;
 		const textbox = getActiveText();
@@ -279,6 +298,7 @@ export const useTextColorToolbar = ({
 		dominantFontSize,
 		strokeWidth,
 		dominantStrokeWidth,
+		textAlign,
 		position,
 		placement,
 		setColor,
@@ -289,6 +309,7 @@ export const useTextColorToolbar = ({
 		toggleLinethrough,
 		setFontSize,
 		setStrokeWidth,
+		setTextAlign,
 		deleteText,
 		clearMenu,
 	};

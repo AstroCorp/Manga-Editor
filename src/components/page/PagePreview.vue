@@ -98,7 +98,13 @@ const clipPathId = (index: number) => {
 		<text
 			v-for="(text, index) in model.texts"
 			:key="`text-${index}`"
-			:x="text.x"
+			:x="
+				text.textAlign === 'center'
+					? text.originX + text.width / 2
+					: text.textAlign === 'right'
+						? text.originX + text.width
+						: text.x
+			"
 			:y="text.y"
 			:font-size="text.fontSize"
 			:fill="text.fill"
@@ -109,6 +115,13 @@ const clipPathId = (index: number) => {
 			paint-order="stroke fill"
 			:font-weight="text.fontWeight"
 			:font-style="text.fontStyle"
+			:text-anchor="
+				text.textAlign === 'center'
+					? 'middle'
+					: text.textAlign === 'right'
+						? 'end'
+						: 'start'
+			"
 			:text-decoration="
 				[text.underline ? 'underline' : '', text.linethrough ? 'line-through' : '']
 					.filter(Boolean)

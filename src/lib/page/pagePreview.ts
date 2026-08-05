@@ -73,6 +73,8 @@ const toPreviewTexts = (
 			linethrough: text.linethrough,
 			stroke: text.stroke,
 			strokeWidth: text.strokeWidth,
+			textAlign: text.textAlign,
+			width: text.width,
 			angle: text.angle,
 			originX: text.left,
 			originY: text.top,

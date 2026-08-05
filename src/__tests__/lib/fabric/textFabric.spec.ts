@@ -109,6 +109,7 @@ describe('textFabric', () => {
 			linethrough: false,
 			stroke: null,
 			strokeWidth: 0,
+			textAlign: 'left',
 			styles: {
 				'0': {
 					'0': { fill: '#ff0000', fontWeight: 'bold' },
@@ -252,5 +253,19 @@ describe('textFabric', () => {
 			stroke: '#ff0000',
 			strokeWidth: 3,
 		});
+	});
+
+	it('maps textAlign to and from fabric', () => {
+		const text = TextBlock.create(0, 0);
+
+		text.applyPatch({ textAlign: 'center' });
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+
+		expect(fabricText.textAlign).toBe('center');
+		expect(textBlockFromFabric(fabricText).textAlign).toBe('center');
 	});
 });

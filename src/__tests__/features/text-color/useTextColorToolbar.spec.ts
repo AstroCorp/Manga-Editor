@@ -6,6 +6,7 @@ import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { DEFAULT_TEXT_FONT_SIZE, TextBlock } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
+import type { TextTextAlign } from '@/types/page';
 
 type TextObjectMock = {
 	text: string;
@@ -20,6 +21,7 @@ type TextObjectMock = {
 	linethrough: boolean;
 	stroke: string | null;
 	strokeWidth: number;
+	textAlign: TextTextAlign;
 	angle: number;
 	styles: Record<string, Record<string, Record<string, unknown>>>;
 	isEditing: boolean;
@@ -59,6 +61,7 @@ const createTextObject = (text: TextBlock): TextObjectMock => {
 		linethrough: text.linethrough,
 		stroke: text.stroke,
 		strokeWidth: text.strokeWidth,
+		textAlign: text.textAlign,
 		angle: text.angle,
 		styles: {},
 		isEditing: false,
@@ -404,5 +407,25 @@ describe('useTextColorToolbar', () => {
 		expect(discardActiveObject).toHaveBeenCalled();
 		expect(api.position.value).toBeNull();
 		expect(onChanged).toHaveBeenCalled();
+	});
+
+	it('setTextAlign updates fabric and persists', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(0, 0);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextObject(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const api = useTextColorToolbar({
+			fabricCanvas: shallowRef(canvas),
+		});
+
+		handlers['selection:created']?.();
+		api.setTextAlign('justify-center');
+
+		expect(textObject.set).toHaveBeenCalledWith('textAlign', 'justify-center');
+		expect(mangaStore.texts[0]?.textAlign).toBe('justify-center');
+		expect(api.textAlign.value).toBe('justify-center');
 	});
 });

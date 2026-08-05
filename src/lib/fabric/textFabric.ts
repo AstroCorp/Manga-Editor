@@ -4,12 +4,14 @@ import {
 	isBoldWeight,
 	normalizeFontStyle,
 	normalizeStrokeWidth,
+	normalizeTextAlign,
 	stylesFromFabric,
 	stylesToFabric,
 	toHexColor,
 	toStrokeColor,
 } from '@/lib/fabric/textStyles';
 import {
+	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FONT_SIZE,
 	DEFAULT_TEXT_STROKE_WIDTH,
 	type TextBlock,
@@ -47,6 +49,7 @@ export const textBlockToFabric = (
 		paintFirst: 'stroke',
 		strokeLineJoin: 'round',
 		strokeLineCap: 'round',
+		textAlign: text.textAlign,
 		angle: text.angle,
 		fontFamily: 'Arial, sans-serif',
 		editable: true,
@@ -89,6 +92,7 @@ export const textBlockFromFabric = (textbox: PageTextObject): TextBlockPatch => 
 		stroke: toStrokeColor(textbox.stroke),
 		strokeWidth:
 			normalizeStrokeWidth(textbox.strokeWidth) ?? DEFAULT_TEXT_STROKE_WIDTH,
+		textAlign: normalizeTextAlign(textbox.textAlign) ?? DEFAULT_TEXT_ALIGN,
 		styles: stylesFromFabric(textbox.styles) ?? null,
 	};
 };

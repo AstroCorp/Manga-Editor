@@ -13,10 +13,12 @@ import {
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_STROKE,
 } from '@/models/TextBlock';
+import TextAlignSelect from '@/features/text-color/components/TextAlignSelect.vue';
 import type {
 	TextColorToolbarEmits,
 	TextColorToolbarProps,
 } from '@/types/panel';
+import type { TextTextAlign } from '@/types/page';
 
 const MIXED_VALUE_LABEL = 'mix';
 
@@ -127,6 +129,10 @@ const onColorInput = (event: Event) => {
 
 const onStrokeColorInput = (event: Event) => {
 	emit('setStrokeColor', (event.target as HTMLInputElement).value);
+};
+
+const onTextAlignUpdate = (next: TextTextAlign) => {
+	emit('setTextAlign', next);
 };
 
 const emitFontSize = (raw: string) => {
@@ -291,31 +297,6 @@ const onStrokeWidthKeydown = (event: KeyboardEvent) => {
 			/>
 		</label>
 
-		<label
-			class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
-			title="Stroke color"
-		>
-			<span
-				class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-				aria-hidden="true"
-			>
-				<span
-					class="absolute inset-0 rounded-full"
-					:style="strokeSwatchStyle"
-				/>
-				<span
-					class="absolute inset-[5px] rounded-full bg-white dark:bg-zinc-950"
-				/>
-			</span>
-			<input
-				type="color"
-				class="sr-only"
-				:value="strokeColorValue"
-				aria-label="Stroke color"
-				@input="onStrokeColorInput"
-			/>
-		</label>
-
 		<div
 			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"
 			title="Font size"
@@ -351,6 +332,31 @@ const onStrokeWidthKeydown = (event: KeyboardEvent) => {
 				</button>
 			</div>
 		</div>
+
+		<label
+			class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+			title="Stroke color"
+		>
+			<span
+				class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+				aria-hidden="true"
+			>
+				<span
+					class="absolute inset-0 rounded-full"
+					:style="strokeSwatchStyle"
+				/>
+				<span
+					class="absolute inset-[5px] rounded-full bg-white dark:bg-zinc-950"
+				/>
+			</span>
+			<input
+				type="color"
+				class="sr-only"
+				:value="strokeColorValue"
+				aria-label="Stroke color"
+				@input="onStrokeColorInput"
+			/>
+		</label>
 
 		<div
 			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"
@@ -432,6 +438,12 @@ const onStrokeWidthKeydown = (event: KeyboardEvent) => {
 		>
 			<Icon icon="fluent:text-strikethrough-24-regular" class="size-5" />
 		</button>
+
+		<TextAlignSelect
+			:model-value="textAlign"
+			@update:model-value="onTextAlignUpdate"
+		/>
+
 		<button
 			type="button"
 			class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"

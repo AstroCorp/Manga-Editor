@@ -142,6 +142,8 @@ describe('pagePreview', () => {
 				linethrough: false,
 				stroke: null,
 				strokeWidth: 0,
+				textAlign: 'left',
+				width: 100,
 				angle: 12,
 				originX: 12,
 				originY: 24,

@@ -13,6 +13,7 @@ const baseProps = {
 	dominantFontSize: 24,
 	strokeWidth: 0 as number | null,
 	dominantStrokeWidth: 0,
+	textAlign: 'left' as const,
 	left: 100,
 	top: 50,
 	placement: 'above' as const,
@@ -281,8 +282,11 @@ describe('TextColorToolbar', () => {
 			},
 		});
 
-		await wrapper.get('input[aria-label="Stroke color"]').setValue('#00ff00');
-		await wrapper.get('input[aria-label="Stroke color"]').trigger('input');
+		const strokeInput = wrapper.get('input[aria-label="Stroke color"]');
+		const strokeEl = strokeInput.element as HTMLInputElement;
+
+		strokeEl.value = '#00ff00';
+		await strokeInput.trigger('input');
 		await wrapper.get('button[aria-label="Increase stroke width"]').trigger('click');
 
 		expect(wrapper.emitted('setStrokeColor')?.at(-1)).toEqual(['#00ff00']);
@@ -302,6 +306,45 @@ describe('TextColorToolbar', () => {
 		await wrapper.get('button[aria-label="Delete text"]').trigger('click');
 
 		expect(wrapper.emitted('deleteText')).toHaveLength(1);
+	});
+
+	it('emits setTextAlign from the custom align menu', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Text align"]').trigger('click');
+
+		const justifyRight = wrapper.findAll('ul[role="listbox"] button').find((node) => {
+			return node.text().includes('Justify right');
+		});
+
+		expect(justifyRight).toBeTruthy();
+		await justifyRight!.trigger('click');
+
+		expect(wrapper.emitted('setTextAlign')?.at(-1)).toEqual(['justify-right']);
+	});
+
+	it('opens the align menu when clicking the trigger', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		expect(wrapper.find('ul[role="listbox"]').exists()).toBe(false);
+
+		await wrapper.get('button[aria-label="Text align"]').trigger('click');
+
+		expect(wrapper.find('ul[role="listbox"]').exists()).toBe(true);
 	});
 
 	it('shows mix for stroke width and nudges from dominant', async () => {

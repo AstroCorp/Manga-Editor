@@ -17,6 +17,7 @@ import {
 	parseStrokeWidthInput,
 	stylesFromFabric,
 	stylesToFabric,
+	textAlignIconName,
 	toHexColor,
 	toStrokeColor,
 } from '@/lib/fabric/textStyles';
@@ -62,6 +63,17 @@ describe('textStyles', () => {
 		expect(toStrokeColor('')).toBeNull();
 		expect(toStrokeColor('transparent')).toBeNull();
 		expect(toStrokeColor('#AbC')).toBe('#aabbcc');
+	});
+
+	it('maps textAlign values to toolbar icons', () => {
+		expect(textAlignIconName('left')).toBe('fluent:text-align-left-24-regular');
+		expect(textAlignIconName('center')).toBe(
+			'fluent:text-align-center-24-regular',
+		);
+		expect(textAlignIconName('right')).toBe('fluent:text-align-right-24-regular');
+		expect(textAlignIconName('justify-left')).toBe(
+			'fluent:text-align-justify-24-regular',
+		);
 	});
 
 	it('round-trips format styles between fabric and domain', () => {
@@ -211,6 +223,7 @@ describe('textStyles', () => {
 			dominantFontSize: 18,
 			strokeWidth: 0,
 			dominantStrokeWidth: 0,
+			textAlign: 'left',
 		});
 
 		const uniform = {
@@ -232,6 +245,7 @@ describe('textStyles', () => {
 			dominantFontSize: 20,
 			strokeWidth: 0,
 			dominantStrokeWidth: 0,
+			textAlign: 'left',
 		});
 	});
 
@@ -260,6 +274,7 @@ describe('textStyles', () => {
 			dominantFontSize: 18,
 			strokeWidth: 0,
 			dominantStrokeWidth: 0,
+			textAlign: 'left',
 		});
 	});
 

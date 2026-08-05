@@ -32,6 +32,7 @@ export const textColorFeature: CanvasFeature = {
 					dominantFontSize: api.dominantFontSize.value,
 					strokeWidth: api.strokeWidth.value,
 					dominantStrokeWidth: api.dominantStrokeWidth.value,
+					textAlign: api.textAlign.value,
 					left: stage.left,
 					top: stage.top,
 					placement: api.placement.value,
@@ -46,6 +47,7 @@ export const textColorFeature: CanvasFeature = {
 				toggleLinethrough: api.toggleLinethrough,
 				setFontSize: api.setFontSize as (...args: never[]) => unknown,
 				setStrokeWidth: api.setStrokeWidth as (...args: never[]) => unknown,
+				setTextAlign: api.setTextAlign as (...args: never[]) => unknown,
 				deleteText: api.deleteText,
 			},
 		});
