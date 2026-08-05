@@ -5,16 +5,21 @@ import { getObjectOverlayAnchor } from '@/lib/fabric/overlayAnchor';
 import { textBlockFromFabric } from '@/lib/fabric/textFabric';
 import {
 	applyTextFontSize,
+	applyTextStrokeWidth,
 	applyTextStyle,
 	collectTextColors,
 	collectTextFormat,
+	collectTextStrokeColors,
 	normalizeFontSize,
+	normalizeStrokeWidth,
 	toHexColor,
 	type TextFormatFlags,
 } from '@/lib/fabric/textStyles';
 import {
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
+	DEFAULT_TEXT_STROKE,
+	DEFAULT_TEXT_STROKE_WIDTH,
 } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { PageTextObject } from '@/types/fabric';
@@ -24,6 +29,7 @@ import type { TextCharStyle } from '@/types/page';
 
 type TextColorToolbarDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
+	onChanged?: () => void;
 };
 
 const DEFAULT_FLAGS: TextFormatFlags = {
@@ -33,6 +39,8 @@ const DEFAULT_FLAGS: TextFormatFlags = {
 	linethrough: false,
 	fontSize: DEFAULT_TEXT_FONT_SIZE,
 	dominantFontSize: DEFAULT_TEXT_FONT_SIZE,
+	strokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
+	dominantStrokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
 };
 
 const REFRESH_EVENTS = [
@@ -47,16 +55,22 @@ const REFRESH_EVENTS = [
 	'text:selection:changed',
 ] as const;
 
-export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
+export const useTextColorToolbar = ({
+	fabricCanvas,
+	onChanged,
+}: TextColorToolbarDeps) => {
 	const mangaStore = useMangaStore();
 
 	const colors = shallowRef<string[]>([DEFAULT_TEXT_FILL]);
+	const strokeColors = shallowRef<string[]>([DEFAULT_TEXT_STROKE]);
 	const bold = shallowRef(DEFAULT_FLAGS.bold);
 	const italic = shallowRef(DEFAULT_FLAGS.italic);
 	const underline = shallowRef(DEFAULT_FLAGS.underline);
 	const linethrough = shallowRef(DEFAULT_FLAGS.linethrough);
 	const fontSize = shallowRef<number | null>(DEFAULT_FLAGS.fontSize);
 	const dominantFontSize = shallowRef(DEFAULT_FLAGS.dominantFontSize);
+	const strokeWidth = shallowRef<number | null>(DEFAULT_FLAGS.strokeWidth);
+	const dominantStrokeWidth = shallowRef(DEFAULT_FLAGS.dominantStrokeWidth);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
 
@@ -66,12 +80,15 @@ export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
 
 	const clearMenu = () => {
 		colors.value = [DEFAULT_TEXT_FILL];
+		strokeColors.value = [DEFAULT_TEXT_STROKE];
 		bold.value = DEFAULT_FLAGS.bold;
 		italic.value = DEFAULT_FLAGS.italic;
 		underline.value = DEFAULT_FLAGS.underline;
 		linethrough.value = DEFAULT_FLAGS.linethrough;
 		fontSize.value = DEFAULT_FLAGS.fontSize;
 		dominantFontSize.value = DEFAULT_FLAGS.dominantFontSize;
+		strokeWidth.value = DEFAULT_FLAGS.strokeWidth;
+		dominantStrokeWidth.value = DEFAULT_FLAGS.dominantStrokeWidth;
 		position.value = null;
 		placement.value = 'above';
 	};
@@ -103,6 +120,8 @@ export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
 		linethrough.value = flags.linethrough;
 		fontSize.value = flags.fontSize;
 		dominantFontSize.value = flags.dominantFontSize;
+		strokeWidth.value = flags.strokeWidth;
+		dominantStrokeWidth.value = flags.dominantStrokeWidth;
 	};
 
 	const refreshMenu = () => {
@@ -118,6 +137,7 @@ export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
 		const anchor = getObjectOverlayAnchor(textbox);
 
 		colors.value = collectTextColors(textbox);
+		strokeColors.value = collectTextStrokeColors(textbox);
 		applyFlags(collectTextFormat(textbox));
 		position.value = { left: anchor.left, top: anchor.top };
 		placement.value = anchor.placement;
@@ -140,6 +160,12 @@ export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
 	const setColor = (nextColor: string) => {
 		withActiveText((textbox) => {
 			applyTextStyle(textbox, { fill: toHexColor(nextColor) });
+		});
+	};
+
+	const setStrokeColor = (nextColor: string) => {
+		withActiveText((textbox) => {
+			applyTextStyle(textbox, { stroke: toHexColor(nextColor, DEFAULT_TEXT_STROKE) });
 		});
 	};
 
@@ -175,6 +201,35 @@ export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
 		withActiveText((textbox) => {
 			applyTextFontSize(textbox, size);
 		});
+	};
+
+	const setStrokeWidth = (nextWidth: number) => {
+		const width = normalizeStrokeWidth(nextWidth);
+
+		if (width === null) {
+			return;
+		}
+
+		withActiveText((textbox) => {
+			applyTextStrokeWidth(textbox, width);
+		});
+	};
+
+	const deleteText = () => {
+		const canvas = fabricCanvas.value;
+		const textbox = getActiveText();
+		const id = textbox ? getTextId(textbox) : null;
+
+		if (!canvas || !textbox || !id) {
+			return;
+		}
+
+		mangaStore.removeText(id);
+		canvas.remove(textbox);
+		canvas.discardActiveObject();
+		clearMenu();
+		onChanged?.();
+		canvas.requestRenderAll();
 	};
 
 	const bindCanvasEvents = (canvas: Canvas) => {
@@ -215,20 +270,26 @@ export const useTextColorToolbar = ({ fabricCanvas }: TextColorToolbarDeps) => {
 	return {
 		color,
 		colors,
+		strokeColors,
 		bold,
 		italic,
 		underline,
 		linethrough,
 		fontSize,
 		dominantFontSize,
+		strokeWidth,
+		dominantStrokeWidth,
 		position,
 		placement,
 		setColor,
+		setStrokeColor,
 		toggleBold,
 		toggleItalic,
 		toggleUnderline,
 		toggleLinethrough,
 		setFontSize,
+		setStrokeWidth,
+		deleteText,
 		clearMenu,
 	};
 };

@@ -5,39 +5,67 @@ import {
 	colorSwatchBackground,
 	MAX_TEXT_FONT_SIZE,
 	MIN_TEXT_FONT_SIZE,
+	MIN_TEXT_STROKE_WIDTH,
 	parseFontSizeInput,
+	parseStrokeWidthInput,
 } from '@/lib/fabric/textStyles';
-import { DEFAULT_TEXT_FILL } from '@/models/TextBlock';
+import {
+	DEFAULT_TEXT_FILL,
+	DEFAULT_TEXT_STROKE,
+} from '@/models/TextBlock';
 import type {
 	TextColorToolbarEmits,
 	TextColorToolbarProps,
 } from '@/types/panel';
 
-const MIXED_FONT_SIZE_LABEL = 'mix';
+const MIXED_VALUE_LABEL = 'mix';
 
 const props = defineProps<TextColorToolbarProps>();
 const emit = defineEmits<TextColorToolbarEmits>();
 
 const fontSizeDraft = ref('');
+const strokeWidthDraft = ref('');
 
 const isFontSizeMixed = computed(() => {
 	return props.fontSize === null;
 });
 
+const isStrokeWidthMixed = computed(() => {
+	return props.strokeWidth === null;
+});
+
 const fontSizeFallback = computed(() => {
 	return isFontSizeMixed.value
-		? MIXED_FONT_SIZE_LABEL
+		? MIXED_VALUE_LABEL
 		: String(props.fontSize);
+});
+
+const strokeWidthFallback = computed(() => {
+	return isStrokeWidthMixed.value
+		? MIXED_VALUE_LABEL
+		: String(props.strokeWidth);
 });
 
 const resolvedFontSize = computed(() => {
 	return props.fontSize ?? props.dominantFontSize;
 });
 
+const resolvedStrokeWidth = computed(() => {
+	return props.strokeWidth ?? props.dominantStrokeWidth;
+});
+
 watch(
 	() => [props.fontSize, props.dominantFontSize] as const,
 	() => {
 		fontSizeDraft.value = fontSizeFallback.value;
+	},
+	{ immediate: true },
+);
+
+watch(
+	() => [props.strokeWidth, props.dominantStrokeWidth] as const,
+	() => {
+		strokeWidthDraft.value = strokeWidthFallback.value;
 	},
 	{ immediate: true },
 );
@@ -63,6 +91,12 @@ const swatchStyle = computed(() => {
 	};
 });
 
+const strokeSwatchStyle = computed(() => {
+	return {
+		background: colorSwatchBackground(props.strokeColors),
+	};
+});
+
 const formatToggleClass = (active: boolean) => {
 	if (active) {
 		return 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400';
@@ -75,12 +109,24 @@ const fontSizeAriaLabel = computed(() => {
 	return isFontSizeMixed.value ? 'Font size (mixed)' : 'Font size';
 });
 
+const strokeWidthAriaLabel = computed(() => {
+	return isStrokeWidthMixed.value ? 'Stroke width (mixed)' : 'Stroke width';
+});
+
 const colorValue = computed(() => {
 	return props.colors[0] ?? DEFAULT_TEXT_FILL;
 });
 
+const strokeColorValue = computed(() => {
+	return props.strokeColors[0] ?? DEFAULT_TEXT_STROKE;
+});
+
 const onColorInput = (event: Event) => {
 	emit('setColor', (event.target as HTMLInputElement).value);
+};
+
+const onStrokeColorInput = (event: Event) => {
+	emit('setStrokeColor', (event.target as HTMLInputElement).value);
 };
 
 const emitFontSize = (raw: string) => {
@@ -99,12 +145,36 @@ const emitFontSize = (raw: string) => {
 	return true;
 };
 
+const emitStrokeWidth = (raw: string) => {
+	const next = parseStrokeWidthInput(raw);
+
+	if (next === null) {
+		return false;
+	}
+
+	if (next === props.strokeWidth) {
+		return true;
+	}
+
+	emit('setStrokeWidth', next);
+
+	return true;
+};
+
 const revealDominantFontSize = () => {
 	if (!isFontSizeMixed.value) {
 		return;
 	}
 
 	fontSizeDraft.value = String(props.dominantFontSize);
+};
+
+const revealDominantStrokeWidth = () => {
+	if (!isStrokeWidthMixed.value) {
+		return;
+	}
+
+	strokeWidthDraft.value = String(props.dominantStrokeWidth);
 };
 
 const onFontSizeInput = (event: Event) => {
@@ -114,13 +184,20 @@ const onFontSizeInput = (event: Event) => {
 	emitFontSize(value);
 };
 
+const onStrokeWidthInput = (event: Event) => {
+	const value = (event.target as HTMLInputElement).value;
+
+	strokeWidthDraft.value = value;
+	emitStrokeWidth(value);
+};
+
 const commitFontSize = (event?: Event) => {
 	const raw =
 		event?.target instanceof HTMLInputElement
 			? event.target.value
 			: fontSizeDraft.value;
 
-	if (raw.trim().toLowerCase() === MIXED_FONT_SIZE_LABEL) {
+	if (raw.trim().toLowerCase() === MIXED_VALUE_LABEL) {
 		fontSizeDraft.value = fontSizeFallback.value;
 
 		return;
@@ -128,6 +205,23 @@ const commitFontSize = (event?: Event) => {
 
 	if (!emitFontSize(raw)) {
 		fontSizeDraft.value = fontSizeFallback.value;
+	}
+};
+
+const commitStrokeWidth = (event?: Event) => {
+	const raw =
+		event?.target instanceof HTMLInputElement
+			? event.target.value
+			: strokeWidthDraft.value;
+
+	if (raw.trim().toLowerCase() === MIXED_VALUE_LABEL) {
+		strokeWidthDraft.value = strokeWidthFallback.value;
+
+		return;
+	}
+
+	if (!emitStrokeWidth(raw)) {
+		strokeWidthDraft.value = strokeWidthFallback.value;
 	}
 };
 
@@ -142,12 +236,29 @@ const nudgeFontSize = (delta: number) => {
 	emitFontSize(String(next));
 };
 
+const nudgeStrokeWidth = (delta: number) => {
+	const current = resolvedStrokeWidth.value;
+	const next = Math.max(MIN_TEXT_STROKE_WIDTH, current + delta);
+
+	strokeWidthDraft.value = String(next);
+	emitStrokeWidth(String(next));
+};
+
 const onFontSizeKeydown = (event: KeyboardEvent) => {
 	if (event.key !== 'Enter') {
 		return;
 	}
 
 	commitFontSize(event);
+	(event.target as HTMLInputElement).blur();
+};
+
+const onStrokeWidthKeydown = (event: KeyboardEvent) => {
+	if (event.key !== 'Enter') {
+		return;
+	}
+
+	commitStrokeWidth(event);
 	(event.target as HTMLInputElement).blur();
 };
 </script>
@@ -177,6 +288,31 @@ const onFontSizeKeydown = (event: KeyboardEvent) => {
 				:value="colorValue"
 				aria-label="Text color"
 				@input="onColorInput"
+			/>
+		</label>
+
+		<label
+			class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+			title="Stroke color"
+		>
+			<span
+				class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+				aria-hidden="true"
+			>
+				<span
+					class="absolute inset-0 rounded-full"
+					:style="strokeSwatchStyle"
+				/>
+				<span
+					class="absolute inset-[5px] rounded-full bg-white dark:bg-zinc-950"
+				/>
+			</span>
+			<input
+				type="color"
+				class="sr-only"
+				:value="strokeColorValue"
+				aria-label="Stroke color"
+				@input="onStrokeColorInput"
 			/>
 		</label>
 
@@ -210,6 +346,42 @@ const onFontSizeKeydown = (event: KeyboardEvent) => {
 					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
 					aria-label="Decrease font size"
 					@click="nudgeFontSize(-1)"
+				>
+					<Icon icon="fluent:chevron-down-16-regular" class="size-3" />
+				</button>
+			</div>
+		</div>
+
+		<div
+			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"
+			title="Stroke width"
+		>
+			<input
+				:value="strokeWidthDraft"
+				type="text"
+				inputmode="numeric"
+				class="h-full w-8 appearance-none border-0 bg-transparent px-1 text-center text-sm text-inherit outline-none ring-0 hover:bg-transparent focus:bg-transparent"
+				:aria-label="strokeWidthAriaLabel"
+				@focus="revealDominantStrokeWidth"
+				@keydown="onStrokeWidthKeydown"
+				@input="onStrokeWidthInput"
+				@change="commitStrokeWidth"
+				@blur="commitStrokeWidth"
+			/>
+			<div class="flex w-5 shrink-0 flex-col">
+				<button
+					type="button"
+					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
+					aria-label="Increase stroke width"
+					@click="nudgeStrokeWidth(1)"
+				>
+					<Icon icon="fluent:chevron-up-16-regular" class="size-3" />
+				</button>
+				<button
+					type="button"
+					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
+					aria-label="Decrease stroke width"
+					@click="nudgeStrokeWidth(-1)"
 				>
 					<Icon icon="fluent:chevron-down-16-regular" class="size-3" />
 				</button>
@@ -259,6 +431,15 @@ const onFontSizeKeydown = (event: KeyboardEvent) => {
 			@click="emit('toggleLinethrough')"
 		>
 			<Icon icon="fluent:text-strikethrough-24-regular" class="size-5" />
+		</button>
+		<button
+			type="button"
+			class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+			title="Delete text"
+			aria-label="Delete text"
+			@click="emit('deleteText')"
+		>
+			<Icon icon="fluent:delete-24-regular" class="size-5" />
 		</button>
 	</div>
 </template>

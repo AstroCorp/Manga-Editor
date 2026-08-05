@@ -2,6 +2,8 @@ import type { TextStyle } from 'fabric';
 import {
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
+	DEFAULT_TEXT_STROKE,
+	DEFAULT_TEXT_STROKE_WIDTH,
 } from '@/models/TextBlock';
 import type {
 	TextCharStyle,
@@ -12,6 +14,7 @@ import type {
 
 export const MIN_TEXT_FONT_SIZE = 8;
 export const MAX_TEXT_FONT_SIZE = 200;
+export const MIN_TEXT_STROKE_WIDTH = 0;
 
 type FabricStyleSample = {
 	fill?: unknown;
@@ -20,6 +23,8 @@ type FabricStyleSample = {
 	fontStyle?: unknown;
 	underline?: unknown;
 	linethrough?: unknown;
+	stroke?: unknown;
+	strokeWidth?: unknown;
 };
 
 export type TextStyleSource = {
@@ -30,6 +35,8 @@ export type TextStyleSource = {
 	fontStyle?: unknown;
 	underline?: unknown;
 	linethrough?: unknown;
+	stroke?: unknown;
+	strokeWidth?: unknown;
 	isEditing?: boolean;
 	selectionStart?: number;
 	selectionEnd?: number;
@@ -41,6 +48,7 @@ export type TextStyleSource = {
 };
 
 type TextStyleMutable = TextStyleSource & {
+	width?: number;
 	set: {
 		(key: string, value: unknown): unknown;
 		(props: Record<string, unknown>): unknown;
@@ -53,6 +61,7 @@ type TextStyleMutable = TextStyleSource & {
 	removeStyle: (property: keyof TextCharStyle) => unknown;
 	initDimensions?: () => unknown;
 	setCoords?: () => unknown;
+	calcTextWidth?: () => number;
 	dirty?: boolean;
 };
 
@@ -60,9 +69,13 @@ const LAYOUT_STYLE_KEYS: Array<keyof TextCharStyle> = [
 	'fontSize',
 	'fontWeight',
 	'fontStyle',
+	'strokeWidth',
 ];
 
-/** null en fontSize = mezcla; dominantFontSize = el más frecuente. */
+/** Ancho temporal para medir el texto sin soft-wrap de Textbox. */
+const UNBOUNDED_TEXT_WIDTH = 1_000_000;
+const MIN_TEXTBOX_WIDTH = 20;
+/** null en fontSize/strokeWidth = mezcla; dominant* = el más frecuente. */
 export type TextFormatFlags = {
 	bold: boolean;
 	italic: boolean;
@@ -70,6 +83,8 @@ export type TextFormatFlags = {
 	linethrough: boolean;
 	fontSize: number | null;
 	dominantFontSize: number;
+	strokeWidth: number | null;
+	dominantStrokeWidth: number;
 };
 
 const toCharStyle = (style: Record<string, unknown>): TextCharStyle | null => {
@@ -105,6 +120,16 @@ const toCharStyle = (style: Record<string, unknown>): TextCharStyle | null => {
 		next.linethrough = style.linethrough;
 	}
 
+	if (typeof style.stroke === 'string' && style.stroke.length > 0) {
+		next.stroke = toHexColor(style.stroke);
+	}
+
+	const strokeWidth = normalizeStrokeWidth(style.strokeWidth);
+
+	if (strokeWidth !== null) {
+		next.strokeWidth = strokeWidth;
+	}
+
 	return Object.keys(next).length > 0 ? next : null;
 };
 
@@ -116,6 +141,16 @@ export const normalizeFontSize = (value: unknown): number | null => {
 	}
 
 	return Math.min(MAX_TEXT_FONT_SIZE, Math.max(MIN_TEXT_FONT_SIZE, Math.round(size)));
+};
+
+export const normalizeStrokeWidth = (value: unknown): number | null => {
+	const width = typeof value === 'number' ? value : Number(value);
+
+	if (!Number.isFinite(width)) {
+		return null;
+	}
+
+	return Math.max(MIN_TEXT_STROKE_WIDTH, Math.round(width));
 };
 
 export const isBoldWeight = (value: unknown): boolean => {
@@ -169,6 +204,21 @@ export const parseFontSizeInput = (raw: string): number | null => {
 	}
 
 	return Math.round(size);
+};
+
+/** Parsea stroke width tipado; null si vacío o inválido. */
+export const parseStrokeWidthInput = (raw: string): number | null => {
+	if (raw.trim() === '') {
+		return null;
+	}
+
+	const width = Number(raw);
+
+	if (!Number.isFinite(width) || width < MIN_TEXT_STROKE_WIDTH) {
+		return null;
+	}
+
+	return Math.round(width);
 };
 
 /** Compacta styles de Fabric a props de formato (JSON estable). */
@@ -292,6 +342,25 @@ export const toHexColor = (
 	return `#${toByte(rgb[1]!)}${toByte(rgb[2]!)}${toByte(rgb[3]!)}`;
 };
 
+/** Stroke de dominio: null si vacío / transparente. */
+export const toStrokeColor = (value: unknown): string | null => {
+	if (value === null || value === undefined || value === '') {
+		return null;
+	}
+
+	if (typeof value !== 'string') {
+		return null;
+	}
+
+	const trimmed = value.trim().toLowerCase();
+
+	if (trimmed === 'transparent' || trimmed === 'none') {
+		return null;
+	}
+
+	return toHexColor(value, DEFAULT_TEXT_STROKE);
+};
+
 export const hasTextSelectionRange = (textbox: TextStyleSource): boolean => {
 	return Boolean(
 		textbox.isEditing &&
@@ -372,6 +441,12 @@ const sampleFlag = <T>(
 	});
 };
 
+const resolveStrokeHex = (value: unknown, fallback: string): string => {
+	const stroke = toStrokeColor(value);
+
+	return stroke ?? fallback;
+};
+
 /** Colores únicos (en orden) del rango seleccionado o de todo el texto. */
 export const collectTextColors = (textbox: TextStyleSource): string[] => {
 	const base = toHexColor(textbox.fill);
@@ -398,10 +473,36 @@ export const collectTextColors = (textbox: TextStyleSource): string[] => {
 	return unique.length > 0 ? unique : [base];
 };
 
+/** Colores de stroke únicos del rango o de todo el texto. */
+export const collectTextStrokeColors = (textbox: TextStyleSource): string[] => {
+	const base = resolveStrokeHex(textbox.stroke, DEFAULT_TEXT_STROKE);
+	const samples = getStyleSamples(textbox);
+	const unique: string[] = [];
+	const seen = new Set<string>();
+
+	for (const style of samples) {
+		const hex =
+			style.stroke === undefined
+				? base
+				: resolveStrokeHex(style.stroke, base);
+
+		if (seen.has(hex)) {
+			continue;
+		}
+
+		seen.add(hex);
+		unique.push(hex);
+	}
+
+	return unique.length > 0 ? unique : [base];
+};
+
 /** Estado de formato del rango o de todo el texto. */
 export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => {
 	const samples = getStyleSamples(textbox);
 	const baseSize = normalizeFontSize(textbox.fontSize) ?? DEFAULT_TEXT_FONT_SIZE;
+	const baseStrokeWidth =
+		normalizeStrokeWidth(textbox.strokeWidth) ?? DEFAULT_TEXT_STROKE_WIDTH;
 	const baseBold = isBoldWeight(textbox.fontWeight);
 	const baseItalic = normalizeFontStyle(textbox.fontStyle) === 'italic';
 	const baseUnderline = Boolean(textbox.underline);
@@ -448,8 +549,15 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		(style) => normalizeFontSize(style.fontSize) ?? undefined,
 		baseSize,
 	);
+	const strokeWidths = sampleFlag(
+		samples,
+		(style) => normalizeStrokeWidth(style.strokeWidth) ?? undefined,
+		baseStrokeWidth,
+	);
 	const dominantFontSize =
 		fontSizes.length === 0 ? baseSize : mostFrequent(fontSizes);
+	const dominantStrokeWidth =
+		strokeWidths.length === 0 ? baseStrokeWidth : mostFrequent(strokeWidths);
 
 	return {
 		bold: bolds.some(Boolean),
@@ -458,6 +566,9 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		linethrough: linethroughs.some(Boolean),
 		fontSize: fontSizes.length === 0 ? null : resolveUnique(fontSizes),
 		dominantFontSize,
+		strokeWidth:
+			strokeWidths.length === 0 ? null : resolveUnique(strokeWidths),
+		dominantStrokeWidth,
 	};
 };
 
@@ -490,6 +601,10 @@ export const applyTextStyle = (
 			textbox.removeStyle(property);
 		}
 	});
+
+	if (styles.stroke !== undefined || styles.strokeWidth !== undefined) {
+		ensureSmoothTextStroke(textbox);
+	}
 };
 
 /**
@@ -501,6 +616,62 @@ export const applyTextFontSize = (textbox: TextStyleMutable, size: number) => {
 		textbox.removeStyle('fontSize');
 		textbox.set('fontSize', size);
 	});
+};
+
+/** strokeWidth también refresca medidas del Textbox. */
+export const applyTextStrokeWidth = (
+	textbox: TextStyleMutable,
+	width: number,
+) => {
+	const stroke =
+		toStrokeColor(textbox.stroke) ??
+		(width > 0 ? DEFAULT_TEXT_STROKE : null);
+	const styles: Partial<TextCharStyle> = {
+		strokeWidth: width,
+		...(stroke ? { stroke } : {}),
+	};
+
+	applyStylesToRangeOrWhole(textbox, styles, () => {
+		textbox.removeStyle('strokeWidth');
+
+		if (stroke) {
+			textbox.removeStyle('stroke');
+			textbox.set({ stroke, strokeWidth: width });
+		} else {
+			textbox.set('strokeWidth', width);
+		}
+	});
+
+	ensureSmoothTextStroke(textbox);
+};
+
+/** Evita picos de miter en contornos gruesos del texto. */
+const ensureSmoothTextStroke = (textbox: TextStyleMutable) => {
+	textbox.set({
+		strokeLineJoin: 'round',
+		strokeLineCap: 'round',
+		paintFirst: 'stroke',
+	});
+};
+/**
+ * Amplía el width solo si el contenido (sin soft-wrap) no cabe.
+ * Si la caja ya tiene espacio, se respeta el ancho actual.
+ */
+export const fitTextboxWidthToContent = (textbox: TextStyleMutable) => {
+	const currentWidth =
+		typeof textbox.width === 'number' && Number.isFinite(textbox.width)
+			? textbox.width
+			: MIN_TEXTBOX_WIDTH;
+
+	textbox.set('width', UNBOUNDED_TEXT_WIDTH);
+	textbox.initDimensions?.();
+
+	const measured = Math.ceil(textbox.calcTextWidth?.() ?? 0);
+	const nextWidth = Math.max(currentWidth, measured, MIN_TEXTBOX_WIDTH);
+
+	textbox.set('width', nextWidth);
+	textbox.initDimensions?.();
+	textbox.setCoords?.();
 };
 
 const refreshTextLayout = (
@@ -518,6 +689,13 @@ const refreshTextLayout = (
 	(textbox as TextStyleMutable & { _forceClearCache?: boolean })._forceClearCache =
 		true;
 	textbox.dirty = true;
+
+	if (styles.fontSize !== undefined) {
+		fitTextboxWidthToContent(textbox);
+
+		return;
+	}
+
 	textbox.initDimensions?.();
 	textbox.setCoords?.();
 };

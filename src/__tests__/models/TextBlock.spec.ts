@@ -132,4 +132,23 @@ describe('TextBlock', () => {
 
 		expect(text.toJSON().styles).toBeUndefined();
 	});
+
+	it('serializes stroke props and clears stroke with null', () => {
+		const text = TextBlock.create(0, 0);
+
+		expect(text.stroke).toBeNull();
+		expect(text.strokeWidth).toBe(0);
+
+		text.applyPatch({ stroke: '#ff0000', strokeWidth: 2 });
+
+		const json = text.toJSON();
+
+		expect(json.stroke).toBe('#ff0000');
+		expect(json.strokeWidth).toBe(2);
+
+		text.applyPatch({ stroke: null });
+
+		expect(text.stroke).toBeNull();
+		expect(text.strokeWidth).toBe(2);
+	});
 });

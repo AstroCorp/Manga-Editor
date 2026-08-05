@@ -3,12 +3,15 @@ import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import {
 	isBoldWeight,
 	normalizeFontStyle,
+	normalizeStrokeWidth,
 	stylesFromFabric,
 	stylesToFabric,
 	toHexColor,
+	toStrokeColor,
 } from '@/lib/fabric/textStyles';
 import {
 	DEFAULT_TEXT_FONT_SIZE,
+	DEFAULT_TEXT_STROKE_WIDTH,
 	type TextBlock,
 } from '@/models/TextBlock';
 import type { PageTextObject } from '@/types/fabric';
@@ -28,6 +31,7 @@ export const textBlockToFabric = (
 ): PageTextObject => {
 	const interactive = options.interactive;
 	const fabricStyles = stylesToFabric(text.styles);
+	const stroke = text.stroke;
 	const textbox = new Textbox(text.content, {
 		left: text.left,
 		top: text.top,
@@ -38,6 +42,11 @@ export const textBlockToFabric = (
 		fontStyle: text.fontStyle,
 		underline: text.underline,
 		linethrough: text.linethrough,
+		stroke: stroke ?? undefined,
+		strokeWidth: text.strokeWidth,
+		paintFirst: 'stroke',
+		strokeLineJoin: 'round',
+		strokeLineCap: 'round',
 		angle: text.angle,
 		fontFamily: 'Arial, sans-serif',
 		editable: true,
@@ -77,6 +86,9 @@ export const textBlockFromFabric = (textbox: PageTextObject): TextBlockPatch => 
 			normalizeFontStyle(textbox.fontStyle) === 'italic' ? 'italic' : 'normal',
 		underline: Boolean(textbox.underline),
 		linethrough: Boolean(textbox.linethrough),
+		stroke: toStrokeColor(textbox.stroke),
+		strokeWidth:
+			normalizeStrokeWidth(textbox.strokeWidth) ?? DEFAULT_TEXT_STROKE_WIDTH,
 		styles: stylesFromFabric(textbox.styles) ?? null,
 	};
 };

@@ -1,18 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import {
 	applyTextFontSize,
+	applyTextStrokeWidth,
 	applyTextStyle,
 	collectTextColors,
 	collectTextFormat,
+	collectTextStrokeColors,
 	colorSwatchBackground,
+	fitTextboxWidthToContent,
 	hasTextSelectionRange,
 	normalizeFontSize,
 	normalizeFontStyle,
 	normalizeFontWeight,
+	normalizeStrokeWidth,
 	parseFontSizeInput,
+	parseStrokeWidthInput,
 	stylesFromFabric,
 	stylesToFabric,
 	toHexColor,
+	toStrokeColor,
 } from '@/lib/fabric/textStyles';
 
 describe('textStyles', () => {
@@ -43,6 +49,19 @@ describe('textStyles', () => {
 		expect(normalizeFontStyle('oblique')).toBe('italic');
 		expect(normalizeFontStyle('normal')).toBe('normal');
 		expect(normalizeFontStyle('nope')).toBeNull();
+
+		expect(normalizeStrokeWidth(2.4)).toBe(2);
+		expect(normalizeStrokeWidth(-1)).toBe(0);
+		expect(normalizeStrokeWidth(99)).toBe(99);
+		expect(normalizeStrokeWidth('nope')).toBeNull();
+
+		expect(parseStrokeWidthInput('4')).toBe(4);
+		expect(parseStrokeWidthInput('0')).toBe(0);
+		expect(parseStrokeWidthInput('21')).toBe(21);
+		expect(parseStrokeWidthInput('-1')).toBeNull();
+		expect(toStrokeColor('')).toBeNull();
+		expect(toStrokeColor('transparent')).toBeNull();
+		expect(toStrokeColor('#AbC')).toBe('#aabbcc');
 	});
 
 	it('round-trips format styles between fabric and domain', () => {
@@ -190,6 +209,8 @@ describe('textStyles', () => {
 			linethrough: false,
 			fontSize: null,
 			dominantFontSize: 18,
+			strokeWidth: 0,
+			dominantStrokeWidth: 0,
 		});
 
 		const uniform = {
@@ -209,6 +230,8 @@ describe('textStyles', () => {
 			linethrough: false,
 			fontSize: 20,
 			dominantFontSize: 20,
+			strokeWidth: 0,
+			dominantStrokeWidth: 0,
 		});
 	});
 
@@ -235,6 +258,8 @@ describe('textStyles', () => {
 			linethrough: false,
 			fontSize: null,
 			dominantFontSize: 18,
+			strokeWidth: 0,
+			dominantStrokeWidth: 0,
 		});
 	});
 
@@ -260,17 +285,28 @@ describe('textStyles', () => {
 
 	it('applyTextFontSize uses set(key, value) for whole text', () => {
 		const calls: unknown[] = [];
+		let width = 200;
 		const textbox = {
 			isEditing: false,
 			text: 'abcd',
+			get width() {
+				return width;
+			},
 			getSelectionStyles: () => [],
 			set: (key: string | Record<string, unknown>, value?: unknown) => {
 				calls.push({ key, value });
+
+				if (key === 'width' && typeof value === 'number') {
+					width = value;
+				}
 			},
 			removeStyle: (property: string) => {
 				calls.push({ remove: property });
 			},
 			setSelectionStyles: () => undefined,
+			calcTextWidth: () => {
+				return width >= 1_000_000 ? 120 : width;
+			},
 			initDimensions: () => {
 				calls.push('dims');
 			},
@@ -284,6 +320,9 @@ describe('textStyles', () => {
 		expect(calls).toEqual([
 			{ remove: 'fontSize' },
 			{ key: 'fontSize', value: 36 },
+			{ key: 'width', value: 1_000_000 },
+			'dims',
+			{ key: 'width', value: 200 },
 			'dims',
 			'coords',
 		]);
@@ -296,9 +335,11 @@ describe('textStyles', () => {
 			selectionStart: 0,
 			selectionEnd: 2,
 			text: 'abcd',
+			width: 200,
 			getSelectionStyles: () => [],
 			set: () => undefined,
 			removeStyle: () => undefined,
+			calcTextWidth: () => 80,
 			setSelectionStyles: (
 				styles: Record<string, unknown>,
 				start?: number,
@@ -315,6 +356,64 @@ describe('textStyles', () => {
 		expect(selectionCalls).toEqual([
 			{ styles: { fontSize: 42 }, start: 0, end: 2 },
 		]);
+	});
+
+	it('fitTextboxWidthToContent keeps width when content still fits', () => {
+		const widths: number[] = [];
+		let width = 200;
+		const textbox = {
+			text: 'Hello',
+			get width() {
+				return width;
+			},
+			getSelectionStyles: () => [],
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				if (key === 'width' && typeof value === 'number') {
+					width = value;
+					widths.push(value);
+				}
+			},
+			setSelectionStyles: () => undefined,
+			removeStyle: () => undefined,
+			calcTextWidth: () => {
+				return width >= 1_000_000 ? 120 : width;
+			},
+			initDimensions: () => undefined,
+			setCoords: () => undefined,
+		};
+
+		fitTextboxWidthToContent(textbox);
+
+		expect(widths).toEqual([1_000_000, 200]);
+	});
+
+	it('fitTextboxWidthToContent expands width when content needs more space', () => {
+		const widths: number[] = [];
+		let width = 50;
+		const textbox = {
+			text: 'Hello',
+			get width() {
+				return width;
+			},
+			getSelectionStyles: () => [],
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				if (key === 'width' && typeof value === 'number') {
+					width = value;
+					widths.push(value);
+				}
+			},
+			setSelectionStyles: () => undefined,
+			removeStyle: () => undefined,
+			calcTextWidth: () => {
+				return width >= 1_000_000 ? 144.2 : width;
+			},
+			initDimensions: () => undefined,
+			setCoords: () => undefined,
+		};
+
+		fitTextboxWidthToContent(textbox);
+
+		expect(widths).toEqual([1_000_000, 145]);
 	});
 
 	it('applyTextStyle targets selection or whole text', () => {
@@ -346,17 +445,32 @@ describe('textStyles', () => {
 		const wholeCalls: Array<Record<string, unknown>> = [];
 		const removed: string[] = [];
 		const layoutCalls: string[] = [];
+		let width = 200;
 		const whole = {
 			isEditing: false,
 			text: 'abcd',
+			get width() {
+				return width;
+			},
 			getSelectionStyles: () => [],
-			set: (styles: Record<string, unknown>) => {
-				wholeCalls.push(styles);
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				if (typeof key === 'object') {
+					wholeCalls.push(key);
+
+					return;
+				}
+
+				if (key === 'width' && typeof value === 'number') {
+					width = value;
+				}
 			},
 			removeStyle: (property: string) => {
 				removed.push(property);
 			},
 			setSelectionStyles: () => undefined,
+			calcTextWidth: () => {
+				return width >= 1_000_000 ? 90 : width;
+			},
 			initDimensions: () => {
 				layoutCalls.push('dims');
 			},
@@ -368,7 +482,8 @@ describe('textStyles', () => {
 		applyTextStyle(whole, { underline: true, fontSize: 18 });
 		expect(wholeCalls).toEqual([{ underline: true, fontSize: 18 }]);
 		expect(removed).toEqual(['underline', 'fontSize']);
-		expect(layoutCalls).toEqual(['dims', 'coords']);
+		expect(layoutCalls).toEqual(['dims', 'dims', 'coords']);
+		expect(width).toBe(200);
 	});
 
 	it('applyTextStyle does not refresh layout for fill-only changes', () => {
@@ -399,5 +514,74 @@ describe('textStyles', () => {
 		expect(colorSwatchBackground(['#ff0000', '#00ff00'])).toBe(
 			'conic-gradient(#ff0000 0deg 180deg, #00ff00 180deg 360deg)',
 		);
+	});
+
+	it('collectTextStrokeColors returns unique stroke fills', () => {
+		const colors = collectTextStrokeColors({
+			text: 'Hi',
+			stroke: '#112233',
+			isEditing: true,
+			selectionStart: 0,
+			selectionEnd: 2,
+			getSelectionStyles: () => {
+				return [{ stroke: '#ff0000' }, { stroke: '#00ff00' }];
+			},
+		});
+
+		expect(colors).toEqual(['#ff0000', '#00ff00']);
+	});
+
+	it('collectTextFormat reports mixed stroke widths', () => {
+		const flags = collectTextFormat({
+			text: 'ab',
+			strokeWidth: 1,
+			fontSize: 24,
+			fontWeight: 'normal',
+			fontStyle: 'normal',
+			underline: false,
+			linethrough: false,
+			isEditing: true,
+			selectionStart: 0,
+			selectionEnd: 2,
+			getSelectionStyles: () => {
+				return [{ strokeWidth: 1 }, { strokeWidth: 4 }];
+			},
+		});
+
+		expect(flags.strokeWidth).toBeNull();
+		expect(flags.dominantStrokeWidth).toBe(1);
+	});
+
+	it('applyTextStrokeWidth sets width and default stroke color when needed', () => {
+		const removed: string[] = [];
+		const sets: unknown[] = [];
+		const textbox = {
+			isEditing: false,
+			text: 'ab',
+			stroke: null,
+			strokeWidth: 0,
+			getSelectionStyles: () => [],
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				sets.push(typeof key === 'object' ? key : { [key]: value });
+			},
+			removeStyle: (property: string) => {
+				removed.push(property);
+			},
+			setSelectionStyles: () => undefined,
+			initDimensions: () => undefined,
+			setCoords: () => undefined,
+		};
+
+		applyTextStrokeWidth(textbox, 3);
+
+		expect(removed).toEqual(['strokeWidth', 'stroke']);
+		expect(sets).toEqual([
+			{ stroke: '#000000', strokeWidth: 3 },
+			{
+				strokeLineJoin: 'round',
+				strokeLineCap: 'round',
+				paintFirst: 'stroke',
+			},
+		]);
 	});
 });

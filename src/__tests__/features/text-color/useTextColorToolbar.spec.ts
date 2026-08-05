@@ -18,6 +18,8 @@ type TextObjectMock = {
 	fontStyle: string;
 	underline: boolean;
 	linethrough: boolean;
+	stroke: string | null;
+	strokeWidth: number;
 	angle: number;
 	styles: Record<string, Record<string, Record<string, unknown>>>;
 	isEditing: boolean;
@@ -36,6 +38,7 @@ type TextObjectMock = {
 	};
 	setCoords: ReturnType<typeof vi.fn>;
 	initDimensions: ReturnType<typeof vi.fn>;
+	calcTextWidth: () => number;
 	aCoords: {
 		bl: { x: number; y: number };
 		br: { x: number; y: number };
@@ -54,6 +57,8 @@ const createTextObject = (text: TextBlock): TextObjectMock => {
 		fontStyle: text.fontStyle,
 		underline: text.underline,
 		linethrough: text.linethrough,
+		stroke: text.stroke,
+		strokeWidth: text.strokeWidth,
 		angle: text.angle,
 		styles: {},
 		isEditing: false,
@@ -83,6 +88,11 @@ const createTextObject = (text: TextBlock): TextObjectMock => {
 		removeStyle: vi.fn(),
 		getSelectionStyles: () => {
 			return [{}];
+		},
+		calcTextWidth: () => {
+			return textObject.width >= 1_000_000
+				? textObject.fontSize * 5
+				: textObject.width;
 		},
 		getBoundingRect: () => {
 			return {
@@ -342,5 +352,57 @@ describe('useTextColorToolbar', () => {
 
 		expect(canvas.off).toHaveBeenCalled();
 		expect(api.position.value).toBeNull();
+	});
+
+	it('setStrokeColor and setStrokeWidth update fabric and persist', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(0, 0);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextObject(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const api = useTextColorToolbar({
+			fabricCanvas: shallowRef(canvas),
+		});
+
+		handlers['selection:created']?.();
+		api.setStrokeColor('#00ff00');
+		api.setStrokeWidth(4);
+
+		expect(textObject.set).toHaveBeenCalledWith({ stroke: '#00ff00' });
+		expect(mangaStore.texts[0]?.stroke).toBe('#00ff00');
+		expect(mangaStore.texts[0]?.strokeWidth).toBe(4);
+		expect(api.strokeWidth.value).toBe(4);
+		expect(api.strokeColors.value[0]).toBe('#00ff00');
+	});
+
+	it('deleteText removes the active text from store and canvas', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(0, 0);
+		const onChanged = vi.fn();
+
+		mangaStore.addText(text);
+
+		const textObject = createTextObject(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const remove = vi.fn();
+		const discardActiveObject = vi.fn();
+
+		Object.assign(canvas, { remove, discardActiveObject });
+
+		const api = useTextColorToolbar({
+			fabricCanvas: shallowRef(canvas),
+			onChanged,
+		});
+
+		handlers['selection:created']?.();
+		api.deleteText();
+
+		expect(mangaStore.texts).toHaveLength(0);
+		expect(remove).toHaveBeenCalledWith(textObject);
+		expect(discardActiveObject).toHaveBeenCalled();
+		expect(api.position.value).toBeNull();
+		expect(onChanged).toHaveBeenCalled();
 	});
 });

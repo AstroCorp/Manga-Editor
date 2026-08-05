@@ -11,6 +11,8 @@ export const DEFAULT_TEXT_CONTENT = 'Default text';
 export const DEFAULT_TEXT_WIDTH = 200;
 export const DEFAULT_TEXT_FONT_SIZE = 24;
 export const DEFAULT_TEXT_FILL = '#000000';
+export const DEFAULT_TEXT_STROKE = '#000000';
+export const DEFAULT_TEXT_STROKE_WIDTH = 0;
 export const DEFAULT_TEXT_FONT_WEIGHT: TextFontWeight = 'normal';
 export const DEFAULT_TEXT_FONT_STYLE: TextFontStyle = 'normal';
 
@@ -36,6 +38,8 @@ export class TextBlock {
 	public fontStyle: TextFontStyle;
 	public underline: boolean;
 	public linethrough: boolean;
+	public stroke: string | null;
+	public strokeWidth: number;
 	public angle: number;
 	public styles: TextStylesJSON | null;
 
@@ -51,6 +55,8 @@ export class TextBlock {
 		this.fontStyle = value.fontStyle ?? DEFAULT_TEXT_FONT_STYLE;
 		this.underline = value.underline ?? false;
 		this.linethrough = value.linethrough ?? false;
+		this.stroke = value.stroke ?? null;
+		this.strokeWidth = value.strokeWidth ?? DEFAULT_TEXT_STROKE_WIDTH;
 		this.angle = value.angle ?? 0;
 		this.styles = cloneStyles(value.styles);
 	}
@@ -68,6 +74,8 @@ export class TextBlock {
 			fontStyle: DEFAULT_TEXT_FONT_STYLE,
 			underline: false,
 			linethrough: false,
+			stroke: null,
+			strokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
 			angle: 0,
 			styles: undefined,
 		});
@@ -114,6 +122,14 @@ export class TextBlock {
 			this.linethrough = patch.linethrough;
 		}
 
+		if ('stroke' in patch) {
+			this.stroke = patch.stroke ?? null;
+		}
+
+		if (patch.strokeWidth !== undefined) {
+			this.strokeWidth = patch.strokeWidth;
+		}
+
 		if (patch.angle !== undefined) {
 			this.angle = patch.angle;
 		}
@@ -136,6 +152,8 @@ export class TextBlock {
 			fontStyle: this.fontStyle,
 			underline: this.underline,
 			linethrough: this.linethrough,
+			stroke: this.stroke,
+			strokeWidth: this.strokeWidth,
 			angle: this.angle,
 			...(this.styles ? { styles: cloneStyles(this.styles) ?? undefined } : {}),
 		};

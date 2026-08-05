@@ -107,6 +107,8 @@ describe('textFabric', () => {
 			fontStyle: 'italic',
 			underline: true,
 			linethrough: false,
+			stroke: null,
+			strokeWidth: 0,
 			styles: {
 				'0': {
 					'0': { fill: '#ff0000', fontWeight: 'bold' },
@@ -224,6 +226,31 @@ describe('textFabric', () => {
 			'0': {
 				'1': { fill: '#00ff00' },
 			},
+		});
+	});
+
+	it('maps stroke props to and from fabric', () => {
+		const text = TextBlock.create(0, 0);
+
+		text.applyPatch({
+			stroke: '#ff0000',
+			strokeWidth: 3,
+		});
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+
+		expect(fabricText.stroke).toBe('#ff0000');
+		expect(fabricText.strokeWidth).toBe(3);
+		expect(fabricText.paintFirst).toBe('stroke');
+		expect(fabricText.strokeLineJoin).toBe('round');
+		expect(fabricText.strokeLineCap).toBe('round');
+
+		expect(textBlockFromFabric(fabricText)).toMatchObject({
+			stroke: '#ff0000',
+			strokeWidth: 3,
 		});
 	});
 });

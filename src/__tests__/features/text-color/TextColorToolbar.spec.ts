@@ -4,12 +4,15 @@ import TextColorToolbar from '@/features/text-color/components/TextColorToolbar.
 
 const baseProps = {
 	colors: ['#112233'],
+	strokeColors: ['#000000'],
 	bold: false,
 	italic: false,
 	underline: false,
 	linethrough: false,
 	fontSize: 24 as number | null,
 	dominantFontSize: 24,
+	strokeWidth: 0 as number | null,
+	dominantStrokeWidth: 0,
 	left: 100,
 	top: 50,
 	placement: 'above' as const,
@@ -266,5 +269,61 @@ describe('TextColorToolbar', () => {
 		});
 
 		expect(wrapper.find('[role="toolbar"]').exists()).toBe(false);
+	});
+
+	it('emits stroke color and stroke width changes', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('input[aria-label="Stroke color"]').setValue('#00ff00');
+		await wrapper.get('input[aria-label="Stroke color"]').trigger('input');
+		await wrapper.get('button[aria-label="Increase stroke width"]').trigger('click');
+
+		expect(wrapper.emitted('setStrokeColor')?.at(-1)).toEqual(['#00ff00']);
+		expect(wrapper.emitted('setStrokeWidth')?.at(-1)).toEqual([1]);
+	});
+
+	it('emits deleteText from the delete button', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Delete text"]').trigger('click');
+
+		expect(wrapper.emitted('deleteText')).toHaveLength(1);
+	});
+
+	it('shows mix for stroke width and nudges from dominant', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				strokeWidth: null,
+				dominantStrokeWidth: 3,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Stroke width (mixed)"]');
+
+		expect((input.element as HTMLInputElement).value).toBe('mix');
+
+		await wrapper.get('button[aria-label="Increase stroke width"]').trigger('click');
+
+		expect(wrapper.emitted('setStrokeWidth')?.at(-1)).toEqual([4]);
 	});
 });

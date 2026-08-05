@@ -19,6 +19,8 @@ export type TextCharStyle = {
 	fontStyle?: TextFontStyle;
 	underline?: boolean;
 	linethrough?: boolean;
+	stroke?: string;
+	strokeWidth?: number;
 };
 
 export type TextStylesJSON = {
@@ -39,6 +41,8 @@ export type TextBlockJSON = {
 	fontStyle?: TextFontStyle;
 	underline?: boolean;
 	linethrough?: boolean;
+	stroke?: string | null;
+	strokeWidth?: number;
 	angle?: number;
 	styles?: TextStylesJSON | null;
 };
@@ -55,6 +59,8 @@ export type PagePreviewText = {
 	fontStyle: TextFontStyle;
 	underline: boolean;
 	linethrough: boolean;
+	stroke: string | null;
+	strokeWidth: number;
 	angle: number;
 	originX: number;
 	originY: number;

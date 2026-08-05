@@ -140,11 +140,31 @@ describe('pagePreview', () => {
 				fontStyle: 'normal',
 				underline: false,
 				linethrough: false,
+				stroke: null,
+				strokeWidth: 0,
 				angle: 12,
 				originX: 12,
 				originY: 24,
 			},
 		]);
+	});
+
+	it('includes text stroke in preview when width is positive', () => {
+		const text = TextBlock.create(0, 0);
+
+		text.applyPatch({
+			stroke: '#ff0000',
+			strokeWidth: 2,
+			content: 'Outlined',
+		});
+
+		const preview = buildPagePreview(100, 100, [], [text]);
+
+		expect(preview.texts[0]).toMatchObject({
+			stroke: '#ff0000',
+			strokeWidth: 2,
+			content: 'Outlined',
+		});
 	});
 
 	it('marks grayscale images for preview styling', () => {

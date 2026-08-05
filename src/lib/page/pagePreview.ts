@@ -71,6 +71,8 @@ const toPreviewTexts = (
 			fontStyle: text.fontStyle,
 			underline: text.underline,
 			linethrough: text.linethrough,
+			stroke: text.stroke,
+			strokeWidth: text.strokeWidth,
 			angle: text.angle,
 			originX: text.left,
 			originY: text.top,

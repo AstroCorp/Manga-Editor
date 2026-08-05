@@ -59,12 +59,15 @@ export type ShapeActionMenuEmits = {
 
 export type TextColorToolbarProps = {
 	colors: string[];
+	strokeColors: string[];
 	bold: boolean;
 	italic: boolean;
 	underline: boolean;
 	linethrough: boolean;
 	fontSize: number | null;
 	dominantFontSize: number;
+	strokeWidth: number | null;
+	dominantStrokeWidth: number;
 	left: number | null;
 	top: number | null;
 	placement: OverlayPlacement;
@@ -72,9 +75,12 @@ export type TextColorToolbarProps = {
 
 export type TextColorToolbarEmits = {
 	setColor: [color: string];
+	setStrokeColor: [color: string];
 	toggleBold: [];
 	toggleItalic: [];
 	toggleUnderline: [];
 	toggleLinethrough: [];
 	setFontSize: [fontSize: number];
+	setStrokeWidth: [strokeWidth: number];
+	deleteText: [];
 };

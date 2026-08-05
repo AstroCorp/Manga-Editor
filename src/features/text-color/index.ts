@@ -8,6 +8,7 @@ export const textColorFeature: CanvasFeature = {
 	install(ctx) {
 		const api = useTextColorToolbar({
 			fabricCanvas: ctx.fabricCanvas,
+			onChanged: () => ctx.actions.syncInteractionMode(),
 		});
 
 		ctx.actions.register({
@@ -22,12 +23,15 @@ export const textColorFeature: CanvasFeature = {
 
 				return {
 					colors: api.colors.value,
+					strokeColors: api.strokeColors.value,
 					bold: api.bold.value,
 					italic: api.italic.value,
 					underline: api.underline.value,
 					linethrough: api.linethrough.value,
 					fontSize: api.fontSize.value,
 					dominantFontSize: api.dominantFontSize.value,
+					strokeWidth: api.strokeWidth.value,
+					dominantStrokeWidth: api.dominantStrokeWidth.value,
 					left: stage.left,
 					top: stage.top,
 					placement: api.placement.value,
@@ -35,11 +39,14 @@ export const textColorFeature: CanvasFeature = {
 			}),
 			listeners: {
 				setColor: api.setColor as (...args: never[]) => unknown,
+				setStrokeColor: api.setStrokeColor as (...args: never[]) => unknown,
 				toggleBold: api.toggleBold,
 				toggleItalic: api.toggleItalic,
 				toggleUnderline: api.toggleUnderline,
 				toggleLinethrough: api.toggleLinethrough,
 				setFontSize: api.setFontSize as (...args: never[]) => unknown,
+				setStrokeWidth: api.setStrokeWidth as (...args: never[]) => unknown,
+				deleteText: api.deleteText,
 			},
 		});
 	},

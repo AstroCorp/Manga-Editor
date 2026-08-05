@@ -140,4 +140,30 @@ describe('PagePreview', () => {
 		);
 		expect(wrapper.find('text').text()).toContain('Hi');
 	});
+
+	it('renders text stroke attributes when stroke width is set', () => {
+		const text = TextBlock.create(5, 5);
+
+		text.applyPatch({
+			content: 'Hi',
+			stroke: '#ff0000',
+			strokeWidth: 2,
+		});
+
+		const wrapper = mount(PagePreview, {
+			props: {
+				width: 100,
+				height: 100,
+				shapes: [],
+				texts: [text],
+			},
+		});
+
+		const node = wrapper.find('text');
+
+		expect(node.attributes('stroke')).toBe('#ff0000');
+		expect(node.attributes('stroke-width')).toBe('2');
+		expect(node.attributes('stroke-linejoin')).toBe('round');
+		expect(node.attributes('paint-order')).toBe('stroke fill');
+	});
 });
