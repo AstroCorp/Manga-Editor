@@ -262,6 +262,59 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(page.toLayoutJSON().layers).toHaveLength(2);
 	});
 
+	it('applyLayout uniquifies duplicate layer names', () => {
+		const page = Page.createBlank(1);
+
+		page.applyLayout({
+			width: 600,
+			height: 900,
+			shapes: [],
+			layers: [
+				{ name: 'Ink', shapes: [] },
+				{ name: 'Ink', shapes: [] },
+			],
+		});
+
+		expect(page.layers.map((layer) => layer.name)).toEqual([
+			'Ink',
+			'Ink (2)',
+		]);
+	});
+
+	it('setShapeWhiteFill toggles view fill without touching other layers', () => {
+		const page = Page.createBlank(1);
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		page.addShape(shape);
+		page.addLayer();
+
+		const otherShape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 5, y: 0 },
+				{ x: 5, y: 5 },
+			],
+			2,
+		);
+
+		page.addShape(otherShape);
+
+		const before = page.getActiveLayer().shapes;
+
+		expect(page.setShapeWhiteFill(otherShape.id, true)).toBe(true);
+		expect(page.getActiveLayer().shapes).not.toBe(before);
+		expect(otherShape.whiteFill).toBe(true);
+		expect(shape.whiteFill).toBe(false);
+		expect(page.setShapeWhiteFill('missing', true)).toBe(false);
+	});
+
 	it('setSize resets to default layer and reclamps margins', () => {
 		const page = Page.createBlank(1);
 

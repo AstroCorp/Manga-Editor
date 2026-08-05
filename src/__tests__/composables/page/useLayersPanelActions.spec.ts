@@ -1,11 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useLayersPanelActions } from '@/composables/page/useLayersPanelActions';
 import { useMangaStore } from '@/stores/manga';
 
+vi.mock('vue3-toastify', () => {
+	return {
+		toast: {
+			warn: vi.fn(),
+		},
+	};
+});
+
 describe('useLayersPanelActions', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
+		vi.clearAllMocks();
 	});
 
 	it('allows removing any layer while keeping at least one', () => {
@@ -58,5 +67,34 @@ describe('useLayersPanelActions', () => {
 			bottom!.id,
 			middle!.id,
 		]);
+	});
+
+	it('warns when renaming to a duplicate layer name', async () => {
+		const { toast } = await import('vue3-toastify');
+		const mangaStore = useMangaStore();
+		const { renameLayer } = useLayersPanelActions();
+
+		mangaStore.renameLayer(mangaStore.activeLayer.id, 'Ink');
+		mangaStore.addLayer();
+		renameLayer(mangaStore.activeLayer.id, 'ink');
+
+		expect(toast.warn).toHaveBeenCalledExactlyOnceWith(
+			'A layer with that name already exists.',
+		);
+		expect(mangaStore.activeLayer.name).not.toBe('ink');
+	});
+
+	it('ignores empty or case-equivalent rename without toast', async () => {
+		const { toast } = await import('vue3-toastify');
+		const mangaStore = useMangaStore();
+		const { renameLayer } = useLayersPanelActions();
+		const id = mangaStore.activeLayer.id;
+
+		mangaStore.renameLayer(id, 'Tone');
+		renameLayer(id, '   ');
+		renameLayer(id, 'tone');
+
+		expect(toast.warn).not.toHaveBeenCalled();
+		expect(mangaStore.activeLayer.name).toBe('Tone');
 	});
 });

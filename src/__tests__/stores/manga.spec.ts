@@ -296,6 +296,36 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes[0]?.image).toBeNull();
 	});
 
+	it('setShapeWhiteFill updates the active layer shape only', () => {
+		const store = useMangaStore();
+		const base = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		store.addShape(base);
+		store.addLayer();
+
+		const ink = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 8, y: 0 },
+				{ x: 8, y: 8 },
+			],
+			2,
+		);
+
+		store.addShape(ink);
+		store.setShapeWhiteFill(ink.id, true);
+
+		expect(ink.whiteFill).toBe(true);
+		expect(base.whiteFill).toBe(false);
+	});
+
 	it('clearActivePage resets to default layer and bumps contentResetEpoch', () => {
 		const store = useMangaStore();
 

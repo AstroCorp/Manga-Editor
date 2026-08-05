@@ -16,6 +16,7 @@ import type { Canvas, FabricObject } from 'fabric';
 const createObject = (props: {
 	objectType?: string;
 	panelId?: string;
+	layerId?: string;
 	isGuide?: boolean;
 	isGridGuide?: boolean;
 }) => {
@@ -29,6 +30,10 @@ const createObject = (props: {
 
 			if (key === 'panelId') {
 				return props.panelId;
+			}
+
+			if (key === 'layerId') {
+				return props.layerId;
 			}
 
 			if (key === 'isGuide') {
@@ -173,6 +178,50 @@ describe('panel fabric helpers', () => {
 		]);
 		expect(moveObjectTo.mock.calls.map((call) => call[1])).toEqual([
 			0, 1, 2, 3,
+		]);
+	});
+
+	it('stackPageContent orders by layerOrder with panel then image per layer', () => {
+		const bottomPanel = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 'b',
+			layerId: 'bottom',
+		});
+		const bottomImage = createObject({
+			objectType: FABRIC_OBJECT_TYPE.PanelImage,
+			panelId: 'b',
+			layerId: 'bottom',
+		});
+		const topPanel = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 't',
+			layerId: 'top',
+		});
+		const topImage = createObject({
+			objectType: FABRIC_OBJECT_TYPE.PanelImage,
+			panelId: 't',
+			layerId: 'top',
+		});
+		const orphanPanel = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 'x',
+		});
+		const moveObjectTo = vi.fn();
+		const canvas = {
+			getObjects: () => {
+				return [topImage, bottomPanel, orphanPanel, topPanel, bottomImage];
+			},
+			moveObjectTo,
+		} as unknown as Canvas;
+
+		stackPageContent(canvas, ['bottom', 'top']);
+
+		expect(moveObjectTo.mock.calls.map((call) => call[0])).toEqual([
+			bottomPanel,
+			bottomImage,
+			topPanel,
+			topImage,
+			orphanPanel,
 		]);
 	});
 });

@@ -1,7 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePageListActions } from '@/composables/page/usePageListActions';
 import { useMangaStore } from '@/stores/manga';
+
+vi.mock('vue3-toastify', () => {
+	return {
+		toast: {
+			warn: vi.fn(),
+		},
+	};
+});
 
 const dragEvent = (partial: Partial<DragEvent> = {}): DragEvent => {
 	return {
@@ -18,6 +26,7 @@ const dragEvent = (partial: Partial<DragEvent> = {}): DragEvent => {
 describe('usePageListActions', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
+		vi.clearAllMocks();
 	});
 
 	it('adds, selects and renames pages', () => {
@@ -95,5 +104,20 @@ describe('usePageListActions', () => {
 		expect(pagesVisible.value).toBe(true);
 		togglePagesVisible();
 		expect(pagesVisible.value).toBe(false);
+	});
+
+	it('warns when renaming to a duplicate page name', async () => {
+		const { toast } = await import('vue3-toastify');
+		const mangaStore = useMangaStore();
+		const { addPage, renamePage } = usePageListActions();
+
+		addPage();
+		renamePage(mangaStore.pages[0]!.id, 'Cover');
+		renamePage(mangaStore.pages[1]!.id, 'cover');
+
+		expect(toast.warn).toHaveBeenCalledExactlyOnceWith(
+			'A page with that name already exists.',
+		);
+		expect(mangaStore.pages[1]?.name).not.toBe('cover');
 	});
 });
