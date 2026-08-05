@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { Shape } from '@/models/Shape';
 import { ShapeImage } from '@/models/ShapeImage';
+import { TextBlock } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 
 describe('useMangaStore config layout', () => {
@@ -395,5 +396,33 @@ describe('useMangaStore config layout', () => {
 
 		store.setLayerVisible(store.layers[1]!.id, false);
 		expect(store.activePage.hasHiddenLayers()).toBe(true);
+	});
+
+	it('addText updateText and removeText manage active layer texts', () => {
+		const store = useMangaStore();
+		const text = TextBlock.create(15, 25);
+
+		store.addText(text);
+
+		expect(store.texts).toHaveLength(1);
+		expect(store.texts[0]?.id).toBe(text.id);
+
+		store.updateText(text.id, { content: 'Updated', angle: 9 });
+
+		expect(store.texts[0]?.content).toBe('Updated');
+		expect(store.texts[0]?.angle).toBe(9);
+
+		store.removeText(text.id);
+
+		expect(store.texts).toHaveLength(0);
+	});
+
+	it('clearActivePage removes texts', () => {
+		const store = useMangaStore();
+
+		store.addText(TextBlock.create(0, 0));
+		store.clearActivePage();
+
+		expect(store.texts).toHaveLength(0);
 	});
 });

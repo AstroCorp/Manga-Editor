@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import PagePreview from '@/components/page/PagePreview.vue';
 import { Shape } from '@/models/Shape';
 import { ShapeImage } from '@/models/ShapeImage';
+import { TextBlock } from '@/models/TextBlock';
 
 describe('PagePreview', () => {
 	it('renders white fill polygons only when whiteFill is enabled', () => {
@@ -45,7 +46,7 @@ describe('PagePreview', () => {
 		expect(fills[0]?.attributes('points')).toBe('0,0 10,0 10,10');
 	});
 
-	it('draws fill before image and stroke after image', () => {
+	it('draws fill before clipped image and stroke after image', () => {
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -80,8 +81,63 @@ describe('PagePreview', () => {
 			return node.tagName.toLowerCase();
 		});
 
-		expect(tags).toEqual(['rect', 'polygon', 'image', 'polygon']);
-		expect(children[1]?.getAttribute('fill')).toBe('#ffffff');
-		expect(children[3]?.getAttribute('fill')).toBe('none');
+		expect(tags).toEqual(['defs', 'rect', 'polygon', 'g', 'polygon']);
+		expect(children[2]?.getAttribute('fill')).toBe('#ffffff');
+		expect(children[4]?.getAttribute('fill')).toBe('none');
+
+		const clipPolygon = wrapper.find('defs').find('polygon');
+		const imageGroup = wrapper.find('g');
+
+		expect(clipPolygon.exists()).toBe(true);
+		expect(clipPolygon.attributes('points')).toBe('0,0 40,0 40,40');
+		expect(imageGroup.attributes('clip-path')).toMatch(/url\(#.*img-clip-0\)/);
+		expect(imageGroup.find('image').exists()).toBe(true);
+	});
+
+	it('applies rotation transform to texts and images', () => {
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			2,
+		);
+
+		shape.setImage(
+			new ShapeImage({
+				src: 'data:image/png;base64,xx',
+				left: 10,
+				top: 10,
+				scaleX: 1,
+				scaleY: 1,
+				width: 10,
+				height: 10,
+				originX: 'center',
+				originY: 'center',
+				angle: 25,
+			}),
+		);
+
+		const text = TextBlock.create(5, 5);
+
+		text.applyPatch({ angle: 40, content: 'Hi' });
+
+		const wrapper = mount(PagePreview, {
+			props: {
+				width: 100,
+				height: 100,
+				shapes: [shape],
+				texts: [text],
+			},
+		});
+
+		expect(wrapper.find('g image').attributes('transform')).toBe(
+			'rotate(25 10 10)',
+		);
+		expect(wrapper.find('text').attributes('transform')).toBe(
+			'rotate(40 5 5)',
+		);
+		expect(wrapper.find('text').text()).toContain('Hi');
 	});
 });

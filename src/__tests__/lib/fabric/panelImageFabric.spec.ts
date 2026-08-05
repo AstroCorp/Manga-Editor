@@ -51,7 +51,30 @@ describe('panelImageFabric', () => {
 		expect(shapeImage.originY).toBe('center');
 		expect(shapeImage.width).toBe(80);
 		expect(shapeImage.height).toBe(40);
+		expect(shapeImage.angle).toBe(0);
 		expect(shapeImage.grayscale).toBe(false);
+	});
+
+	it('shapeImageFromFabric maps angle', () => {
+		const fabricImage = {
+			getSrc: () => {
+				return 'data:image/png;base64,xx';
+			},
+			left: 10,
+			top: 20,
+			scaleX: 1,
+			scaleY: 1,
+			originX: 'center',
+			originY: 'center',
+			width: 40,
+			height: 40,
+			angle: 42,
+			get: (key: string) => {
+				return key === 'src' ? 'data:image/png;base64,xx' : undefined;
+			},
+		} as unknown as FabricImage;
+
+		expect(shapeImageFromFabric(fabricImage).angle).toBe(42);
 	});
 
 	it('shapeImageFromFabric reads grayscale from Fabric filters', () => {

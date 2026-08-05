@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Page } from '@/models/Page';
 import { Shape } from '@/models/Shape';
 import { ShapeImage } from '@/models/ShapeImage';
+import { TextBlock } from '@/models/TextBlock';
 import {
 	DEFAULT_GRID_COLS,
 	DEFAULT_PAGE_HEIGHT,
@@ -406,6 +407,50 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 
 		expect(page.getVisibleShapes()).toHaveLength(1);
 		expect(page.hasHiddenLayers()).toBe(true);
+	});
+
+	it('adds updates and clears texts on the active layer', () => {
+		const page = Page.createBlank(1);
+		const text = TextBlock.create(10, 20);
+
+		page.addText(text);
+
+		expect(page.getActiveLayer().texts).toHaveLength(1);
+		expect(page.hasDrawing()).toBe(true);
+		expect(page.getVisibleTexts()).toHaveLength(1);
+
+		expect(
+			page.updateText(text.id, { content: 'Edited', angle: 18 }),
+		).toBe(true);
+		expect(page.getActiveLayer().texts[0]?.content).toBe('Edited');
+		expect(page.getActiveLayer().texts[0]?.angle).toBe(18);
+
+		expect(page.removeText(text.id)).toBe(true);
+		expect(page.getActiveLayer().texts).toHaveLength(0);
+		expect(page.hasDrawing()).toBe(false);
+	});
+
+	it('getVisibleTexts flattens visible layers only', () => {
+		const page = Page.createBlank(1);
+
+		page.addText(TextBlock.create(0, 0));
+		page.addLayer();
+		page.addText(TextBlock.create(5, 5));
+
+		expect(page.getVisibleTexts()).toHaveLength(2);
+
+		page.setLayerVisible(page.layers[1]!.id, false);
+
+		expect(page.getVisibleTexts()).toHaveLength(1);
+	});
+
+	it('resetToDefaultLayer clears texts', () => {
+		const page = Page.createBlank(1);
+
+		page.addText(TextBlock.create(1, 1));
+		page.resetToDefaultLayer();
+
+		expect(page.getActiveLayer().texts).toHaveLength(0);
 	});
 
 	it('can remove the original layer when more than one exists', () => {

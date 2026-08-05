@@ -20,15 +20,20 @@ describe('useEditorStore selection and zoom bridge', () => {
 		const cancelStroke = vi.fn();
 		const exportDataUrl = vi.fn(() => 'data:image/png;base64,abc');
 		const resetZoomView = vi.fn();
+		const addSimpleText = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
 			exportDataUrl,
 			resetZoomView,
+			addSimpleText,
 		});
 
 		store.cancelStroke();
 		expect(cancelStroke).toHaveBeenCalledOnce();
+
+		store.addSimpleText();
+		expect(addSimpleText).toHaveBeenCalledOnce();
 
 		store.resetZoom();
 
@@ -39,17 +44,21 @@ describe('useEditorStore selection and zoom bridge', () => {
 	it('unregisterCanvas stubs actions', () => {
 		const store = useEditorStore();
 		const cancelStroke = vi.fn();
+		const addSimpleText = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
 			exportDataUrl: vi.fn(() => null),
 			resetZoomView: vi.fn(),
+			addSimpleText,
 		});
 
 		store.unregisterCanvas();
 		store.cancelStroke();
+		store.addSimpleText();
 
 		expect(cancelStroke).not.toHaveBeenCalled();
+		expect(addSimpleText).not.toHaveBeenCalled();
 	});
 
 	it('exportPage cancels stroke then downloads the image', () => {
@@ -75,6 +84,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 			cancelStroke,
 			exportDataUrl,
 			resetZoomView: vi.fn(),
+			addSimpleText: vi.fn(),
 		});
 
 		store.exportPage(EXPORT_IMAGE_FORMAT.Png);

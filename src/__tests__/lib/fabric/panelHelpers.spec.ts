@@ -4,8 +4,10 @@ import {
 	collectPanelIdsWithImage,
 	findPanelById,
 	getPanelId,
+	getTextId,
 	isGridGuide,
 	isGuide,
+	isPageText,
 	isPanel,
 	isPanelImage,
 	removeObjectsByPanelId,
@@ -16,6 +18,7 @@ import type { Canvas, FabricObject } from 'fabric';
 const createObject = (props: {
 	objectType?: string;
 	panelId?: string;
+	textId?: string;
 	layerId?: string;
 	isGuide?: boolean;
 	isGridGuide?: boolean;
@@ -30,6 +33,10 @@ const createObject = (props: {
 
 			if (key === 'panelId') {
 				return props.panelId;
+			}
+
+			if (key === 'textId') {
+				return props.textId;
 			}
 
 			if (key === 'layerId') {
@@ -102,6 +109,20 @@ describe('panel fabric helpers', () => {
 		expect(
 			isPanelImage(createObject({ objectType: FABRIC_OBJECT_TYPE.Panel })),
 		).toBe(false);
+	});
+
+	it('isPageText / getTextId detect text objects', () => {
+		const text = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Text,
+			textId: 'txt-1',
+		});
+
+		expect(isPageText(text)).toBe(true);
+		expect(getTextId(text)).toBe('txt-1');
+		expect(
+			isPageText(createObject({ objectType: FABRIC_OBJECT_TYPE.Panel })),
+		).toBe(false);
+		expect(getTextId(createObject({ textId: '' }))).toBeUndefined();
 	});
 
 	it('findPanelById returns only panel polygons', () => {
@@ -178,6 +199,39 @@ describe('panel fabric helpers', () => {
 		]);
 		expect(moveObjectTo.mock.calls.map((call) => call[1])).toEqual([
 			0, 1, 2, 3,
+		]);
+	});
+
+	it('stackPageContent places texts after images per layer', () => {
+		const panel = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 'p1',
+			layerId: 'layer',
+		});
+		const image = createObject({
+			objectType: FABRIC_OBJECT_TYPE.PanelImage,
+			panelId: 'p1',
+			layerId: 'layer',
+		});
+		const text = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Text,
+			textId: 't1',
+			layerId: 'layer',
+		});
+		const moveObjectTo = vi.fn();
+		const canvas = {
+			getObjects: () => {
+				return [text, image, panel];
+			},
+			moveObjectTo,
+		} as unknown as Canvas;
+
+		stackPageContent(canvas, ['layer']);
+
+		expect(moveObjectTo.mock.calls.map((call) => call[0])).toEqual([
+			panel,
+			image,
+			text,
 		]);
 	});
 

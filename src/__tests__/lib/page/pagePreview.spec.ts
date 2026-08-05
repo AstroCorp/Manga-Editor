@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildPagePreview } from '@/lib/page/pagePreview';
+import { TextBlock } from '@/models/TextBlock';
 
 describe('pagePreview', () => {
 	it('returns empty panels for blank shapes', () => {
@@ -83,6 +84,63 @@ describe('pagePreview', () => {
 			clipPoints: '0,0 10,0 10,10',
 			grayscale: false,
 		});
+	});
+
+	it('includes image angle and clip points for the panel mask', () => {
+		const preview = buildPagePreview(200, 200, [
+			{
+				points: [
+					{ x: 0, y: 0 },
+					{ x: 20, y: 0 },
+					{ x: 20, y: 20 },
+				],
+				strokeWidth: 2,
+				image: {
+					src: 'https://example.com/cover.png',
+					left: 10,
+					top: 10,
+					scaleX: 1,
+					scaleY: 1,
+					originX: 'left',
+					originY: 'top',
+					width: 20,
+					height: 20,
+					angle: 30,
+				},
+			},
+		]);
+
+		expect(preview.images[0]?.angle).toBe(30);
+		expect(preview.images[0]?.clipPoints).toBe('0,0 20,0 20,20');
+		expect(preview.images[0]?.originX).toBe(10);
+		expect(preview.images[0]?.originY).toBe(10);
+	});
+
+	it('builds preview texts with rotation origin at the text top-left', () => {
+		const text = new TextBlock({
+			id: 't1',
+			content: 'Hello\nthere',
+			left: 12,
+			top: 24,
+			width: 100,
+			fontSize: 16,
+			fill: '#000000',
+			angle: 12,
+		});
+		const preview = buildPagePreview(200, 200, [], [text]);
+
+		expect(preview.texts).toEqual([
+			{
+				content: 'Hello there',
+				x: 12,
+				y: 40,
+				fontSize: 16,
+				fill: '#000000',
+				angle: 12,
+				originX: 12,
+				originY: 24,
+			},
+		]);
 	});
 
 	it('marks grayscale images for preview styling', () => {
