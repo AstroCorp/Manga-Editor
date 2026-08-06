@@ -94,7 +94,7 @@ type TextStyleMutable = TextStyleSource & {
 		startIndex?: number,
 		endIndex?: number,
 	) => unknown;
-	removeStyle: (property: keyof TextCharStyle) => unknown;
+	removeStyle(property: string): unknown;
 	initDimensions?: () => unknown;
 	setCoords?: () => unknown;
 	calcTextWidth?: () => number;
