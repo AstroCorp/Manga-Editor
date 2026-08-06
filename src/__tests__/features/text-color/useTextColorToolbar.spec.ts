@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { nextTick, shallowRef } from 'vue';
+import { nextTick, ref, shallowRef } from 'vue';
 import { useTextColorToolbar } from '@/features/text-color/useTextColorToolbar';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { DEFAULT_TEXT_FONT_SIZE, TextBlock } from '@/models/TextBlock';
@@ -21,6 +21,7 @@ type TextObjectMock = {
 	linethrough: boolean;
 	stroke: string | null;
 	strokeWidth: number;
+	lineHeight: number;
 	textAlign: TextTextAlign;
 	angle: number;
 	styles: Record<string, Record<string, Record<string, unknown>>>;
@@ -61,6 +62,7 @@ const createTextObject = (text: TextBlock): TextObjectMock => {
 		linethrough: text.linethrough,
 		stroke: text.stroke,
 		strokeWidth: text.strokeWidth,
+		lineHeight: text.lineHeight,
 		textAlign: text.textAlign,
 		angle: text.angle,
 		styles: {},
@@ -132,6 +134,22 @@ const createCanvas = (textObject: TextObjectMock | null) => {
 	return { canvas, handlers };
 };
 
+const createToolbar = (
+	canvas: Canvas | null,
+	overrides: {
+		rootEl?: HTMLElement | null;
+		zoomFactor?: number;
+		onChanged?: () => void;
+	} = {},
+) => {
+	return useTextColorToolbar({
+		fabricCanvas: shallowRef(canvas),
+		rootEl: ref(overrides.rootEl ?? null),
+		zoomFactor: ref(overrides.zoomFactor ?? 1),
+		onChanged: overrides.onChanged,
+	});
+};
+
 describe('useTextColorToolbar', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
@@ -145,9 +163,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 
@@ -171,9 +187,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.setFontSize(Number.NaN);
@@ -190,9 +204,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.toggleBold();
@@ -209,9 +221,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.toggleItalic();
@@ -234,9 +244,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.setColor('#ff0000');
@@ -262,9 +270,7 @@ describe('useTextColorToolbar', () => {
 		};
 
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.toggleBold();
@@ -284,9 +290,7 @@ describe('useTextColorToolbar', () => {
 	});
 
 	it('setFontSize is a no-op without selection', () => {
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(null),
-		});
+		const api = createToolbar(null);
 
 		expect(() => {
 			api.setFontSize(40);
@@ -301,9 +305,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.setFontSize(40);
@@ -330,9 +332,7 @@ describe('useTextColorToolbar', () => {
 		};
 
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 
@@ -345,7 +345,7 @@ describe('useTextColorToolbar', () => {
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
 		const fabricCanvas = shallowRef<Canvas | null>(canvas);
-		const api = useTextColorToolbar({ fabricCanvas });
+		const api = useTextColorToolbar({ fabricCanvas, rootEl: ref(null), zoomFactor: ref(1) });
 
 		handlers['selection:created']?.();
 		expect(api.position.value).not.toBeNull();
@@ -365,9 +365,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.setStrokeColor('#00ff00');
@@ -378,6 +376,89 @@ describe('useTextColorToolbar', () => {
 		expect(mangaStore.texts[0]?.strokeWidth).toBe(4);
 		expect(api.strokeWidth.value).toBe(4);
 		expect(api.strokeColors.value[0]).toBe('#00ff00');
+	});
+
+	it('setLineHeight updates fabric and persists TextBlock', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(0, 0);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextObject(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const api = createToolbar(canvas);
+
+		handlers['selection:created']?.();
+		api.setLineHeight(1.8);
+
+		expect(textObject.set).toHaveBeenCalledWith('lineHeight', 1.8);
+		expect(textObject.initDimensions).toHaveBeenCalled();
+		expect(mangaStore.texts[0]?.lineHeight).toBe(1.8);
+		expect(api.lineHeight.value).toBe(1.8);
+	});
+
+	it('alignToPage moves the text AABB to the page anchor', async () => {
+		const mangaStore = useMangaStore();
+
+		mangaStore.setActivePageSize(1000, 2000);
+
+		const text = TextBlock.create(100, 200);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextObject(text);
+		textObject.getBoundingRect = () => {
+			return {
+				left: textObject.left,
+				top: textObject.top,
+				width: textObject.width,
+				height: 80,
+			};
+		};
+
+		const stage = {
+			getBoundingClientRect: () => {
+				return { left: 0, top: 0, width: 1000, height: 2000 };
+			},
+		};
+		const rootEl = {
+			firstElementChild: stage,
+			clientWidth: 400,
+			clientHeight: 300,
+			scrollWidth: 1000,
+			scrollHeight: 2000,
+			scrollLeft: 0,
+			scrollTop: 0,
+			getBoundingClientRect: () => {
+				return { left: 0, top: 0, width: 400, height: 300 };
+			},
+			scrollTo(options: ScrollToOptions) {
+				this.scrollLeft = options.left ?? this.scrollLeft;
+				this.scrollTop = options.top ?? this.scrollTop;
+			},
+		} as unknown as HTMLElement;
+
+		const { canvas, handlers } = createCanvas(textObject);
+		const calcOffset = vi.fn();
+
+		Object.assign(canvas, { calcOffset });
+
+		const api = createToolbar(canvas, { rootEl });
+
+		handlers['selection:created']?.();
+		api.alignToPage('bottom-right');
+		await nextTick();
+
+		expect(textObject.set).toHaveBeenCalledWith({
+			left: 800,
+			top: 1920,
+		});
+		expect(mangaStore.texts[0]?.left).toBe(800);
+		expect(mangaStore.texts[0]?.top).toBe(1920);
+		// Centro (900, 1960); viewport 400×300 → scroll clampado al máximo disponible
+		expect(rootEl.scrollLeft).toBe(600);
+		expect(rootEl.scrollTop).toBe(1700);
+		expect(calcOffset).toHaveBeenCalled();
 	});
 
 	it('deleteText removes the active text from store and canvas', () => {
@@ -394,10 +475,7 @@ describe('useTextColorToolbar', () => {
 
 		Object.assign(canvas, { remove, discardActiveObject });
 
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-			onChanged,
-		});
+		const api = createToolbar(canvas, { onChanged });
 
 		handlers['selection:created']?.();
 		api.deleteText();
@@ -417,9 +495,7 @@ describe('useTextColorToolbar', () => {
 
 		const textObject = createTextObject(text);
 		const { canvas, handlers } = createCanvas(textObject);
-		const api = useTextColorToolbar({
-			fabricCanvas: shallowRef(canvas),
-		});
+		const api = createToolbar(canvas);
 
 		handlers['selection:created']?.();
 		api.setTextAlign('justify-center');

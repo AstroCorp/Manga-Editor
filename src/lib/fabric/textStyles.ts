@@ -3,6 +3,7 @@ import {
 	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
+	DEFAULT_TEXT_LINE_HEIGHT,
 	DEFAULT_TEXT_STROKE,
 	DEFAULT_TEXT_STROKE_WIDTH,
 } from '@/models/TextBlock';
@@ -17,6 +18,9 @@ import type {
 export const MIN_TEXT_FONT_SIZE = 8;
 export const MAX_TEXT_FONT_SIZE = 200;
 export const MIN_TEXT_STROKE_WIDTH = 0;
+export const MIN_TEXT_LINE_HEIGHT = 0.5;
+export const MAX_TEXT_LINE_HEIGHT = 5;
+export const TEXT_LINE_HEIGHT_STEP = 0.1;
 
 export const TEXT_ALIGN_VALUES = [
 	'left',
@@ -54,6 +58,7 @@ type FabricStyleSample = {
 	linethrough?: unknown;
 	stroke?: unknown;
 	strokeWidth?: unknown;
+	lineHeight?: unknown;
 };
 
 export type TextStyleSource = {
@@ -66,6 +71,7 @@ export type TextStyleSource = {
 	linethrough?: unknown;
 	stroke?: unknown;
 	strokeWidth?: unknown;
+	lineHeight?: unknown;
 	textAlign?: unknown;
 	isEditing?: boolean;
 	selectionStart?: number;
@@ -100,12 +106,13 @@ const LAYOUT_STYLE_KEYS: Array<keyof TextCharStyle> = [
 	'fontWeight',
 	'fontStyle',
 	'strokeWidth',
+	'lineHeight',
 ];
 
 /** Ancho temporal para medir el texto sin soft-wrap de Textbox. */
 const UNBOUNDED_TEXT_WIDTH = 1_000_000;
 const MIN_TEXTBOX_WIDTH = 20;
-/** null en fontSize/strokeWidth = mezcla; dominant* = el más frecuente. */
+/** null en fontSize/strokeWidth/lineHeight = mezcla; dominant* = el más frecuente. */
 export type TextFormatFlags = {
 	bold: boolean;
 	italic: boolean;
@@ -115,6 +122,8 @@ export type TextFormatFlags = {
 	dominantFontSize: number;
 	strokeWidth: number | null;
 	dominantStrokeWidth: number;
+	lineHeight: number | null;
+	dominantLineHeight: number;
 	textAlign: TextTextAlign;
 };
 
@@ -161,6 +170,12 @@ const toCharStyle = (style: Record<string, unknown>): TextCharStyle | null => {
 		next.strokeWidth = strokeWidth;
 	}
 
+	const lineHeight = normalizeLineHeight(style.lineHeight);
+
+	if (lineHeight !== null) {
+		next.lineHeight = lineHeight;
+	}
+
 	return Object.keys(next).length > 0 ? next : null;
 };
 
@@ -182,6 +197,21 @@ export const normalizeStrokeWidth = (value: unknown): number | null => {
 	}
 
 	return Math.max(MIN_TEXT_STROKE_WIDTH, Math.round(width));
+};
+
+export const normalizeLineHeight = (value: unknown): number | null => {
+	const height = typeof value === 'number' ? value : Number(value);
+
+	if (!Number.isFinite(height)) {
+		return null;
+	}
+
+	const clamped = Math.min(
+		MAX_TEXT_LINE_HEIGHT,
+		Math.max(MIN_TEXT_LINE_HEIGHT, height),
+	);
+
+	return Math.round(clamped * 100) / 100;
 };
 
 export const isBoldWeight = (value: unknown): boolean => {
@@ -278,6 +308,25 @@ export const parseStrokeWidthInput = (raw: string): number | null => {
 	}
 
 	return Math.round(width);
+};
+
+/** Parsea lineHeight tipado; null si vacío o fuera de rango. */
+export const parseLineHeightInput = (raw: string): number | null => {
+	if (raw.trim() === '') {
+		return null;
+	}
+
+	const height = Number(raw);
+
+	if (!Number.isFinite(height)) {
+		return null;
+	}
+
+	if (height < MIN_TEXT_LINE_HEIGHT || height > MAX_TEXT_LINE_HEIGHT) {
+		return null;
+	}
+
+	return Math.round(height * 100) / 100;
 };
 
 /** Compacta styles de Fabric a props de formato (JSON estable). */
@@ -562,6 +611,8 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 	const baseSize = normalizeFontSize(textbox.fontSize) ?? DEFAULT_TEXT_FONT_SIZE;
 	const baseStrokeWidth =
 		normalizeStrokeWidth(textbox.strokeWidth) ?? DEFAULT_TEXT_STROKE_WIDTH;
+	const baseLineHeight =
+		normalizeLineHeight(textbox.lineHeight) ?? DEFAULT_TEXT_LINE_HEIGHT;
 	const baseBold = isBoldWeight(textbox.fontWeight);
 	const baseItalic = normalizeFontStyle(textbox.fontStyle) === 'italic';
 	const baseUnderline = Boolean(textbox.underline);
@@ -613,10 +664,17 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		(style) => normalizeStrokeWidth(style.strokeWidth) ?? undefined,
 		baseStrokeWidth,
 	);
+	const lineHeights = sampleFlag(
+		samples,
+		(style) => normalizeLineHeight(style.lineHeight) ?? undefined,
+		baseLineHeight,
+	);
 	const dominantFontSize =
 		fontSizes.length === 0 ? baseSize : mostFrequent(fontSizes);
 	const dominantStrokeWidth =
 		strokeWidths.length === 0 ? baseStrokeWidth : mostFrequent(strokeWidths);
+	const dominantLineHeight =
+		lineHeights.length === 0 ? baseLineHeight : mostFrequent(lineHeights);
 
 	return {
 		bold: bolds.some(Boolean),
@@ -628,6 +686,9 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		strokeWidth:
 			strokeWidths.length === 0 ? null : resolveUnique(strokeWidths),
 		dominantStrokeWidth,
+		lineHeight:
+			lineHeights.length === 0 ? null : resolveUnique(lineHeights),
+		dominantLineHeight,
 		textAlign: normalizeTextAlign(textbox.textAlign) ?? DEFAULT_TEXT_ALIGN,
 	};
 };
@@ -716,6 +777,20 @@ export const applyTextAlign = (
 	textbox.dirty = true;
 	textbox.initDimensions?.();
 	textbox.setCoords?.();
+};
+
+/**
+ * lineHeight se guarda por carácter (como fontSize); el layout de Fabric
+ * lo aplica por línea vía el patch en `lineHeightLayout`.
+ */
+export const applyTextLineHeight = (
+	textbox: TextStyleMutable,
+	lineHeight: number,
+) => {
+	applyStylesToRangeOrWhole(textbox, { lineHeight }, () => {
+		textbox.removeStyle('lineHeight');
+		textbox.set('lineHeight', lineHeight);
+	});
 };
 
 /** Evita picos de miter en contornos gruesos del texto. */

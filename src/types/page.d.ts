@@ -20,6 +20,18 @@ export type TextTextAlign =
 	| 'justify-center'
 	| 'justify-right';
 
+/** Ancla espacial del texto respecto a la página (rejilla 3×3). */
+export type PageTextAnchor =
+	| 'top-left'
+	| 'top-center'
+	| 'top-right'
+	| 'middle-left'
+	| 'middle-center'
+	| 'middle-right'
+	| 'bottom-left'
+	| 'bottom-center'
+	| 'bottom-right';
+
 export type TextCharStyle = {
 	fill?: string;
 	fontSize?: number;
@@ -29,6 +41,8 @@ export type TextCharStyle = {
 	linethrough?: boolean;
 	stroke?: string;
 	strokeWidth?: number;
+	/** Multiplicador de interlineado (afecta toda la línea en el layout). */
+	lineHeight?: number;
 };
 
 export type TextStylesJSON = {
@@ -51,6 +65,7 @@ export type TextBlockJSON = {
 	linethrough?: boolean;
 	stroke?: string | null;
 	strokeWidth?: number;
+	lineHeight?: number;
 	textAlign?: TextTextAlign;
 	angle?: number;
 	styles?: TextStylesJSON | null;
@@ -59,10 +74,12 @@ export type TextBlockJSON = {
 export type TextBlockPatch = Partial<Omit<TextBlockJSON, 'id'>>;
 
 export type PagePreviewText = {
-	content: string;
+	/** Líneas ya partidas (\\n + soft-wrap aproximado por width). */
+	lines: string[];
 	x: number;
 	y: number;
 	fontSize: number;
+	lineHeight: number;
 	fill: string;
 	fontWeight: TextFontWeight;
 	fontStyle: TextFontStyle;

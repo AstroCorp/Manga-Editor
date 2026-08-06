@@ -141,6 +141,32 @@ describe('PagePreview', () => {
 		expect(wrapper.find('text').text()).toContain('Hi');
 	});
 
+	it('renders multiline text with tspans and lineHeight dy', () => {
+		const text = TextBlock.create(5, 5);
+
+		text.applyPatch({
+			content: 'Hi\nthere',
+			lineHeight: 1.5,
+			fontSize: 20,
+		});
+
+		const wrapper = mount(PagePreview, {
+			props: {
+				width: 100,
+				height: 100,
+				shapes: [],
+				texts: [text],
+			},
+		});
+
+		const tspans = wrapper.findAll('text tspan');
+
+		expect(tspans).toHaveLength(2);
+		expect(tspans[0]?.text()).toContain('Hi');
+		expect(tspans[1]?.text()).toContain('there');
+		expect(tspans[1]?.attributes('dy')).toBe('30');
+	});
+
 	it('renders text stroke attributes when stroke width is set', () => {
 		const text = TextBlock.create(5, 5);
 

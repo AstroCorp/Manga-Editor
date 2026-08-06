@@ -3,6 +3,7 @@ import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import {
 	isBoldWeight,
 	normalizeFontStyle,
+	normalizeLineHeight,
 	normalizeStrokeWidth,
 	normalizeTextAlign,
 	stylesFromFabric,
@@ -13,6 +14,7 @@ import {
 import {
 	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FONT_SIZE,
+	DEFAULT_TEXT_LINE_HEIGHT,
 	DEFAULT_TEXT_STROKE_WIDTH,
 	type TextBlock,
 } from '@/models/TextBlock';
@@ -49,6 +51,7 @@ export const textBlockToFabric = (
 		paintFirst: 'stroke',
 		strokeLineJoin: 'round',
 		strokeLineCap: 'round',
+		lineHeight: text.lineHeight,
 		textAlign: text.textAlign,
 		angle: text.angle,
 		fontFamily: 'Arial, sans-serif',
@@ -92,6 +95,8 @@ export const textBlockFromFabric = (textbox: PageTextObject): TextBlockPatch => 
 		stroke: toStrokeColor(textbox.stroke),
 		strokeWidth:
 			normalizeStrokeWidth(textbox.strokeWidth) ?? DEFAULT_TEXT_STROKE_WIDTH,
+		lineHeight:
+			normalizeLineHeight(textbox.lineHeight) ?? DEFAULT_TEXT_LINE_HEIGHT,
 		textAlign: normalizeTextAlign(textbox.textAlign) ?? DEFAULT_TEXT_ALIGN,
 		styles: stylesFromFabric(textbox.styles) ?? null,
 	};

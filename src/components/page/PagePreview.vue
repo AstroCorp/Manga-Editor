@@ -4,7 +4,7 @@ import { PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
 import { buildPagePreview } from '@/lib/page/pagePreview';
 import type { Shape } from '@/models/Shape';
 import type { TextBlock } from '@/models/TextBlock';
-import type { ShapeJSON } from '@/types/page';
+import type { PagePreviewText, ShapeJSON } from '@/types/page';
 
 const props = withDefaults(
 	defineProps<{
@@ -41,6 +41,43 @@ const rotateTransform = (angle: number, originX: number, originY: number) => {
 
 const clipPathId = (index: number) => {
 	return `${previewId}-img-clip-${index}`;
+};
+
+const textAnchorX = (text: PagePreviewText) => {
+	if (text.textAlign === 'center' || text.textAlign === 'justify-center') {
+		return text.originX + text.width / 2;
+	}
+
+	if (text.textAlign === 'right' || text.textAlign === 'justify-right') {
+		return text.originX + text.width;
+	}
+
+	return text.x;
+};
+
+const textAnchor = (text: PagePreviewText) => {
+	if (text.textAlign === 'center' || text.textAlign === 'justify-center') {
+		return 'middle';
+	}
+
+	if (text.textAlign === 'right' || text.textAlign === 'justify-right') {
+		return 'end';
+	}
+
+	return 'start';
+};
+
+const lineDy = (text: PagePreviewText, lineIndex: number) => {
+	if (lineIndex === 0) {
+		return undefined;
+	}
+
+	return text.fontSize * text.lineHeight;
+};
+
+/** Línea vacía: NBSP para que el dy del tspan se aplique en SVG. */
+const lineContent = (line: string) => {
+	return line.length > 0 ? line : '\u00A0';
 };
 </script>
 
@@ -98,13 +135,7 @@ const clipPathId = (index: number) => {
 		<text
 			v-for="(text, index) in model.texts"
 			:key="`text-${index}`"
-			:x="
-				text.textAlign === 'center'
-					? text.originX + text.width / 2
-					: text.textAlign === 'right'
-						? text.originX + text.width
-						: text.x
-			"
+			:x="textAnchorX(text)"
 			:y="text.y"
 			:font-size="text.fontSize"
 			:fill="text.fill"
@@ -115,13 +146,7 @@ const clipPathId = (index: number) => {
 			paint-order="stroke fill"
 			:font-weight="text.fontWeight"
 			:font-style="text.fontStyle"
-			:text-anchor="
-				text.textAlign === 'center'
-					? 'middle'
-					: text.textAlign === 'right'
-						? 'end'
-						: 'start'
-			"
+			:text-anchor="textAnchor(text)"
 			:text-decoration="
 				[text.underline ? 'underline' : '', text.linethrough ? 'line-through' : '']
 					.filter(Boolean)
@@ -131,7 +156,14 @@ const clipPathId = (index: number) => {
 			font-family="Arial, sans-serif"
 			xml:space="preserve"
 		>
-			{{ text.content }}
+			<tspan
+				v-for="(line, lineIndex) in text.lines"
+				:key="`line-${lineIndex}`"
+				:x="textAnchorX(text)"
+				:dy="lineDy(text, lineIndex)"
+			>
+				{{ lineContent(line) }}
+			</tspan>
 		</text>
 	</svg>
 </template>

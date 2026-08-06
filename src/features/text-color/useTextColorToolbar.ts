@@ -1,37 +1,43 @@
-import { computed, shallowRef, watch } from 'vue';
+import { computed, nextTick, shallowRef, watch, type Ref, type ShallowRef } from 'vue';
 import type { Canvas, FabricObject } from 'fabric';
 import { getTextId, isGuide, isPageText } from '@/lib/fabric/isGuide';
 import { getObjectOverlayAnchor } from '@/lib/fabric/overlayAnchor';
+import { alignTextToPage } from '@/lib/fabric/pageAlign';
 import { textBlockFromFabric } from '@/lib/fabric/textFabric';
 import {
 	applyTextAlign,
 	applyTextFontSize,
+	applyTextLineHeight,
 	applyTextStrokeWidth,
 	applyTextStyle,
 	collectTextColors,
 	collectTextFormat,
 	collectTextStrokeColors,
 	normalizeFontSize,
+	normalizeLineHeight,
 	normalizeStrokeWidth,
 	normalizeTextAlign,
 	toHexColor,
 	type TextFormatFlags,
 } from '@/lib/fabric/textStyles';
+import { scrollPageRectIntoView } from '@/lib/fabric/visiblePagePoint';
 import {
 	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
+	DEFAULT_TEXT_LINE_HEIGHT,
 	DEFAULT_TEXT_STROKE,
 	DEFAULT_TEXT_STROKE_WIDTH,
 } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { PageTextObject } from '@/types/fabric';
 import type { OverlayPlacement, PageOverlayPosition } from '@/types/panel';
-import type { ShallowRef } from 'vue';
-import type { TextCharStyle, TextTextAlign } from '@/types/page';
+import type { PageTextAnchor, TextCharStyle, TextTextAlign } from '@/types/page';
 
 type TextColorToolbarDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
+	rootEl: Ref<HTMLElement | null>;
+	zoomFactor: Ref<number>;
 	onChanged?: () => void;
 };
 
@@ -44,6 +50,8 @@ const DEFAULT_FLAGS: TextFormatFlags = {
 	dominantFontSize: DEFAULT_TEXT_FONT_SIZE,
 	strokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
 	dominantStrokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
+	lineHeight: DEFAULT_TEXT_LINE_HEIGHT,
+	dominantLineHeight: DEFAULT_TEXT_LINE_HEIGHT,
 	textAlign: DEFAULT_TEXT_ALIGN,
 };
 
@@ -61,6 +69,8 @@ const REFRESH_EVENTS = [
 
 export const useTextColorToolbar = ({
 	fabricCanvas,
+	rootEl,
+	zoomFactor,
 	onChanged,
 }: TextColorToolbarDeps) => {
 	const mangaStore = useMangaStore();
@@ -75,6 +85,8 @@ export const useTextColorToolbar = ({
 	const dominantFontSize = shallowRef(DEFAULT_FLAGS.dominantFontSize);
 	const strokeWidth = shallowRef<number | null>(DEFAULT_FLAGS.strokeWidth);
 	const dominantStrokeWidth = shallowRef(DEFAULT_FLAGS.dominantStrokeWidth);
+	const lineHeight = shallowRef<number | null>(DEFAULT_FLAGS.lineHeight);
+	const dominantLineHeight = shallowRef(DEFAULT_FLAGS.dominantLineHeight);
 	const textAlign = shallowRef<TextTextAlign>(DEFAULT_FLAGS.textAlign);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
@@ -94,6 +106,8 @@ export const useTextColorToolbar = ({
 		dominantFontSize.value = DEFAULT_FLAGS.dominantFontSize;
 		strokeWidth.value = DEFAULT_FLAGS.strokeWidth;
 		dominantStrokeWidth.value = DEFAULT_FLAGS.dominantStrokeWidth;
+		lineHeight.value = DEFAULT_FLAGS.lineHeight;
+		dominantLineHeight.value = DEFAULT_FLAGS.dominantLineHeight;
 		textAlign.value = DEFAULT_FLAGS.textAlign;
 		position.value = null;
 		placement.value = 'above';
@@ -128,6 +142,8 @@ export const useTextColorToolbar = ({
 		dominantFontSize.value = flags.dominantFontSize;
 		strokeWidth.value = flags.strokeWidth;
 		dominantStrokeWidth.value = flags.dominantStrokeWidth;
+		lineHeight.value = flags.lineHeight;
+		dominantLineHeight.value = flags.dominantLineHeight;
 		textAlign.value = flags.textAlign;
 	};
 
@@ -222,6 +238,18 @@ export const useTextColorToolbar = ({
 		});
 	};
 
+	const setLineHeight = (nextHeight: number) => {
+		const height = normalizeLineHeight(nextHeight);
+
+		if (height === null) {
+			return;
+		}
+
+		withActiveText((textbox) => {
+			applyTextLineHeight(textbox, height);
+		});
+	};
+
 	const setTextAlign = (nextAlign: TextTextAlign) => {
 		const align = normalizeTextAlign(nextAlign);
 
@@ -231,6 +259,34 @@ export const useTextColorToolbar = ({
 
 		withActiveText((textbox) => {
 			applyTextAlign(textbox, align);
+		});
+	};
+
+	const alignToPage = (anchor: PageTextAnchor) => {
+		const page = mangaStore.activePage;
+		const root = rootEl.value;
+		const zoom = zoomFactor.value;
+
+		withActiveText((textbox) => {
+			alignTextToPage(
+				textbox,
+				{ width: page.width, height: page.height },
+				anchor,
+			);
+		});
+
+		// Tras el focus del select (preventScroll) y el reposition de la toolbar.
+		void nextTick(() => {
+			const textbox = getActiveText();
+
+			if (!root || !textbox) {
+				return;
+			}
+
+			textbox.setCoords?.();
+			scrollPageRectIntoView(root, textbox.getBoundingRect(), zoom);
+			fabricCanvas.value?.calcOffset();
+			refreshMenu();
 		});
 	};
 
@@ -298,6 +354,8 @@ export const useTextColorToolbar = ({
 		dominantFontSize,
 		strokeWidth,
 		dominantStrokeWidth,
+		lineHeight,
+		dominantLineHeight,
 		textAlign,
 		position,
 		placement,
@@ -309,7 +367,9 @@ export const useTextColorToolbar = ({
 		toggleLinethrough,
 		setFontSize,
 		setStrokeWidth,
+		setLineHeight,
 		setTextAlign,
+		alignToPage,
 		deleteText,
 		clearMenu,
 	};

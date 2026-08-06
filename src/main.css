@@ -105,3 +105,16 @@
 		linear-gradient(45deg, transparent 75%, #09090b 75%),
 		linear-gradient(-45deg, transparent 75%, #09090b 75%);
 }
+
+/*
+ * Fabric coloca el textarea de edición con position:absolute según calcOffset.
+ * Con el stage en overflow-auto el offset suma mal el scroll y el focus mueve
+ * la página. Fijarlo en el viewport evita el salto y el espacio extra.
+ */
+textarea[data-fabric='textarea'] {
+	position: fixed !important;
+	left: 0 !important;
+	top: 0 !important;
+	right: auto !important;
+	bottom: auto !important;
+}

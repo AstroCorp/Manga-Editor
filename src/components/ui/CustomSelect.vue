@@ -73,7 +73,7 @@ const toggleOpen = async () => {
 
 const close = () => {
 	open.value = false;
-	trigger.value?.focus();
+	trigger.value?.focus({ preventScroll: true });
 };
 
 const selectOption = (value: string) => {

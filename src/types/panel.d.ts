@@ -1,10 +1,11 @@
 import type { Canvas } from 'fabric';
-import type { ShallowRef } from 'vue';
+import type { Ref, ShallowRef } from 'vue';
 import type { GridPoint } from '@/types/geometry';
-import type { TextTextAlign } from '@/types/page';
+import type { PageTextAnchor, TextTextAlign } from '@/types/page';
 
 export type SelectionDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
+	rootEl: Ref<HTMLElement | null>;
 	syncInteractionMode: () => void;
 	cancelStroke: () => void;
 };
@@ -69,6 +70,8 @@ export type TextColorToolbarProps = {
 	dominantFontSize: number;
 	strokeWidth: number | null;
 	dominantStrokeWidth: number;
+	lineHeight: number | null;
+	dominantLineHeight: number;
 	textAlign: TextTextAlign;
 	left: number | null;
 	top: number | null;
@@ -84,6 +87,8 @@ export type TextColorToolbarEmits = {
 	toggleLinethrough: [];
 	setFontSize: [fontSize: number];
 	setStrokeWidth: [strokeWidth: number];
+	setLineHeight: [lineHeight: number];
 	setTextAlign: [textAlign: TextTextAlign];
+	alignToPage: [anchor: PageTextAnchor];
 	deleteText: [];
 };

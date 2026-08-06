@@ -7,6 +7,8 @@ import {
 	type ControlRenderingStyleOverride,
 } from 'fabric';
 import { ACCENT_COLOR } from '@/lib/fabric/fabricColors';
+import { setupFabricHiddenTextarea } from '@/lib/fabric/hiddenTextarea';
+import { setupPerCharLineHeight } from '@/lib/fabric/lineHeightLayout';
 
 export const ROTATE_ICON_SIZE = 30;
 export const ROTATE_OFFSET_Y = 44;
@@ -64,6 +66,9 @@ const createBottomRotateControl = (): Control => {
 };
 
 export const setupFabricCustomProperties = () => {
+	setupFabricHiddenTextarea();
+	setupPerCharLineHeight();
+
 	FabricObject.customProperties = ['objectType', 'panelId', 'textId', 'layerId'];
 	FabricObject.ownDefaults.borderColor = ACCENT_COLOR;
 	FabricObject.ownDefaults.cornerColor = ACCENT_COLOR;

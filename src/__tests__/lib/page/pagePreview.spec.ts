@@ -131,10 +131,11 @@ describe('pagePreview', () => {
 
 		expect(preview.texts).toEqual([
 			{
-				content: 'Hello there',
+				lines: ['Hello', 'there'],
 				x: 12,
 				y: 40,
 				fontSize: 16,
+				lineHeight: 1.16,
 				fill: '#000000',
 				fontWeight: 'normal',
 				fontStyle: 'normal',
@@ -151,6 +152,38 @@ describe('pagePreview', () => {
 		]);
 	});
 
+	it('soft-wraps long preview lines to the text width', () => {
+		const text = new TextBlock({
+			id: 't2',
+			content: 'one two three four five six',
+			left: 0,
+			top: 0,
+			width: 40,
+			fontSize: 20,
+			fill: '#000000',
+		});
+		const preview = buildPagePreview(200, 200, [], [text]);
+
+		expect(preview.texts[0]?.lines.length).toBeGreaterThan(1);
+		expect(preview.texts[0]?.lines.join(' ')).toContain('one');
+		expect(preview.texts[0]?.lines.join(' ')).toContain('six');
+	});
+
+	it('keeps text that fits the box on a single preview line', () => {
+		const text = new TextBlock({
+			id: 't3',
+			content: 'Short line',
+			left: 0,
+			top: 0,
+			width: 200,
+			fontSize: 24,
+			fill: '#000000',
+		});
+		const preview = buildPagePreview(200, 200, [], [text]);
+
+		expect(preview.texts[0]?.lines).toEqual(['Short line']);
+	});
+
 	it('includes text stroke in preview when width is positive', () => {
 		const text = TextBlock.create(0, 0);
 
@@ -165,7 +198,7 @@ describe('pagePreview', () => {
 		expect(preview.texts[0]).toMatchObject({
 			stroke: '#ff0000',
 			strokeWidth: 2,
-			content: 'Outlined',
+			lines: ['Outlined'],
 		});
 	});
 

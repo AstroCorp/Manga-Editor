@@ -14,6 +14,8 @@ export const DEFAULT_TEXT_FONT_SIZE = 24;
 export const DEFAULT_TEXT_FILL = '#000000';
 export const DEFAULT_TEXT_STROKE = '#000000';
 export const DEFAULT_TEXT_STROKE_WIDTH = 0;
+/** Default Fabric Text lineHeight. */
+export const DEFAULT_TEXT_LINE_HEIGHT = 1.16;
 export const DEFAULT_TEXT_FONT_WEIGHT: TextFontWeight = 'normal';
 export const DEFAULT_TEXT_FONT_STYLE: TextFontStyle = 'normal';
 export const DEFAULT_TEXT_ALIGN: TextTextAlign = 'left';
@@ -42,6 +44,7 @@ export class TextBlock {
 	public linethrough: boolean;
 	public stroke: string | null;
 	public strokeWidth: number;
+	public lineHeight: number;
 	public textAlign: TextTextAlign;
 	public angle: number;
 	public styles: TextStylesJSON | null;
@@ -60,6 +63,7 @@ export class TextBlock {
 		this.linethrough = value.linethrough ?? false;
 		this.stroke = value.stroke ?? null;
 		this.strokeWidth = value.strokeWidth ?? DEFAULT_TEXT_STROKE_WIDTH;
+		this.lineHeight = value.lineHeight ?? DEFAULT_TEXT_LINE_HEIGHT;
 		this.textAlign = value.textAlign ?? DEFAULT_TEXT_ALIGN;
 		this.angle = value.angle ?? 0;
 		this.styles = cloneStyles(value.styles);
@@ -80,6 +84,7 @@ export class TextBlock {
 			linethrough: false,
 			stroke: null,
 			strokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
+			lineHeight: DEFAULT_TEXT_LINE_HEIGHT,
 			textAlign: DEFAULT_TEXT_ALIGN,
 			angle: 0,
 			styles: undefined,
@@ -135,6 +140,10 @@ export class TextBlock {
 			this.strokeWidth = patch.strokeWidth;
 		}
 
+		if (patch.lineHeight !== undefined) {
+			this.lineHeight = patch.lineHeight;
+		}
+
 		if (patch.textAlign !== undefined) {
 			this.textAlign = patch.textAlign;
 		}
@@ -163,6 +172,7 @@ export class TextBlock {
 			linethrough: this.linethrough,
 			stroke: this.stroke,
 			strokeWidth: this.strokeWidth,
+			lineHeight: this.lineHeight,
 			textAlign: this.textAlign,
 			angle: this.angle,
 			...(this.styles ? { styles: cloneStyles(this.styles) ?? undefined } : {}),

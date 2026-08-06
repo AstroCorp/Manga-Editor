@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	applyTextFontSize,
+	applyTextLineHeight,
 	applyTextStrokeWidth,
 	applyTextStyle,
 	collectTextColors,
@@ -12,8 +13,10 @@ import {
 	normalizeFontSize,
 	normalizeFontStyle,
 	normalizeFontWeight,
+	normalizeLineHeight,
 	normalizeStrokeWidth,
 	parseFontSizeInput,
+	parseLineHeightInput,
 	parseStrokeWidthInput,
 	stylesFromFabric,
 	stylesToFabric,
@@ -63,6 +66,14 @@ describe('textStyles', () => {
 		expect(toStrokeColor('')).toBeNull();
 		expect(toStrokeColor('transparent')).toBeNull();
 		expect(toStrokeColor('#AbC')).toBe('#aabbcc');
+
+		expect(normalizeLineHeight(1.166)).toBe(1.17);
+		expect(normalizeLineHeight(0.1)).toBe(0.5);
+		expect(normalizeLineHeight(9)).toBe(5);
+		expect(normalizeLineHeight('nope')).toBeNull();
+		expect(parseLineHeightInput('1.5')).toBe(1.5);
+		expect(parseLineHeightInput('0.2')).toBeNull();
+		expect(parseLineHeightInput('')).toBeNull();
 	});
 
 	it('maps textAlign values to toolbar icons', () => {
@@ -223,6 +234,8 @@ describe('textStyles', () => {
 			dominantFontSize: 18,
 			strokeWidth: 0,
 			dominantStrokeWidth: 0,
+			lineHeight: 1.16,
+			dominantLineHeight: 1.16,
 			textAlign: 'left',
 		});
 
@@ -245,6 +258,8 @@ describe('textStyles', () => {
 			dominantFontSize: 20,
 			strokeWidth: 0,
 			dominantStrokeWidth: 0,
+			lineHeight: 1.16,
+			dominantLineHeight: 1.16,
 			textAlign: 'left',
 		});
 	});
@@ -274,6 +289,8 @@ describe('textStyles', () => {
 			dominantFontSize: 18,
 			strokeWidth: 0,
 			dominantStrokeWidth: 0,
+			lineHeight: 1.16,
+			dominantLineHeight: 1.16,
 			textAlign: 'left',
 		});
 	});
@@ -598,5 +615,140 @@ describe('textStyles', () => {
 				paintFirst: 'stroke',
 			},
 		]);
+	});
+
+	it('applyTextLineHeight targets the selection range', () => {
+		const selectionCalls: unknown[] = [];
+		const sets: unknown[] = [];
+		const textbox = {
+			isEditing: true,
+			selectionStart: 0,
+			selectionEnd: 2,
+			text: 'ab',
+			lineHeight: 1.16,
+			getSelectionStyles: () => [],
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				sets.push(typeof key === 'object' ? key : { [key]: value });
+			},
+			removeStyle: () => undefined,
+			setSelectionStyles: (
+				styles: Record<string, unknown>,
+				start?: number,
+				end?: number,
+			) => {
+				selectionCalls.push({ styles, start, end });
+			},
+			initDimensions: vi.fn(),
+			setCoords: vi.fn(),
+		};
+
+		applyTextLineHeight(textbox, 1.8);
+
+		expect(selectionCalls).toEqual([
+			{ styles: { lineHeight: 1.8 }, start: 0, end: 2 },
+		]);
+		expect(sets).toEqual([]);
+		expect(textbox.initDimensions).toHaveBeenCalled();
+		expect(textbox.setCoords).toHaveBeenCalled();
+	});
+
+	it('applyTextLineHeight updates the whole text when nothing is selected', () => {
+		const calls: unknown[] = [];
+		const textbox = {
+			isEditing: false,
+			text: 'ab',
+			lineHeight: 1.16,
+			getSelectionStyles: () => [],
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				calls.push(typeof key === 'object' ? key : { [key]: value });
+			},
+			removeStyle: (property: string) => {
+				calls.push({ remove: property });
+			},
+			setSelectionStyles: () => undefined,
+			initDimensions: vi.fn(),
+			setCoords: vi.fn(),
+		};
+
+		applyTextLineHeight(textbox, 1.8);
+
+		expect(calls).toEqual([
+			{ remove: 'lineHeight' },
+			{ lineHeight: 1.8 },
+		]);
+		expect(textbox.initDimensions).toHaveBeenCalled();
+		expect(textbox.setCoords).toHaveBeenCalled();
+	});
+
+	it('collectTextFormat samples lineHeight from selection styles', () => {
+		const mixed = collectTextFormat({
+			text: 'ab',
+			fontSize: 24,
+			lineHeight: 1.16,
+			fontWeight: 'normal',
+			fontStyle: 'normal',
+			underline: false,
+			linethrough: false,
+			isEditing: true,
+			selectionStart: 0,
+			selectionEnd: 2,
+			getSelectionStyles: () => {
+				return [{ lineHeight: 1.5 }, { lineHeight: 2 }];
+			},
+		});
+
+		expect(mixed.lineHeight).toBeNull();
+		expect(mixed.dominantLineHeight).toBe(1.5);
+
+		const uniform = collectTextFormat({
+			text: 'ab',
+			fontSize: 24,
+			lineHeight: 1.16,
+			fontWeight: 'normal',
+			fontStyle: 'normal',
+			underline: false,
+			linethrough: false,
+			isEditing: true,
+			selectionStart: 0,
+			selectionEnd: 2,
+			getSelectionStyles: () => {
+				return [{ lineHeight: 2 }, { lineHeight: 2 }];
+			},
+		});
+
+		expect(uniform.lineHeight).toBe(2);
+		expect(uniform.dominantLineHeight).toBe(2);
+	});
+
+	it('collectTextFormat reads object lineHeight', () => {
+		const flags = collectTextFormat({
+			text: 'ab',
+			fontSize: 24,
+			lineHeight: 2,
+			fontWeight: 'normal',
+			fontStyle: 'normal',
+			underline: false,
+			linethrough: false,
+			isEditing: false,
+			getSelectionStyles: () => {
+				return [{}, {}];
+			},
+		});
+
+		expect(flags.lineHeight).toBe(2);
+		expect(flags.dominantLineHeight).toBe(2);
+	});
+
+	it('stylesFromFabric round-trips char lineHeight', () => {
+		const domain = stylesFromFabric({
+			0: { 0: { lineHeight: 1.8, fill: '#ff0000' } },
+		});
+
+		expect(domain).toEqual({
+			0: { 0: { lineHeight: 1.8, fill: '#ff0000' } },
+		});
+		expect(stylesToFabric(domain)).toEqual({
+			0: { 0: { lineHeight: 1.8, fill: '#ff0000' } },
+		});
 	});
 });

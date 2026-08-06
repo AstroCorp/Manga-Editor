@@ -8,6 +8,8 @@ export const textColorFeature: CanvasFeature = {
 	install(ctx) {
 		const api = useTextColorToolbar({
 			fabricCanvas: ctx.fabricCanvas,
+			rootEl: ctx.rootEl,
+			zoomFactor: ctx.zoomFactor,
 			onChanged: () => ctx.actions.syncInteractionMode(),
 		});
 
@@ -32,6 +34,8 @@ export const textColorFeature: CanvasFeature = {
 					dominantFontSize: api.dominantFontSize.value,
 					strokeWidth: api.strokeWidth.value,
 					dominantStrokeWidth: api.dominantStrokeWidth.value,
+					lineHeight: api.lineHeight.value,
+					dominantLineHeight: api.dominantLineHeight.value,
 					textAlign: api.textAlign.value,
 					left: stage.left,
 					top: stage.top,
@@ -47,7 +51,9 @@ export const textColorFeature: CanvasFeature = {
 				toggleLinethrough: api.toggleLinethrough,
 				setFontSize: api.setFontSize as (...args: never[]) => unknown,
 				setStrokeWidth: api.setStrokeWidth as (...args: never[]) => unknown,
+				setLineHeight: api.setLineHeight as (...args: never[]) => unknown,
 				setTextAlign: api.setTextAlign as (...args: never[]) => unknown,
+				alignToPage: api.alignToPage as (...args: never[]) => unknown,
 				deleteText: api.deleteText,
 			},
 		});

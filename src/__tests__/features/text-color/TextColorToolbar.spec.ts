@@ -13,6 +13,8 @@ const baseProps = {
 	dominantFontSize: 24,
 	strokeWidth: 0 as number | null,
 	dominantStrokeWidth: 0,
+	lineHeight: 1.16 as number | null,
+	dominantLineHeight: 1.16,
 	textAlign: 'left' as const,
 	left: 100,
 	top: 50,
@@ -347,6 +349,28 @@ describe('TextColorToolbar', () => {
 		expect(wrapper.find('ul[role="listbox"]').exists()).toBe(true);
 	});
 
+	it('emits alignToPage from the page align select', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Align to page"]').trigger('click');
+
+		const center = wrapper.findAll('ul[role="listbox"] button').find((node) => {
+			return node.text().trim() === 'Center';
+		});
+
+		expect(center).toBeTruthy();
+		await center!.trigger('click');
+
+		expect(wrapper.emitted('alignToPage')?.at(-1)).toEqual(['middle-center']);
+	});
+
 	it('shows mix for stroke width and nudges from dominant', async () => {
 		const wrapper = mount(TextColorToolbar, {
 			props: {
@@ -368,5 +392,47 @@ describe('TextColorToolbar', () => {
 		await wrapper.get('button[aria-label="Increase stroke width"]').trigger('click');
 
 		expect(wrapper.emitted('setStrokeWidth')?.at(-1)).toEqual([4]);
+	});
+
+	it('emits setLineHeight from spinner buttons', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Increase line height"]').trigger('click');
+
+		expect(wrapper.emitted('setLineHeight')?.at(-1)).toEqual([1.26]);
+
+		await wrapper.get('button[aria-label="Decrease line height"]').trigger('click');
+
+		expect(wrapper.emitted('setLineHeight')?.at(-1)).toEqual([1.06]);
+	});
+
+	it('shows mix for line height and nudges from dominant', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				lineHeight: null,
+				dominantLineHeight: 1.5,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		const input = wrapper.get('input[aria-label="Line height (mixed)"]');
+
+		expect((input.element as HTMLInputElement).value).toBe('mix');
+
+		await wrapper.get('button[aria-label="Increase line height"]').trigger('click');
+
+		expect(wrapper.emitted('setLineHeight')?.at(-1)).toEqual([1.6]);
 	});
 });

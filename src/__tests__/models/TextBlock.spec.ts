@@ -151,4 +151,26 @@ describe('TextBlock', () => {
 		expect(text.stroke).toBeNull();
 		expect(text.strokeWidth).toBe(2);
 	});
+
+	it('serializes lineHeight and restores default when omitted', () => {
+		const text = TextBlock.create(0, 0);
+
+		expect(text.lineHeight).toBe(1.16);
+
+		text.applyPatch({ lineHeight: 1.8 });
+
+		expect(text.toJSON().lineHeight).toBe(1.8);
+
+		const restored = TextBlock.fromJSON({
+			id: 't1',
+			content: 'Hi',
+			left: 0,
+			top: 0,
+			width: 100,
+			fontSize: 24,
+			fill: '#000000',
+		});
+
+		expect(restored.lineHeight).toBe(1.16);
+	});
 });

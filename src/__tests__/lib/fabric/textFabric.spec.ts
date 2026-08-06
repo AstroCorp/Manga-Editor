@@ -109,6 +109,7 @@ describe('textFabric', () => {
 			linethrough: false,
 			stroke: null,
 			strokeWidth: 0,
+			lineHeight: 1.16,
 			textAlign: 'left',
 			styles: {
 				'0': {
@@ -267,5 +268,19 @@ describe('textFabric', () => {
 
 		expect(fabricText.textAlign).toBe('center');
 		expect(textBlockFromFabric(fabricText).textAlign).toBe('center');
+	});
+
+	it('maps lineHeight to and from fabric', () => {
+		const text = TextBlock.create(0, 0);
+
+		text.applyPatch({ lineHeight: 1.8 });
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+
+		expect(fabricText.lineHeight).toBe(1.8);
+		expect(textBlockFromFabric(fabricText).lineHeight).toBe(1.8);
 	});
 });
