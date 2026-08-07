@@ -1,8 +1,7 @@
-import type { OverlayPlacement } from '@/types/panel';
+import type { OverlayScrollClampInput } from '@/types/ui';
 
 const SCROLL_OVERFLOW_RE = /(auto|scroll|overlay)/;
 
-/** Ancestro con overflow que hace scroll (p. ej. el stage checker). */
 export const findScrollParent = (el: Element | null): HTMLElement | null => {
 	let node = el?.parentElement ?? null;
 
@@ -24,21 +23,6 @@ export const findScrollParent = (el: Element | null): HTMLElement | null => {
 	return null;
 };
 
-export type OverlayScrollClampInput = {
-	anchorLeft: number;
-	anchorTop: number;
-	overlayWidth: number;
-	overlayHeight: number;
-	placement: OverlayPlacement;
-	stageRect: Pick<DOMRect, 'left' | 'top'>;
-	portRect: Pick<DOMRect, 'left' | 'top' | 'right' | 'bottom'>;
-	padding?: number;
-};
-
-/**
- * Desplazamiento extra (px viewport) para que un overlay centrado en
- * (anchorLeft, anchorTop) del stage quepa en el scrollport visible.
- */
 export const computeOverlayScrollClamp = (
 	input: OverlayScrollClampInput,
 ): { x: number; y: number } => {

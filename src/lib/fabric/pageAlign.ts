@@ -1,4 +1,4 @@
-import type { PageTextAnchor } from '@/types/page';
+import type { PageAlignableText, PageAlignSize, PageTextAnchor } from '@/types/page';
 
 export const PAGE_TEXT_ANCHORS = [
 	'top-left',
@@ -39,24 +39,6 @@ export const isPageTextAnchor = (value: unknown): value is PageTextAnchor => {
 		typeof value === 'string' &&
 		(PAGE_TEXT_ANCHORS as ReadonlyArray<string>).includes(value)
 	);
-};
-
-export type PageAlignSize = {
-	width: number;
-	height: number;
-};
-
-export type PageAlignableText = {
-	left?: number;
-	top?: number;
-	set: (props: { left: number; top: number }) => unknown;
-	setCoords?: () => unknown;
-	getBoundingRect: () => {
-		left: number;
-		top: number;
-		width: number;
-		height: number;
-	};
 };
 
 const horizontalTarget = (

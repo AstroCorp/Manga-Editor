@@ -10,6 +10,13 @@ export type SelectionDeps = {
 	cancelStroke: () => void;
 };
 
+export type TextColorToolbarDeps = {
+	fabricCanvas: ShallowRef<Canvas | null>;
+	rootEl: Ref<HTMLElement | null>;
+	zoomFactor: Ref<number>;
+	onChanged?: () => void;
+};
+
 export type GridPointHoverDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
 	strokePath: ShallowRef<GridPoint[]>;

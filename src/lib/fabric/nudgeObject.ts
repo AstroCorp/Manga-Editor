@@ -1,14 +1,9 @@
 import type { FabricObject } from 'fabric';
+import type { NudgeDelta } from '@/types/fabric';
 
 export const NUDGE_STEP_PX = 1;
 export const NUDGE_REPEAT_STEP_PX = 4;
 
-export type NudgeDelta = {
-	dx: number;
-	dy: number;
-};
-
-/** Delta en px de página para flechas; null si la tecla no aplica. */
 export const nudgeDeltaForArrowKey = (
 	key: string,
 	repeat = false,

@@ -74,7 +74,6 @@ export type TextBlockJSON = {
 export type TextBlockPatch = Partial<Omit<TextBlockJSON, 'id'>>;
 
 export type PagePreviewText = {
-	/** Líneas ya partidas (\\n + soft-wrap aproximado por width). */
 	lines: string[];
 	x: number;
 	y: number;
@@ -94,6 +93,32 @@ export type PagePreviewText = {
 	originY: number;
 };
 
+export type PreviewTextMeasureStyle = {
+	fontSize: number;
+	fontWeight?: string;
+	fontStyle?: string;
+};
+
+export type PageRect = {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+};
+
+export type PageAlignSize = {
+	width: number;
+	height: number;
+};
+
+export type PageAlignableText = {
+	left?: number;
+	top?: number;
+	set: (props: { left: number; top: number }) => unknown;
+	setCoords?: () => unknown;
+	getBoundingRect: () => PageRect;
+};
+
 export type ShapeImageJSON = {
 	src: string;
 	left: number;
@@ -105,7 +130,6 @@ export type ShapeImageJSON = {
 	width: number;
 	height: number;
 	angle?: number;
-	/** Filtro B/N (opcional para layouts antiguos). */
 	grayscale?: boolean;
 };
 

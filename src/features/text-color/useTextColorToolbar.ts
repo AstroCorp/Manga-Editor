@@ -1,4 +1,4 @@
-import { computed, nextTick, shallowRef, watch, type Ref, type ShallowRef } from 'vue';
+import { computed, nextTick, shallowRef, watch } from 'vue';
 import type { Canvas, FabricObject } from 'fabric';
 import { getTextId, isGuide, isPageText } from '@/lib/fabric/isGuide';
 import { getObjectOverlayAnchor } from '@/lib/fabric/overlayAnchor';
@@ -31,15 +31,12 @@ import {
 } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { PageTextObject } from '@/types/fabric';
-import type { OverlayPlacement, PageOverlayPosition } from '@/types/panel';
+import type {
+	OverlayPlacement,
+	PageOverlayPosition,
+	TextColorToolbarDeps,
+} from '@/types/panel';
 import type { PageTextAnchor, TextCharStyle, TextTextAlign } from '@/types/page';
-
-type TextColorToolbarDeps = {
-	fabricCanvas: ShallowRef<Canvas | null>;
-	rootEl: Ref<HTMLElement | null>;
-	zoomFactor: Ref<number>;
-	onChanged?: () => void;
-};
 
 const DEFAULT_FLAGS: TextFormatFlags = {
 	bold: false,

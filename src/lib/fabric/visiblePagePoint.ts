@@ -1,11 +1,4 @@
-import type { PagePoint } from '@/types/page';
-
-export type PageRect = {
-	left: number;
-	top: number;
-	width: number;
-	height: number;
-};
+import type { PagePoint, PageRect } from '@/types/page';
 
 export const getVisiblePageCenter = (
 	rootEl: HTMLElement,

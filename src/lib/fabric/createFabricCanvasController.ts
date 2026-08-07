@@ -1,20 +1,12 @@
-import { shallowRef, type Ref, type ShallowRef } from 'vue';
+import { shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
 import { isGuide, isPanel } from '@/lib/fabric/isGuide';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
+import type { FabricCanvasController } from '@/types/fabric';
 
-export type FabricCanvasController = {
-	fabricCanvas: ShallowRef<Canvas | null>;
-	init: (width: number, height: number) => void;
-	hydratePage: (page: Page) => Promise<void>;
-	exportDataUrl: (format: ExportImageFormat) => string | null;
-	dispose: () => void;
-};
-
-/** Core Fabric sin lifecycle Vue (el caller dispone en unmount). */
 export const createFabricCanvasController = (
 	canvasEl: Ref<HTMLCanvasElement | null>,
 ): FabricCanvasController => {

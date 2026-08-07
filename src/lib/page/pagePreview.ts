@@ -9,6 +9,7 @@ import type {
 	PagePreviewModel,
 	PagePreviewPanel,
 	PagePreviewText,
+	PreviewTextMeasureStyle,
 	ShapeImageJSON,
 	ShapeLike,
 } from '@/types/page';
@@ -61,19 +62,8 @@ const toImageJson = (image: ShapeLike['image']): ShapeImageJSON | null => {
 };
 
 const PREVIEW_FONT_FAMILY = 'Arial, sans-serif';
-/**
- * Fallback solo si measureText no está disponible (p. ej. jsdom).
- * Ratio bajo a propósito: mejor sub-wrap que inventar líneas de más.
- */
 const FALLBACK_LATIN_CHAR_WIDTH_RATIO = 0.42;
-/** Holgura vs width del Textbox para no partir líneas que Fabric deja en una. */
 const WRAP_WIDTH_SLACK = 1;
-
-export type PreviewTextMeasureStyle = {
-	fontSize: number;
-	fontWeight?: string;
-	fontStyle?: string;
-};
 
 let measureContext: CanvasRenderingContext2D | null | undefined;
 

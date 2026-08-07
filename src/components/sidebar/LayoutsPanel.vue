@@ -3,10 +3,13 @@ import { onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import PagePreview from '@/components/page/PagePreview.vue';
+import LayoutThumbSkeleton from '@/components/sidebar/LayoutThumbSkeleton.vue';
 import { useLayoutsPanelActions } from '@/composables/layouts/useLayoutsPanelActions';
+import { useScrollPagedSlice } from '@/composables/ui/useScrollPagedSlice';
 import { layoutPreviewShapes } from '@/lib/page/layoutPreviewShapes';
 
 const PRESET_SKELETON_COUNT = 6;
+const LAYOUT_PAGE_SIZE = 6;
 
 const {
 	presets,
@@ -25,6 +28,26 @@ const {
 	exportJson,
 	importJson,
 } = useLayoutsPanelActions();
+
+const {
+	scrollEl: presetsScrollEl,
+	visibleItems: visiblePresets,
+	hasMore: hasMorePresets,
+	isLoadingMore: isLoadingMorePresets,
+} = useScrollPagedSlice(presets, {
+	initial: LAYOUT_PAGE_SIZE,
+	pageSize: LAYOUT_PAGE_SIZE,
+});
+
+const {
+	scrollEl: customScrollEl,
+	visibleItems: visibleCustomLayouts,
+	hasMore: hasMoreCustom,
+	isLoadingMore: isLoadingMoreCustom,
+} = useScrollPagedSlice(customLayouts, {
+	initial: LAYOUT_PAGE_SIZE,
+	pageSize: LAYOUT_PAGE_SIZE,
+});
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -65,7 +88,10 @@ const onFileChange = (event: Event) => {
 			>
 				Apply a built-in layout to the active page.
 			</p>
-			<div class="max-h-87.5 overflow-y-auto pe-0.5">
+			<div
+				ref="presetsScrollEl"
+				class="max-h-87.5 overflow-y-auto pe-0.5"
+			>
 				<ul
 					v-if="presetsLoading"
 					class="grid grid-cols-2 gap-2.5"
@@ -73,17 +99,15 @@ const onFileChange = (event: Event) => {
 					aria-label="Loading presets"
 				>
 					<li v-for="index in PRESET_SKELETON_COUNT" :key="`preset-skeleton-${index}`">
-						<div
-							class="w-full rounded-lg border border-slate-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950"
-						>
-							<div
-								class="w-full animate-pulse rounded-sm bg-slate-200 dark:bg-zinc-800"
-							/>
-						</div>
+						<LayoutThumbSkeleton />
 					</li>
 				</ul>
-				<ul v-else-if="presets.length > 0" class="grid grid-cols-2 gap-2.5">
-					<li v-for="preset in presets" :key="preset.id">
+				<ul
+					v-else-if="presets.length > 0"
+					class="grid grid-cols-2 gap-2.5"
+					:aria-busy="isLoadingMorePresets || undefined"
+				>
+					<li v-for="preset in visiblePresets" :key="preset.id">
 						<button
 							type="button"
 							class="group w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
@@ -101,12 +125,25 @@ const onFileChange = (event: Event) => {
 							</span>
 						</button>
 					</li>
+					<li
+						v-for="index in isLoadingMorePresets ? LAYOUT_PAGE_SIZE : 0"
+						:key="`preset-more-${index}`"
+					>
+						<LayoutThumbSkeleton />
+					</li>
 				</ul>
 				<p
 					v-else
 					class="mb-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
 				>
 					No layouts found.
+				</p>
+				<p
+					v-if="!presetsLoading && hasMorePresets && !isLoadingMorePresets"
+					class="mt-2 text-center text-xs text-slate-400 dark:text-slate-500"
+					aria-hidden="true"
+				>
+					Scroll for more
 				</p>
 			</div>
 		</section>
@@ -124,13 +161,17 @@ const onFileChange = (event: Event) => {
 			>
 				Layouts saved from Import JSON (stored in this browser).
 			</p>
-			<div class="max-h-87.5 overflow-y-auto pe-0.5">
+			<div
+				ref="customScrollEl"
+				class="max-h-87.5 overflow-y-auto pe-0.5"
+			>
 				<ul
 					v-if="customLayouts.length > 0"
 					class="grid grid-cols-2 gap-2.5"
+					:aria-busy="isLoadingMoreCustom || undefined"
 				>
 					<li
-						v-for="preset in customLayouts"
+						v-for="preset in visibleCustomLayouts"
 						:key="preset.id"
 						class="group relative"
 					>
@@ -160,12 +201,25 @@ const onFileChange = (event: Event) => {
 							<Icon icon="fluent:delete-24-regular" class="size-5" />
 						</button>
 					</li>
+					<li
+						v-for="index in isLoadingMoreCustom ? LAYOUT_PAGE_SIZE : 0"
+						:key="`custom-more-${index}`"
+					>
+						<LayoutThumbSkeleton />
+					</li>
 				</ul>
 				<p
 					v-else
 					class="mb-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
 				>
 					No custom layouts yet.
+				</p>
+				<p
+					v-if="hasMoreCustom && !isLoadingMoreCustom"
+					class="mt-2 text-center text-xs text-slate-400 dark:text-slate-500"
+					aria-hidden="true"
+				>
+					Scroll for more
 				</p>
 			</div>
 		</section>

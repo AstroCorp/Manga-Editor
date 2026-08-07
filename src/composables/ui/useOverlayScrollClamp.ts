@@ -10,15 +10,8 @@ import {
 	computeOverlayScrollClamp,
 	findScrollParent,
 } from '@/lib/dom/clampOverlayToScrollPort';
-import type { OverlayPlacement } from '@/types/panel';
+import type { OverlayAnchorSource } from '@/types/ui';
 
-type OverlayAnchorSource = {
-	left: number | null;
-	top: number | null;
-	placement: OverlayPlacement;
-};
-
-/** Mantiene un overlay absoluto dentro del scrollport visible. */
 export const useOverlayScrollClamp = (
 	overlayEl: Ref<HTMLElement | null>,
 	getAnchor: () => OverlayAnchorSource,

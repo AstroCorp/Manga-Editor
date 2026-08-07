@@ -1,4 +1,7 @@
 import type { Canvas, FabricImage, FabricObject, Point, Polygon, Polyline, Textbox } from 'fabric';
+import type { ShallowRef } from 'vue';
+import type { Page } from '@/models/Page';
+import type { ExportImageFormat } from '@/types/editor';
 
 export type GridGuideImage = FabricImage & {
 	isGuide?: boolean;
@@ -53,7 +56,19 @@ export type PlaceImageInPanelOptions = {
 	canvas: Canvas;
 	panelId: string;
 	file: File;
-	/** Si devuelve true, se aborta (hydrate/drop obsoleto). */
 	isStale?: () => boolean;
 	selectAfterPlace?: boolean;
+};
+
+export type NudgeDelta = {
+	dx: number;
+	dy: number;
+};
+
+export type FabricCanvasController = {
+	fabricCanvas: ShallowRef<Canvas | null>;
+	init: (width: number, height: number) => void;
+	hydratePage: (page: Page) => Promise<void>;
+	exportDataUrl: (format: ExportImageFormat) => string | null;
+	dispose: () => void;
 };
