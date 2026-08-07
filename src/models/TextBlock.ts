@@ -1,4 +1,5 @@
 import { createId } from '@/lib/id';
+import { DEFAULT_TEXT_FONT_FAMILY } from '@/lib/fonts/googleFontsCatalog';
 import type {
 	TextBlockJSON,
 	TextBlockPatch,
@@ -14,11 +15,12 @@ export const DEFAULT_TEXT_FONT_SIZE = 24;
 export const DEFAULT_TEXT_FILL = '#000000';
 export const DEFAULT_TEXT_STROKE = '#000000';
 export const DEFAULT_TEXT_STROKE_WIDTH = 0;
-/** Default Fabric Text lineHeight. */
 export const DEFAULT_TEXT_LINE_HEIGHT = 1.16;
-export const DEFAULT_TEXT_FONT_WEIGHT: TextFontWeight = 'normal';
-export const DEFAULT_TEXT_FONT_STYLE: TextFontStyle = 'normal';
+const DEFAULT_TEXT_FONT_WEIGHT: TextFontWeight = 'normal';
+const DEFAULT_TEXT_FONT_STYLE: TextFontStyle = 'normal';
 export const DEFAULT_TEXT_ALIGN: TextTextAlign = 'left';
+
+export { DEFAULT_TEXT_FONT_FAMILY };
 
 const cloneStyles = (
 	styles: TextStylesJSON | null | undefined,
@@ -37,6 +39,7 @@ export class TextBlock {
 	public top: number;
 	public width: number;
 	public fontSize: number;
+	public fontFamily: string;
 	public fill: string;
 	public fontWeight: TextFontWeight;
 	public fontStyle: TextFontStyle;
@@ -56,6 +59,7 @@ export class TextBlock {
 		this.top = value.top;
 		this.width = value.width;
 		this.fontSize = value.fontSize;
+		this.fontFamily = value.fontFamily ?? DEFAULT_TEXT_FONT_FAMILY;
 		this.fill = value.fill;
 		this.fontWeight = value.fontWeight ?? DEFAULT_TEXT_FONT_WEIGHT;
 		this.fontStyle = value.fontStyle ?? DEFAULT_TEXT_FONT_STYLE;
@@ -77,6 +81,7 @@ export class TextBlock {
 			top,
 			width: DEFAULT_TEXT_WIDTH,
 			fontSize: DEFAULT_TEXT_FONT_SIZE,
+			fontFamily: DEFAULT_TEXT_FONT_FAMILY,
 			fill: DEFAULT_TEXT_FILL,
 			fontWeight: DEFAULT_TEXT_FONT_WEIGHT,
 			fontStyle: DEFAULT_TEXT_FONT_STYLE,
@@ -110,6 +115,10 @@ export class TextBlock {
 
 		if (patch.fontSize !== undefined) {
 			this.fontSize = patch.fontSize;
+		}
+
+		if (patch.fontFamily !== undefined) {
+			this.fontFamily = patch.fontFamily;
 		}
 
 		if (patch.fill !== undefined) {
@@ -165,6 +174,7 @@ export class TextBlock {
 			top: this.top,
 			width: this.width,
 			fontSize: this.fontSize,
+			fontFamily: this.fontFamily,
 			fill: this.fill,
 			fontWeight: this.fontWeight,
 			fontStyle: this.fontStyle,

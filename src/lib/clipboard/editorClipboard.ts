@@ -9,10 +9,6 @@ export const setClipboardEntry = (entry: ClipboardEntry) => {
 	clipboard = structuredClone(entry);
 };
 
-export const peekClipboardEntry = (): ClipboardEntry | null => {
-	return clipboard;
-};
-
 export const peekClipboardEntryOfKind = <K extends ClipboardEntryKind>(
 	kind: K,
 ): Extract<ClipboardEntry, { kind: K }> | null => {

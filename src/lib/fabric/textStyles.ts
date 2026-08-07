@@ -1,7 +1,9 @@
 import type { TextStyle } from 'fabric';
+import { normalizeFontFamilyName } from '@/lib/fonts/googleFontsCatalog';
 import {
 	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FILL,
+	DEFAULT_TEXT_FONT_FAMILY,
 	DEFAULT_TEXT_FONT_SIZE,
 	DEFAULT_TEXT_LINE_HEIGHT,
 	DEFAULT_TEXT_STROKE,
@@ -22,7 +24,7 @@ export const MIN_TEXT_LINE_HEIGHT = 0.5;
 export const MAX_TEXT_LINE_HEIGHT = 5;
 export const TEXT_LINE_HEIGHT_STEP = 0.1;
 
-export const TEXT_ALIGN_VALUES = [
+const TEXT_ALIGN_VALUES = [
 	'left',
 	'center',
 	'right',
@@ -52,6 +54,7 @@ const TEXT_ALIGN_VALUE_SET: ReadonlySet<TextTextAlign> = new Set(
 type FabricStyleSample = {
 	fill?: unknown;
 	fontSize?: unknown;
+	fontFamily?: unknown;
 	fontWeight?: unknown;
 	fontStyle?: unknown;
 	underline?: unknown;
@@ -65,6 +68,7 @@ export type TextStyleSource = {
 	text?: string;
 	fill?: unknown;
 	fontSize?: unknown;
+	fontFamily?: unknown;
 	fontWeight?: unknown;
 	fontStyle?: unknown;
 	underline?: unknown;
@@ -103,6 +107,7 @@ type TextStyleMutable = TextStyleSource & {
 
 const LAYOUT_STYLE_KEYS: Array<keyof TextCharStyle> = [
 	'fontSize',
+	'fontFamily',
 	'fontWeight',
 	'fontStyle',
 	'strokeWidth',
@@ -112,7 +117,7 @@ const LAYOUT_STYLE_KEYS: Array<keyof TextCharStyle> = [
 /** Ancho temporal para medir el texto sin soft-wrap de Textbox. */
 const UNBOUNDED_TEXT_WIDTH = 1_000_000;
 const MIN_TEXTBOX_WIDTH = 20;
-/** null en fontSize/strokeWidth/lineHeight = mezcla; dominant* = el más frecuente. */
+/** null en fontSize/fontFamily/strokeWidth/lineHeight = mezcla; dominant* = el más frecuente. */
 export type TextFormatFlags = {
 	bold: boolean;
 	italic: boolean;
@@ -120,6 +125,8 @@ export type TextFormatFlags = {
 	linethrough: boolean;
 	fontSize: number | null;
 	dominantFontSize: number;
+	fontFamily: string | null;
+	dominantFontFamily: string;
 	strokeWidth: number | null;
 	dominantStrokeWidth: number;
 	lineHeight: number | null;
@@ -138,6 +145,12 @@ const toCharStyle = (style: Record<string, unknown>): TextCharStyle | null => {
 
 	if (fontSize !== null) {
 		next.fontSize = fontSize;
+	}
+
+	const fontFamily = normalizeFontFamilyName(style.fontFamily);
+
+	if (fontFamily) {
+		next.fontFamily = fontFamily;
 	}
 
 	const fontWeight = normalizeFontWeight(style.fontWeight);
@@ -609,6 +622,8 @@ export const collectTextStrokeColors = (textbox: TextStyleSource): string[] => {
 export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => {
 	const samples = getStyleSamples(textbox);
 	const baseSize = normalizeFontSize(textbox.fontSize) ?? DEFAULT_TEXT_FONT_SIZE;
+	const baseFamily =
+		normalizeFontFamilyName(textbox.fontFamily) ?? DEFAULT_TEXT_FONT_FAMILY;
 	const baseStrokeWidth =
 		normalizeStrokeWidth(textbox.strokeWidth) ?? DEFAULT_TEXT_STROKE_WIDTH;
 	const baseLineHeight =
@@ -659,6 +674,11 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		(style) => normalizeFontSize(style.fontSize) ?? undefined,
 		baseSize,
 	);
+	const fontFamilies = sampleFlag(
+		samples,
+		(style) => normalizeFontFamilyName(style.fontFamily) ?? undefined,
+		baseFamily,
+	);
 	const strokeWidths = sampleFlag(
 		samples,
 		(style) => normalizeStrokeWidth(style.strokeWidth) ?? undefined,
@@ -671,6 +691,8 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 	);
 	const dominantFontSize =
 		fontSizes.length === 0 ? baseSize : mostFrequent(fontSizes);
+	const dominantFontFamily =
+		fontFamilies.length === 0 ? baseFamily : mostFrequent(fontFamilies);
 	const dominantStrokeWidth =
 		strokeWidths.length === 0 ? baseStrokeWidth : mostFrequent(strokeWidths);
 	const dominantLineHeight =
@@ -683,6 +705,9 @@ export const collectTextFormat = (textbox: TextStyleSource): TextFormatFlags => 
 		linethrough: linethroughs.some(Boolean),
 		fontSize: fontSizes.length === 0 ? null : resolveUnique(fontSizes),
 		dominantFontSize,
+		fontFamily:
+			fontFamilies.length === 0 ? null : resolveUnique(fontFamilies),
+		dominantFontFamily,
 		strokeWidth:
 			strokeWidths.length === 0 ? null : resolveUnique(strokeWidths),
 		dominantStrokeWidth,
@@ -736,6 +761,16 @@ export const applyTextFontSize = (textbox: TextStyleMutable, size: number) => {
 	applyStylesToRangeOrWhole(textbox, { fontSize: size }, () => {
 		textbox.removeStyle('fontSize');
 		textbox.set('fontSize', size);
+	});
+};
+
+export const applyTextFontFamily = (
+	textbox: TextStyleMutable,
+	family: string,
+) => {
+	applyStylesToRangeOrWhole(textbox, { fontFamily: family }, () => {
+		textbox.removeStyle('fontFamily');
+		textbox.set('fontFamily', family);
 	});
 };
 

@@ -118,7 +118,7 @@ const toCssFont = (style: PreviewTextMeasureStyle): string => {
 };
 
 /** Ancho de cadena: canvas measureText (mismo font que Fabric/preview). */
-export const estimatePreviewTextWidth = (
+const estimatePreviewTextWidth = (
 	value: string,
 	style: PreviewTextMeasureStyle | number,
 ): number => {
@@ -179,7 +179,7 @@ const breakOversizedToken = (
 };
 
 /** Soft-wrap de una línea dura según width del TextBlock. */
-export const wrapPreviewLine = (
+const wrapPreviewLine = (
 	line: string,
 	maxWidth: number,
 	style: PreviewTextMeasureStyle | number,
@@ -248,7 +248,7 @@ export const wrapPreviewLine = (
 };
 
 /** Parte por \\n y aplica soft-wrap por width. */
-export const buildPreviewTextLines = (
+const buildPreviewTextLines = (
 	content: string,
 	width: number,
 	style: PreviewTextMeasureStyle | number,
@@ -278,6 +278,7 @@ const toPreviewTexts = (
 			x: text.left,
 			y: text.top + text.fontSize,
 			fontSize: text.fontSize,
+			fontFamily: text.fontFamily,
 			lineHeight:
 				typeof text.lineHeight === 'number' && text.lineHeight > 0
 					? text.lineHeight

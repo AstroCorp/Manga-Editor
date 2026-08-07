@@ -11,8 +11,10 @@ import {
 	toHexColor,
 	toStrokeColor,
 } from '@/lib/fabric/textStyles';
+import { normalizeFontFamilyName } from '@/lib/fonts/googleFontsCatalog';
 import {
 	DEFAULT_TEXT_ALIGN,
+	DEFAULT_TEXT_FONT_FAMILY,
 	DEFAULT_TEXT_FONT_SIZE,
 	DEFAULT_TEXT_LINE_HEIGHT,
 	DEFAULT_TEXT_STROKE_WIDTH,
@@ -54,7 +56,7 @@ export const textBlockToFabric = (
 		lineHeight: text.lineHeight,
 		textAlign: text.textAlign,
 		angle: text.angle,
-		fontFamily: 'Arial, sans-serif',
+		fontFamily: text.fontFamily,
 		editable: true,
 		selectable: interactive,
 		evented: interactive,
@@ -85,6 +87,8 @@ export const textBlockFromFabric = (textbox: PageTextObject): TextBlockPatch => 
 		top: textbox.top ?? 0,
 		width: textbox.width ?? 0,
 		fontSize: textbox.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
+		fontFamily:
+			normalizeFontFamilyName(textbox.fontFamily) ?? DEFAULT_TEXT_FONT_FAMILY,
 		angle: textbox.angle ?? 0,
 		fill: toHexColor(textbox.fill),
 		fontWeight: isBoldWeight(textbox.fontWeight) ? 'bold' : 'normal',

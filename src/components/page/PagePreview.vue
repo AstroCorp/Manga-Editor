@@ -153,7 +153,7 @@ const lineContent = (line: string) => {
 					.join(' ') || undefined
 			"
 			:transform="rotateTransform(text.angle, text.originX, text.originY)"
-			font-family="Arial, sans-serif"
+			:font-family="text.fontFamily"
 			xml:space="preserve"
 		>
 			<tspan

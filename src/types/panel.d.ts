@@ -75,6 +75,8 @@ export type TextColorToolbarProps = {
 	linethrough: boolean;
 	fontSize: number | null;
 	dominantFontSize: number;
+	fontFamily: string | null;
+	dominantFontFamily: string;
 	strokeWidth: number | null;
 	dominantStrokeWidth: number;
 	lineHeight: number | null;
@@ -93,6 +95,7 @@ export type TextColorToolbarEmits = {
 	toggleUnderline: [];
 	toggleLinethrough: [];
 	setFontSize: [fontSize: number];
+	setFontFamily: [fontFamily: string];
 	setStrokeWidth: [strokeWidth: number];
 	setLineHeight: [lineHeight: number];
 	setTextAlign: [textAlign: TextTextAlign];

@@ -1,6 +1,6 @@
 import type { PageAlignableText, PageAlignSize, PageTextAnchor } from '@/types/page';
 
-export const PAGE_TEXT_ANCHORS = [
+const PAGE_TEXT_ANCHORS = [
 	'top-left',
 	'top-center',
 	'top-right',
@@ -12,7 +12,7 @@ export const PAGE_TEXT_ANCHORS = [
 	'bottom-right',
 ] as const satisfies ReadonlyArray<PageTextAnchor>;
 
-export const PAGE_TEXT_ANCHOR_LABELS: Record<PageTextAnchor, string> = {
+const PAGE_TEXT_ANCHOR_LABELS: Record<PageTextAnchor, string> = {
 	'top-left': 'Top left',
 	'top-center': 'Top center',
 	'top-right': 'Top right',

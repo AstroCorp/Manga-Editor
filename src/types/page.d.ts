@@ -35,13 +35,13 @@ export type PageTextAnchor =
 export type TextCharStyle = {
 	fill?: string;
 	fontSize?: number;
+	fontFamily?: string;
 	fontWeight?: TextFontWeight;
 	fontStyle?: TextFontStyle;
 	underline?: boolean;
 	linethrough?: boolean;
 	stroke?: string;
 	strokeWidth?: number;
-	/** Multiplicador de interlineado (afecta toda la línea en el layout). */
 	lineHeight?: number;
 };
 
@@ -58,6 +58,7 @@ export type TextBlockJSON = {
 	top: number;
 	width: number;
 	fontSize: number;
+	fontFamily?: string;
 	fill: string;
 	fontWeight?: TextFontWeight;
 	fontStyle?: TextFontStyle;
@@ -78,6 +79,7 @@ export type PagePreviewText = {
 	x: number;
 	y: number;
 	fontSize: number;
+	fontFamily: string;
 	lineHeight: number;
 	fill: string;
 	fontWeight: TextFontWeight;

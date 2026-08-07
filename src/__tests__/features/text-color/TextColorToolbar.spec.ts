@@ -11,6 +11,8 @@ const baseProps = {
 	linethrough: false,
 	fontSize: 24 as number | null,
 	dominantFontSize: 24,
+	fontFamily: 'Arial' as string | null,
+	dominantFontFamily: 'Arial',
 	strokeWidth: 0 as number | null,
 	dominantStrokeWidth: 0,
 	lineHeight: 1.16 as number | null,

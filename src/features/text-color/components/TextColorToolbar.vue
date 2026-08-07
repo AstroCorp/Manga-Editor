@@ -19,6 +19,7 @@ import {
 	DEFAULT_TEXT_STROKE,
 } from '@/models/TextBlock';
 import TextAlignSelect from '@/features/text-color/components/TextAlignSelect.vue';
+import FontFamilySelect from '@/features/text-color/components/FontFamilySelect.vue';
 import PageAlignSelect from '@/features/text-color/components/PageAlignSelect.vue';
 import type {
 	TextColorToolbarEmits,
@@ -177,6 +178,10 @@ const onStrokeColorInput = (event: Event) => {
 
 const onTextAlignUpdate = (next: TextTextAlign) => {
 	emit('setTextAlign', next);
+};
+
+const onFontFamilyUpdate = (next: string) => {
+	emit('setFontFamily', next);
 };
 
 const onPageAlign = (anchor: PageTextAnchor) => {
@@ -415,6 +420,12 @@ const onLineHeightKeydown = (event: KeyboardEvent) => {
 				@input="onColorInput"
 			/>
 		</label>
+
+		<FontFamilySelect
+			:model-value="fontFamily"
+			:dominant-font-family="dominantFontFamily"
+			@update:model-value="onFontFamilyUpdate"
+		/>
 
 		<div
 			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"

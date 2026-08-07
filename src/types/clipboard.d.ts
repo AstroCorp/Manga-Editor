@@ -1,6 +1,6 @@
 import type { TextBlockJSON } from '@/types/page';
 
-export type TextClipboardEntry = {
+type TextClipboardEntry = {
 	kind: 'text';
 	payload: TextBlockJSON;
 };

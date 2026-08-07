@@ -6,6 +6,7 @@ import { alignTextToPage } from '@/lib/fabric/pageAlign';
 import { textBlockFromFabric } from '@/lib/fabric/textFabric';
 import {
 	applyTextAlign,
+	applyTextFontFamily,
 	applyTextFontSize,
 	applyTextLineHeight,
 	applyTextStrokeWidth,
@@ -20,10 +21,13 @@ import {
 	toHexColor,
 	type TextFormatFlags,
 } from '@/lib/fabric/textStyles';
+import { normalizeFontFamilyName } from '@/lib/fonts/googleFontsCatalog';
+import { ensureFontFamilyLoaded } from '@/lib/fonts/loadGoogleFont';
 import { scrollPageRectIntoView } from '@/lib/fabric/visiblePagePoint';
 import {
 	DEFAULT_TEXT_ALIGN,
 	DEFAULT_TEXT_FILL,
+	DEFAULT_TEXT_FONT_FAMILY,
 	DEFAULT_TEXT_FONT_SIZE,
 	DEFAULT_TEXT_LINE_HEIGHT,
 	DEFAULT_TEXT_STROKE,
@@ -45,6 +49,8 @@ const DEFAULT_FLAGS: TextFormatFlags = {
 	linethrough: false,
 	fontSize: DEFAULT_TEXT_FONT_SIZE,
 	dominantFontSize: DEFAULT_TEXT_FONT_SIZE,
+	fontFamily: DEFAULT_TEXT_FONT_FAMILY,
+	dominantFontFamily: DEFAULT_TEXT_FONT_FAMILY,
 	strokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
 	dominantStrokeWidth: DEFAULT_TEXT_STROKE_WIDTH,
 	lineHeight: DEFAULT_TEXT_LINE_HEIGHT,
@@ -80,6 +86,8 @@ export const useTextColorToolbar = ({
 	const linethrough = shallowRef(DEFAULT_FLAGS.linethrough);
 	const fontSize = shallowRef<number | null>(DEFAULT_FLAGS.fontSize);
 	const dominantFontSize = shallowRef(DEFAULT_FLAGS.dominantFontSize);
+	const fontFamily = shallowRef<string | null>(DEFAULT_FLAGS.fontFamily);
+	const dominantFontFamily = shallowRef(DEFAULT_FLAGS.dominantFontFamily);
 	const strokeWidth = shallowRef<number | null>(DEFAULT_FLAGS.strokeWidth);
 	const dominantStrokeWidth = shallowRef(DEFAULT_FLAGS.dominantStrokeWidth);
 	const lineHeight = shallowRef<number | null>(DEFAULT_FLAGS.lineHeight);
@@ -101,6 +109,8 @@ export const useTextColorToolbar = ({
 		linethrough.value = DEFAULT_FLAGS.linethrough;
 		fontSize.value = DEFAULT_FLAGS.fontSize;
 		dominantFontSize.value = DEFAULT_FLAGS.dominantFontSize;
+		fontFamily.value = DEFAULT_FLAGS.fontFamily;
+		dominantFontFamily.value = DEFAULT_FLAGS.dominantFontFamily;
 		strokeWidth.value = DEFAULT_FLAGS.strokeWidth;
 		dominantStrokeWidth.value = DEFAULT_FLAGS.dominantStrokeWidth;
 		lineHeight.value = DEFAULT_FLAGS.lineHeight;
@@ -137,6 +147,8 @@ export const useTextColorToolbar = ({
 		linethrough.value = flags.linethrough;
 		fontSize.value = flags.fontSize;
 		dominantFontSize.value = flags.dominantFontSize;
+		fontFamily.value = flags.fontFamily;
+		dominantFontFamily.value = flags.dominantFontFamily;
 		strokeWidth.value = flags.strokeWidth;
 		dominantStrokeWidth.value = flags.dominantStrokeWidth;
 		lineHeight.value = flags.lineHeight;
@@ -220,6 +232,20 @@ export const useTextColorToolbar = ({
 
 		withActiveText((textbox) => {
 			applyTextFontSize(textbox, size);
+		});
+	};
+
+	const setFontFamily = async (nextFamily: string) => {
+		const family = normalizeFontFamilyName(nextFamily);
+
+		if (!family) {
+			return;
+		}
+
+		await ensureFontFamilyLoaded(family);
+
+		withActiveText((textbox) => {
+			applyTextFontFamily(textbox, family);
 		});
 	};
 
@@ -349,6 +375,8 @@ export const useTextColorToolbar = ({
 		linethrough,
 		fontSize,
 		dominantFontSize,
+		fontFamily,
+		dominantFontFamily,
 		strokeWidth,
 		dominantStrokeWidth,
 		lineHeight,
@@ -363,6 +391,7 @@ export const useTextColorToolbar = ({
 		toggleUnderline,
 		toggleLinethrough,
 		setFontSize,
+		setFontFamily,
 		setStrokeWidth,
 		setLineHeight,
 		setTextAlign,
