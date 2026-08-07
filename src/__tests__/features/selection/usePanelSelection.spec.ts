@@ -3,6 +3,13 @@ import { createPinia, setActivePinia } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import { usePanelSelection } from '@/features/selection/usePanelSelection';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import * as textFabric from '@/lib/fabric/textFabric';
+import {
+	clearClipboard,
+} from '@/lib/clipboard/editorClipboard';
+import {
+	peekCopiedText,
+} from '@/lib/text/textClipboard';
 import { TextBlock } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
@@ -78,22 +85,26 @@ const createImageMock = (panelId: string, left: number, top: number): ObjectMock
 };
 
 const createCanvas = (active: ObjectMock | null) => {
-	const handlers: Record<string, (event?: { target?: FabricObject }) => void> =
-		{};
+	const handlers: Record<string, (event?: unknown) => void> = {};
 	const canvas = {
-		on: (event: string, handler: (event?: { target?: FabricObject }) => void) => {
+		on: (event: string, handler: (event?: unknown) => void) => {
 			handlers[event] = handler;
 		},
 		off: vi.fn(),
 		getActiveObject: () => {
 			return active as unknown as FabricObject;
 		},
-		fire: vi.fn((event: string, payload?: { target?: FabricObject }) => {
+		fire: vi.fn((event: string, payload?: unknown) => {
 			handlers[event]?.(payload);
 		}),
 		requestRenderAll: vi.fn(),
 		remove: vi.fn(),
 		discardActiveObject: vi.fn(),
+		add: vi.fn(),
+		setActiveObject: vi.fn(),
+		getScenePoint: vi.fn((event: { clientX: number; clientY: number }) => {
+			return { x: event.clientX, y: event.clientY };
+		}),
 	} as unknown as Canvas;
 
 	return { canvas, handlers };
@@ -193,5 +204,87 @@ describe('usePanelSelection nudge', () => {
 		);
 
 		expect(textObject.set).toHaveBeenCalledWith({ left: 6, top: 20 });
+	});
+});
+
+describe('usePanelSelection text clipboard', () => {
+	beforeEach(() => {
+		setActivePinia(createPinia());
+		clearClipboard();
+	});
+
+	it('copies selected text and pastes a clone at the mouse position', async () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(10, 20);
+
+		text.applyPatch({ content: 'Copy me', fontSize: 30 });
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const syncInteractionMode = vi.fn();
+		const toFabric = vi
+			.spyOn(textFabric, 'textBlockToFabric')
+			.mockImplementation((block) => {
+				return createTextMock(block) as never;
+			});
+
+		usePanelSelection({
+			fabricCanvas: shallowRef(canvas),
+			rootEl: ref(null),
+			syncInteractionMode,
+			cancelStroke: vi.fn(),
+		});
+
+		handlers['mouse:move']?.({
+			e: { clientX: 120, clientY: 80 },
+		});
+
+		window.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'c', ctrlKey: true }),
+		);
+
+		expect(peekCopiedText()?.content).toBe('Copy me');
+		expect(peekCopiedText()?.fontSize).toBe(30);
+
+		window.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'v', ctrlKey: true }),
+		);
+
+		expect(mangaStore.texts).toHaveLength(2);
+		expect(mangaStore.texts[1]?.content).toBe('Copy me');
+		expect(mangaStore.texts[1]?.id).not.toBe(text.id);
+		expect(mangaStore.texts[1]?.left).toBe(120);
+		expect(mangaStore.texts[1]?.top).toBe(80);
+		expect(canvas.add).toHaveBeenCalled();
+		expect(canvas.setActiveObject).toHaveBeenCalled();
+		expect(syncInteractionMode).toHaveBeenCalled();
+
+		toFabric.mockRestore();
+	});
+
+	it('does not copy while editing text', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text, true);
+		const { canvas } = createCanvas(textObject);
+
+		usePanelSelection({
+			fabricCanvas: shallowRef(canvas),
+			rootEl: ref(null),
+			syncInteractionMode: vi.fn(),
+			cancelStroke: vi.fn(),
+		});
+
+		clearClipboard();
+
+		window.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'c', ctrlKey: true }),
+		);
+
+		expect(peekCopiedText()?.id).not.toBe(text.id);
 	});
 });

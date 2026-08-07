@@ -1,6 +1,11 @@
 import { watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { FabricImage, Textbox, type Canvas, type FabricObject } from 'fabric';
+import {
+	FabricImage,
+	Textbox,
+	type Canvas,
+	type FabricObject,
+} from 'fabric';
 import {
 	getPanelId,
 	getTextId,
@@ -19,10 +24,20 @@ import {
 	nudgeFabricObject,
 } from '@/lib/fabric/nudgeObject';
 import { shapeImageFromFabric } from '@/lib/fabric/panelImageFabric';
-import { textBlockFromFabric } from '@/lib/fabric/textFabric';
+import { textBlockFromFabric, textBlockToFabric } from '@/lib/fabric/textFabric';
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
+import {
+	cloneTextBlockAt,
+	copyTextToClipboard,
+	peekCopiedText,
+} from '@/lib/text/textClipboard';
+import {
+	DEFAULT_TEXT_FILL,
+	DEFAULT_TEXT_FONT_SIZE,
+} from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { PageTextObject } from '@/types/fabric';
+import type { PagePoint, TextBlockJSON } from '@/types/page';
 import type { SelectionDeps } from '@/types/panel';
 
 const isUiKeyboardTarget = (target: EventTarget | null): boolean => {
@@ -47,6 +62,50 @@ const isUiKeyboardTarget = (target: EventTarget | null): boolean => {
 	);
 };
 
+const isModKey = (event: KeyboardEvent): boolean => {
+	return event.ctrlKey || event.metaKey;
+};
+
+const clampPasteOrigin = (
+	point: PagePoint,
+	width: number,
+	height: number,
+	pageWidth: number,
+	pageHeight: number,
+): PagePoint => {
+	return {
+		x: Math.min(Math.max(0, point.x), Math.max(0, pageWidth - width)),
+		y: Math.min(Math.max(0, point.y), Math.max(0, pageHeight - height)),
+	};
+};
+
+const snapshotFromFabricText = (
+	textbox: PageTextObject,
+	textId: string | null,
+): TextBlockJSON => {
+	const patch = textBlockFromFabric(textbox);
+
+	return {
+		id: textId ?? 'clipboard',
+		content: patch.content ?? '',
+		left: patch.left ?? 0,
+		top: patch.top ?? 0,
+		width: patch.width ?? 0,
+		fontSize: patch.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
+		fill: patch.fill ?? DEFAULT_TEXT_FILL,
+		fontWeight: patch.fontWeight,
+		fontStyle: patch.fontStyle,
+		underline: patch.underline,
+		linethrough: patch.linethrough,
+		stroke: patch.stroke,
+		strokeWidth: patch.strokeWidth,
+		lineHeight: patch.lineHeight,
+		textAlign: patch.textAlign,
+		angle: patch.angle,
+		styles: patch.styles,
+	};
+};
+
 export const usePanelSelection = ({
 	fabricCanvas,
 	rootEl,
@@ -54,6 +113,7 @@ export const usePanelSelection = ({
 	cancelStroke,
 }: SelectionDeps) => {
 	const mangaStore = useMangaStore();
+	let lastPointer: PagePoint | null = null;
 
 	const isEditingText = (object: FabricObject | null | undefined): boolean => {
 		if (!object || !isPageText(object)) {
@@ -63,7 +123,6 @@ export const usePanelSelection = ({
 		return Boolean((object as Textbox).isEditing);
 	};
 
-	/** Borra panel (+ imagen), solo la imagen activa, o un texto. */
 	const removeActive = (): boolean => {
 		const canvas = fabricCanvas.value;
 
@@ -122,7 +181,6 @@ export const usePanelSelection = ({
 		return false;
 	};
 
-	/** Aplica el stroke de página a todos los paneles del canvas. */
 	const applyPageStrokeWidth = (width: number) => {
 		const canvas = fabricCanvas.value;
 
@@ -160,7 +218,6 @@ export const usePanelSelection = ({
 		);
 	};
 
-	/** Tras mover/escalar imagen o texto en Fabric, persiste transform en el dominio. */
 	const onObjectModified = (event: { target?: FabricObject }) => {
 		const active = event.target ?? fabricCanvas.value?.getActiveObject();
 
@@ -193,11 +250,22 @@ export const usePanelSelection = ({
 		}
 	};
 
-	/** Snapshot previo al focus del textarea (mouse:down ocurre antes de enterEditing). */
 	let scrollBeforeEdit = captureScrollSnapshot(rootEl.value);
 
 	const onMouseDown = () => {
 		scrollBeforeEdit = captureScrollSnapshot(rootEl.value);
+	};
+
+	const onMouseMove = (event: { e?: Event }) => {
+		const canvas = fabricCanvas.value;
+
+		if (!canvas || !event.e) {
+			return;
+		}
+
+		const point = canvas.getScenePoint(event.e as MouseEvent);
+
+		lastPointer = { x: point.x, y: point.y };
 	};
 
 	const onEditingEntered = (event: { target?: FabricObject }) => {
@@ -252,6 +320,67 @@ export const usePanelSelection = ({
 		return true;
 	};
 
+	const copyActiveText = (): boolean => {
+		const canvas = fabricCanvas.value;
+		const active = canvas?.getActiveObject() as FabricObject | null | undefined;
+
+		if (!canvas || !active || !isPageText(active) || isEditingText(active)) {
+			return false;
+		}
+
+		const textId = getTextId(active);
+		const fromStore = textId
+			? mangaStore.texts.find((text) => {
+					return text.id === textId;
+				})
+			: undefined;
+
+		copyTextToClipboard(
+			fromStore
+				? fromStore.toJSON()
+				: snapshotFromFabricText(active as PageTextObject, textId ?? null),
+		);
+
+		return true;
+	};
+
+	const pasteCopiedText = (): boolean => {
+		const canvas = fabricCanvas.value;
+		const payload = peekCopiedText();
+
+		if (!canvas || !payload) {
+			return false;
+		}
+
+		const page = mangaStore.activePage;
+		const pointer = lastPointer ?? {
+			x: payload.left,
+			y: payload.top,
+		};
+		const origin = clampPasteOrigin(
+			pointer,
+			payload.width,
+			payload.fontSize,
+			page.width,
+			page.height,
+		);
+		const text = cloneTextBlockAt(payload, origin.x, origin.y);
+
+		mangaStore.addText(text);
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: mangaStore.activeLayer.id,
+			interactive: true,
+		});
+
+		canvas.add(fabricText);
+		canvas.setActiveObject(fabricText);
+		syncInteractionMode();
+		canvas.requestRenderAll();
+
+		return true;
+	};
+
 	const onKeyDown = (event: KeyboardEvent) => {
 		if (isUiKeyboardTarget(event.target)) {
 			return;
@@ -265,6 +394,22 @@ export const usePanelSelection = ({
 
 		if (event.key === 'Escape') {
 			cancelStroke();
+
+			return;
+		}
+
+		if (isModKey(event) && event.key.toLowerCase() === 'c') {
+			if (copyActiveText()) {
+				event.preventDefault();
+			}
+
+			return;
+		}
+
+		if (isModKey(event) && event.key.toLowerCase() === 'v') {
+			if (pasteCopiedText()) {
+				event.preventDefault();
+			}
 
 			return;
 		}
@@ -284,6 +429,7 @@ export const usePanelSelection = ({
 
 	const bindSelectionEvents = (canvas: Canvas) => {
 		canvas.on('mouse:down', onMouseDown);
+		canvas.on('mouse:move', onMouseMove);
 		canvas.on('object:modified', onObjectModified);
 		canvas.on('text:changed', onTextChanged);
 		canvas.on('text:editing:entered', onEditingEntered);
@@ -292,6 +438,7 @@ export const usePanelSelection = ({
 
 	const unbindSelectionEvents = (canvas: Canvas) => {
 		canvas.off('mouse:down', onMouseDown);
+		canvas.off('mouse:move', onMouseMove);
 		canvas.off('object:modified', onObjectModified);
 		canvas.off('text:changed', onTextChanged);
 		canvas.off('text:editing:entered', onEditingEntered);
