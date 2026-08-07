@@ -135,7 +135,7 @@ describe('pagePreview', () => {
 				x: 12,
 				y: 40,
 				fontSize: 16,
-				fontFamily: 'Arial',
+				fontFamily: 'Roboto',
 				lineHeight: 1.16,
 				fill: '#000000',
 				fontWeight: 'normal',

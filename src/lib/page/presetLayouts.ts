@@ -24,10 +24,27 @@ export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
 };
 
 const toLayoutJSON = (value: LayoutJSON): LayoutJSON => {
+	const shapes = value.shapes ?? [];
+	const layers =
+		value.layers && value.layers.length > 0
+			? value.layers
+			: [
+					{
+						shapes,
+						gridCols: value.gridCols,
+						gridRows: value.gridRows,
+						marginTop: value.marginTop,
+						marginRight: value.marginRight,
+						marginBottom: value.marginBottom,
+						marginLeft: value.marginLeft,
+						strokeWidth: value.strokeWidth,
+					},
+				];
+
 	return {
 		width: value.width,
 		height: value.height,
-		shapes: value.shapes ?? [],
+		shapes,
 		gridCols: value.gridCols,
 		gridRows: value.gridRows,
 		marginTop: value.marginTop,
@@ -35,7 +52,7 @@ const toLayoutJSON = (value: LayoutJSON): LayoutJSON => {
 		marginBottom: value.marginBottom,
 		marginLeft: value.marginLeft,
 		strokeWidth: value.strokeWidth,
-		layers: value.layers,
+		layers,
 	};
 };
 

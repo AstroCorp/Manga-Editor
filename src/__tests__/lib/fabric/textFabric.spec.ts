@@ -101,7 +101,7 @@ describe('textFabric', () => {
 			top: 16,
 			width: 180,
 			fontSize: 28,
-			fontFamily: 'Arial',
+			fontFamily: 'Roboto',
 			angle: 33,
 			fill: '#112233',
 			fontWeight: 'bold',
