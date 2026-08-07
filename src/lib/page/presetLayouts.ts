@@ -29,7 +29,7 @@ const normalizePresetLayout = (value: LayoutJSON): LayoutJSON => {
 
 /**
  * Layouts por defecto en `src/layouts/*.json`.
- * Lazy: Vite parte chunks y solo se piden al listar presets.
+ * Lazy: Vite parte chunks; cada `load()` pide solo ese JSON.
  */
 const modules = import.meta.glob('../../layouts/*.json', {
 	import: 'default',
@@ -41,11 +41,35 @@ const fileIdFromPath = (path: string): string => {
 	return file.replace(/\.json$/i, '');
 };
 
-export const listPresetLayouts = async (): Promise<PresetLayout[]> => {
+const modulesById = new Map<string, () => Promise<unknown>>();
+
+for (const [path, load] of Object.entries(modules)) {
+	modulesById.set(fileIdFromPath(path), load);
+}
+
+const comparePresetId = (a: string, b: string) => {
+	return a.localeCompare(b, undefined, { sensitivity: 'base' });
+};
+
+/** Ids de presets empaquetados (sin leer JSON). */
+export const listPresetIds = (): string[] => {
+	return [...modulesById.keys()].sort(comparePresetId);
+};
+
+/** Carga solo los presets indicados (chunks bajo demanda). */
+export const loadPresetLayoutsByIds = async (
+	ids: readonly string[],
+): Promise<PresetLayout[]> => {
 	const presets: PresetLayout[] = [];
 
 	await Promise.all(
-		Object.entries(modules).map(async ([path, load]) => {
+		ids.map(async (id) => {
+			const load = modulesById.get(id);
+
+			if (!load) {
+				return;
+			}
+
 			const value = await load();
 
 			if (!isLayoutJSON(value)) {
@@ -53,15 +77,18 @@ export const listPresetLayouts = async (): Promise<PresetLayout[]> => {
 			}
 
 			presets.push({
-				id: fileIdFromPath(path),
+				id,
 				layout: normalizePresetLayout(value),
 			});
 		}),
 	);
 
 	return presets.sort((a, b) => {
-		return a.id.localeCompare(b.id, undefined, {
-			sensitivity: 'base',
-		});
+		return comparePresetId(a.id, b.id);
 	});
+};
+
+/** Carga todos los presets (tests / utilidades). */
+export const listPresetLayouts = async (): Promise<PresetLayout[]> => {
+	return loadPresetLayoutsByIds(listPresetIds());
 };

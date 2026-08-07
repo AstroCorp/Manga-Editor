@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useNearBottomLoad } from '@/composables/ui/useNearBottomLoad';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
 import { isSingleLayerLayout } from '@/lib/page/resolveLayoutFields';
@@ -13,7 +14,13 @@ export const useLayoutsPanelActions = () => {
 	const editorStore = useEditorStore();
 	const layoutsStore = useLayoutsStore();
 	const { pageHasDrawing, activeLayerHasDrawing } = useActivePageLayout();
-	const { presets, presetsStatus, customLayouts } = storeToRefs(layoutsStore);
+	const {
+		presets,
+		presetsStatus,
+		presetsLoadingMore,
+		hasMorePresets,
+		customLayouts,
+	} = storeToRefs(layoutsStore);
 
 	const {
 		pending: pendingPreset,
@@ -31,6 +38,25 @@ export const useLayoutsPanelActions = () => {
 
 	const presetsLoading = computed(() => {
 		return presetsStatus.value === PRESETS_LOAD_STATUS.Loading;
+	});
+
+	const {
+		scrollEl: presetsScrollEl,
+		sentinelEl: presetsSentinelEl,
+		notifyLayoutReady: notifyPresetsLayoutReady,
+		tryLoadMore: tryLoadMorePresets,
+	} = useNearBottomLoad({
+		waitForLayoutReady: true,
+		canLoadMore: () => {
+			return hasMorePresets.value && !presetsLoadingMore.value;
+		},
+		onLoadMore: () => {
+			void layoutsStore.loadMorePresets().then((loaded) => {
+				if (!loaded) {
+					notifyPresetsLayoutReady();
+				}
+			});
+		},
 	});
 
 	/** 1 capa → capa activa; multi → cualquier capa con contenido. */
@@ -82,6 +108,12 @@ export const useLayoutsPanelActions = () => {
 		presets,
 		customLayouts,
 		presetsLoading,
+		presetsLoadingMore,
+		hasMorePresets,
+		presetsScrollEl,
+		presetsSentinelEl,
+		notifyPresetsLayoutReady,
+		tryLoadMorePresets,
 		pendingPreset,
 		pendingDeleteCustom,
 		applyMessage,

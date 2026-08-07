@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
 	isLayoutJSON,
+	listPresetIds,
 	listPresetLayouts,
+	loadPresetLayoutsByIds,
 } from '@/lib/page/presetLayouts';
 import type { PresetLayout } from '@/types/layouts';
 
@@ -39,6 +41,22 @@ describe('presetLayouts', () => {
 				layers: 'nope',
 			}),
 		).toBe(false);
+	});
+
+	it('listPresetIds returns sorted packaged ids without loading JSON', () => {
+		const ids = listPresetIds();
+
+		expect(ids.length).toBeGreaterThanOrEqual(1);
+		expect(ids).toContain('01');
+		expect([...ids].sort((a, b) => a.localeCompare(b))).toEqual(ids);
+	});
+
+	it('loadPresetLayoutsByIds loads only requested presets', async () => {
+		const presets = await loadPresetLayoutsByIds(['01']);
+
+		expect(presets).toHaveLength(1);
+		expect(presets[0]?.id).toBe('01');
+		expect(presets[0]?.layout.layers.length).toBeGreaterThanOrEqual(1);
 	});
 
 	it('listPresetLayouts loads packaged JSON presets', async () => {

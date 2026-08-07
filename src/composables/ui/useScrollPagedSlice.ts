@@ -1,5 +1,6 @@
 import { useInfiniteScroll } from '@vueuse/core';
 import { computed, ref, watch, type Ref } from 'vue';
+import { useNearBottomLoad } from '@/composables/ui/useNearBottomLoad';
 import type { ScrollPagedSliceOptions } from '@/types/ui';
 
 const DEFAULT_INITIAL = 6;
@@ -13,8 +14,13 @@ export const useScrollPagedSlice = <T>(
 	const initial = options.initial ?? DEFAULT_INITIAL;
 	const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
 	const distance = options.distance ?? DEFAULT_DISTANCE;
+	/**
+	 * true (default): VueUse InfiniteScroll (también rellena si no hay overflow).
+	 * false: sentinel/scroll masonry-safe vía `useNearBottomLoad`.
+	 */
+	const loadWhenNarrow = options.loadWhenNarrow ?? true;
+	const waitForLayoutReady = options.waitForLayoutReady ?? false;
 
-	const scrollEl = ref<HTMLElement | null>(null);
 	const visibleCount = ref(initial);
 
 	const visibleItems = computed(() => {
@@ -25,43 +31,129 @@ export const useScrollPagedSlice = <T>(
 		return visibleCount.value < items.value.length;
 	});
 
-	const { isLoading, reset } = useInfiniteScroll(
-		scrollEl,
-		async () => {
-			await new Promise<void>((resolve) => {
-				requestAnimationFrame(() => {
-					resolve();
-				});
+	const bumpVisible = async () => {
+		await new Promise<void>((resolve) => {
+			requestAnimationFrame(() => {
+				resolve();
 			});
+		});
 
-			visibleCount.value = Math.min(
-				visibleCount.value + pageSize,
-				items.value.length,
+		const before = visibleCount.value;
+
+		visibleCount.value = Math.min(
+			visibleCount.value + pageSize,
+			items.value.length,
+		);
+
+		return visibleCount.value > before;
+	};
+
+	if (loadWhenNarrow) {
+		const scrollEl = ref<HTMLElement | null>(null);
+		const { isLoading, reset } = useInfiniteScroll(
+			scrollEl,
+			async () => {
+				await bumpVisible();
+			},
+			{
+				distance,
+				canLoadMore: () => {
+					return visibleCount.value < items.value.length;
+				},
+			},
+		);
+
+		watch(
+			items,
+			() => {
+				visibleCount.value = initial;
+				reset();
+			},
+			{ deep: false },
+		);
+
+		return {
+			scrollEl,
+			visibleItems,
+			hasMore,
+			isLoadingMore: isLoading,
+			visibleCount,
+			reset: () => {
+				visibleCount.value = initial;
+				reset();
+			},
+		};
+	}
+
+	const isLoadingMore = ref(false);
+
+	const {
+		scrollEl,
+		sentinelEl,
+		layoutReady,
+		notifyLayoutReady,
+		suspendUntilLayoutReady,
+	} = useNearBottomLoad({
+		distance,
+		waitForLayoutReady,
+		canLoadMore: () => {
+			return (
+				!isLoadingMore.value &&
+				visibleCount.value < items.value.length
 			);
 		},
-		{
-			distance,
-			canLoadMore: () => {
-				return visibleCount.value < items.value.length;
-			},
+		onLoadMore: () => {
+			isLoadingMore.value = true;
+			void bumpVisible().finally(() => {
+				isLoadingMore.value = false;
+			});
 		},
-	);
+	});
+
+	const loadMore = async () => {
+		if (
+			isLoadingMore.value ||
+			!layoutReady.value ||
+			visibleCount.value >= items.value.length
+		) {
+			return false;
+		}
+
+		isLoadingMore.value = true;
+
+		if (waitForLayoutReady) {
+			suspendUntilLayoutReady();
+		}
+
+		try {
+			return await bumpVisible();
+		} finally {
+			isLoadingMore.value = false;
+		}
+	};
 
 	watch(
 		items,
 		() => {
 			visibleCount.value = initial;
-			reset();
+			suspendUntilLayoutReady();
 		},
 		{ deep: false },
 	);
 
 	return {
 		scrollEl,
+		sentinelEl,
 		visibleItems,
 		hasMore,
-		isLoadingMore: isLoading,
+		isLoadingMore,
 		visibleCount,
-		reset,
+		layoutReady,
+		loadMore,
+		notifyLayoutReady,
+		reset: () => {
+			visibleCount.value = initial;
+			suspendUntilLayoutReady();
+		},
 	};
 };

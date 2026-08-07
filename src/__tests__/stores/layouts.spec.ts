@@ -12,7 +12,7 @@ describe('useLayoutsStore', () => {
 		vi.restoreAllMocks();
 	});
 
-	it('loads presets once and ignores later calls', async () => {
+	it('loads the first preset page and can fetch more', async () => {
 		const store = useLayoutsStore();
 
 		expect(store.presetsStatus).toBe(PRESETS_LOAD_STATUS.Idle);
@@ -20,13 +20,39 @@ describe('useLayoutsStore', () => {
 		await store.ensurePresetsLoaded();
 
 		expect(store.presetsStatus).toBe(PRESETS_LOAD_STATUS.Ready);
-		expect(store.presets.length).toBeGreaterThanOrEqual(1);
+		expect(store.presetIds.length).toBeGreaterThan(6);
+		expect(store.presets).toHaveLength(6);
+		expect(store.hasMorePresets).toBe(true);
 
 		const firstLength = store.presets.length;
 
 		await store.ensurePresetsLoaded();
-
 		expect(store.presets).toHaveLength(firstLength);
+
+		await store.loadMorePresets();
+
+		expect(store.presets.length).toBeGreaterThan(firstLength);
+		expect(store.presets.length).toBeLessThanOrEqual(store.presetIds.length);
+	});
+
+	it('loadMorePresets is a no-op before the first page is ready', async () => {
+		const store = useLayoutsStore();
+
+		expect(await store.loadMorePresets()).toBe(false);
+		expect(store.presets).toEqual([]);
+	});
+
+	it('loadMorePresets stops when every preset id is loaded', async () => {
+		const store = useLayoutsStore();
+
+		await store.ensurePresetsLoaded();
+
+		while (store.hasMorePresets) {
+			await store.loadMorePresets();
+		}
+
+		expect(store.presets).toHaveLength(store.presetIds.length);
+		expect(await store.loadMorePresets()).toBe(false);
 	});
 
 	it('adds and removes custom layouts', () => {
@@ -65,9 +91,9 @@ describe('useLayoutsStore', () => {
 	});
 
 	it('resets to idle when preset listing fails', async () => {
-		vi.spyOn(presetLayouts, 'listPresetLayouts').mockRejectedValueOnce(
-			new Error('network'),
-		);
+		vi.spyOn(presetLayouts, 'listPresetIds').mockImplementationOnce(() => {
+			throw new Error('network');
+		});
 
 		const store = useLayoutsStore();
 

@@ -7,6 +7,16 @@ import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { PresetLayout } from '@/types/layouts';
 
+vi.mock('@vueuse/core', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('@vueuse/core')>();
+
+	return {
+		...actual,
+		useEventListener: vi.fn(),
+		useIntersectionObserver: vi.fn(),
+	};
+});
+
 const samplePreset = (id: string): PresetLayout => {
 	return {
 		id,
@@ -215,5 +225,25 @@ describe('useLayoutsPanelActions', () => {
 
 		expect(exportPageJson).toHaveBeenCalledOnce();
 		expect(importPageJson).toHaveBeenCalledExactlyOnceWith(file);
+	});
+
+	it('loads more presets only after masonry layout is ready', async () => {
+		const layoutsStore = useLayoutsStore();
+
+		await layoutsStore.ensurePresetsLoaded();
+
+		const loadMorePresets = vi
+			.spyOn(layoutsStore, 'loadMorePresets')
+			.mockResolvedValue(true);
+
+		const { notifyPresetsLayoutReady, tryLoadMorePresets } =
+			useLayoutsPanelActions();
+
+		expect(tryLoadMorePresets()).toBe(false);
+		expect(loadMorePresets).not.toHaveBeenCalled();
+
+		notifyPresetsLayoutReady();
+		expect(tryLoadMorePresets()).toBe(true);
+		expect(loadMorePresets).toHaveBeenCalledOnce();
 	});
 });

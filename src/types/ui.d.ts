@@ -10,6 +10,16 @@ export type ScrollPagedSliceOptions = {
 	initial?: number;
 	pageSize?: number;
 	distance?: number;
+	/**
+	 * Si true (default), carga más cuando el contenido no desborda el contenedor
+	 * (VueUse). Con masonry async hay que usar `false` + sentinel en el scroll.
+	 */
+	loadWhenNarrow?: boolean;
+	/**
+	 * No paginar hasta `notifyLayoutReady()` (p. ej. tras masonry `@redraw`).
+	 * Evita cascadas mientras el muro está vacío a media reconstrucción.
+	 */
+	waitForLayoutReady?: boolean;
 };
 
 export type OverlayScrollClampInput = {

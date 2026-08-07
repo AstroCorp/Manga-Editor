@@ -14,6 +14,9 @@ importers:
       '@vueuse/core':
         specifier: ^14.3.0
         version: 14.3.0(vue@3.5.40(typescript@6.0.3))
+      '@yeger/vue-masonry-wall':
+        specifier: 6.1.4
+        version: 6.1.4(vue@3.5.40(typescript@6.0.3))
       fabric:
         specifier: ^7.4.0
         version: 7.4.0
@@ -719,6 +722,14 @@ packages:
     resolution: {integrity: sha512-bZpge9eSXwa4ToSiqJ7j6KRwhAsneMFoSz3LMWKQDkqimm3D/tbFlrklrs/IOqC8tEcYmXQZJ6N0UrjhBirVCg==}
     peerDependencies:
       vue: ^3.5.0
+
+  '@yeger/debounce@2.0.20':
+    resolution: {integrity: sha512-vvHS5wMR2MHCXLGcOzcbYR//ZVKpy16LAjzWh9ZLO2ozre8BlF60W7eDGFR/F+pCGPBsLQHzX6pGvt73IQQasA==}
+
+  '@yeger/vue-masonry-wall@6.1.4':
+    resolution: {integrity: sha512-ApJO9NRuYOT8GvjNfz3RHiJ28E1gNPycn5e8liDPhtv8JM8q74UPDWCZ8CVBNvXju6SYELAMAG/svbK7mpV24A==}
+    peerDependencies:
+      vue: ^3.5.19
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -2547,6 +2558,13 @@ snapshots:
 
   '@vueuse/shared@14.3.0(vue@3.5.40(typescript@6.0.3))':
     dependencies:
+      vue: 3.5.40(typescript@6.0.3)
+
+  '@yeger/debounce@2.0.20': {}
+
+  '@yeger/vue-masonry-wall@6.1.4(vue@3.5.40(typescript@6.0.3))':
+    dependencies:
+      '@yeger/debounce': 2.0.20
       vue: 3.5.40(typescript@6.0.3)
 
   abbrev@2.0.0: {}
