@@ -5,6 +5,7 @@ export type CanvasActions = {
 	exportDataUrl: (format: ExportImageFormat) => string | null;
 	resetZoomView: () => void;
 	addSimpleText: () => void;
+	addBoxedText: () => void;
 };
 
 export type ThemePreference = 'auto' | 'light' | 'dark';

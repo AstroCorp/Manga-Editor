@@ -2,6 +2,24 @@ import type { Canvas, FabricObject } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import type { GuideMarkedObject, PanelLikeObject } from '@/types/fabric';
 
+type GroupedFabricObject = FabricObject & {
+	group?: FabricObject | null;
+};
+
+/**
+ * Si el target es un hijo del Group de texto boxed, devuelve el Group;
+ * si no, el propio objeto (Textbox o Group).
+ */
+export const resolvePageTextObject = (object: FabricObject): FabricObject => {
+	const parent = (object as GroupedFabricObject).group;
+
+	if (parent?.get('objectType') === FABRIC_OBJECT_TYPE.Text) {
+		return parent;
+	}
+
+	return object;
+};
+
 export const isGuide = (object: FabricObject): boolean => {
 	const marked = object as GuideMarkedObject;
 
@@ -24,7 +42,7 @@ export const isPanelImage = (object: FabricObject): boolean => {
 };
 
 export const isPageText = (object: FabricObject): boolean => {
-	return object.get('objectType') === FABRIC_OBJECT_TYPE.Text;
+	return resolvePageTextObject(object).get('objectType') === FABRIC_OBJECT_TYPE.Text;
 };
 
 export const getPanelId = (object: FabricObject): string | undefined => {
@@ -34,13 +52,13 @@ export const getPanelId = (object: FabricObject): string | undefined => {
 };
 
 export const getTextId = (object: FabricObject): string | undefined => {
-	const value = object.get('textId');
+	const value = resolvePageTextObject(object).get('textId');
 
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
 };
 
 export const getLayerId = (object: FabricObject): string | undefined => {
-	const value = object.get('layerId');
+	const value = resolvePageTextObject(object).get('layerId');
 
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
 };

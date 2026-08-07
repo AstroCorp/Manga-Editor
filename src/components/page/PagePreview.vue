@@ -45,11 +45,11 @@ const clipPathId = (index: number) => {
 
 const textAnchorX = (text: PagePreviewText) => {
 	if (text.textAlign === 'center' || text.textAlign === 'justify-center') {
-		return text.originX + text.width / 2;
+		return text.x + text.width / 2;
 	}
 
 	if (text.textAlign === 'right' || text.textAlign === 'justify-right') {
-		return text.originX + text.width;
+		return text.x + text.width;
 	}
 
 	return text.x;
@@ -132,38 +132,55 @@ const lineContent = (line: string) => {
 			:stroke-width="panel.strokeWidth"
 			stroke-linejoin="miter"
 		/>
-		<text
-			v-for="(text, index) in model.texts"
-			:key="`text-${index}`"
-			:x="textAnchorX(text)"
-			:y="text.y"
-			:font-size="text.fontSize"
-			:fill="text.fill"
-			:stroke="text.strokeWidth > 0 ? text.stroke ?? undefined : undefined"
-			:stroke-width="text.strokeWidth > 0 ? text.strokeWidth : undefined"
-			stroke-linejoin="round"
-			stroke-linecap="round"
-			paint-order="stroke fill"
-			:font-weight="text.fontWeight"
-			:font-style="text.fontStyle"
-			:text-anchor="textAnchor(text)"
-			:text-decoration="
-				[text.underline ? 'underline' : '', text.linethrough ? 'line-through' : '']
-					.filter(Boolean)
-					.join(' ') || undefined
-			"
-			:transform="rotateTransform(text.angle, text.originX, text.originY)"
-			:font-family="text.fontFamily"
-			xml:space="preserve"
-		>
-			<tspan
-				v-for="(line, lineIndex) in text.lines"
-				:key="`line-${lineIndex}`"
+		<template v-for="(text, index) in model.texts" :key="`text-${index}`">
+			<rect
+				v-if="text.box"
+				:x="text.originX"
+				:y="text.originY"
+				:width="text.boxWidth ?? text.width + text.box.padding * 2"
+				:height="
+					text.boxHeight ??
+					text.lines.length * text.fontSize * text.lineHeight +
+						text.box.padding * 2
+				"
+				:rx="text.box.cornerRadius"
+				:ry="text.box.cornerRadius"
+				:fill="text.box.fill"
+				:stroke="text.box.stroke"
+				:stroke-width="text.box.strokeWidth"
+				:transform="rotateTransform(text.angle, text.originX, text.originY)"
+			/>
+			<text
 				:x="textAnchorX(text)"
-				:dy="lineDy(text, lineIndex)"
+				:y="text.y"
+				:font-size="text.fontSize"
+				:fill="text.fill"
+				:stroke="text.strokeWidth > 0 ? text.stroke ?? undefined : undefined"
+				:stroke-width="text.strokeWidth > 0 ? text.strokeWidth : undefined"
+				stroke-linejoin="round"
+				stroke-linecap="round"
+				paint-order="stroke fill"
+				:font-weight="text.fontWeight"
+				:font-style="text.fontStyle"
+				:text-anchor="textAnchor(text)"
+				:text-decoration="
+					[text.underline ? 'underline' : '', text.linethrough ? 'line-through' : '']
+						.filter(Boolean)
+						.join(' ') || undefined
+				"
+				:transform="rotateTransform(text.angle, text.originX, text.originY)"
+				:font-family="text.fontFamily"
+				xml:space="preserve"
 			>
-				{{ lineContent(line) }}
-			</tspan>
-		</text>
+				<tspan
+					v-for="(line, lineIndex) in text.lines"
+					:key="`line-${lineIndex}`"
+					:x="textAnchorX(text)"
+					:dy="lineDy(text, lineIndex)"
+				>
+					{{ lineContent(line) }}
+				</tspan>
+			</text>
+		</template>
 	</svg>
 </template>

@@ -2,7 +2,7 @@ import { storeToRefs } from 'pinia';
 import { onBeforeUnmount, shallowRef, watch, type ShallowRef } from 'vue';
 import {
 	Polyline,
-	Textbox,
+	Group,
 	type Canvas,
 	type TPointerEvent,
 	type TPointerEventInfo,
@@ -23,6 +23,7 @@ import {
 	isPanel,
 	isPanelImage,
 } from '@/lib/fabric/isGuide';
+import { getPageTextbox } from '@/lib/fabric/textFabric';
 import {
 	DRAFT_STROKE_COLOR,
 	GUIDE_STROKE_COLOR,
@@ -31,7 +32,7 @@ import { Shape } from '@/models/Shape';
 import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
 import type { GridPoint } from '@/types/geometry';
-import type { GuidedPolyline } from '@/types/fabric';
+import type { GuidedPolyline, PageTextObject } from '@/types/fabric';
 
 export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 	const editorStore = useEditorStore();
@@ -123,15 +124,18 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 			}
 
 			if (isPageText(object)) {
-				const editing = Boolean((object as Textbox).isEditing);
+				const textbox = getPageTextbox(object as PageTextObject);
+				const editing = Boolean(textbox?.isEditing);
+				const boxed = object instanceof Group;
 
 				object.selectable = true;
 				object.evented = true;
 				object.lockMovementX = editing;
 				object.lockMovementY = editing;
 				object.lockRotation = editing;
+				// false en idle: Fabric desactiva ml/mr/mt/mb si el lock correspondiente es true.
 				object.lockScalingX = editing;
-				object.lockScalingY = true;
+				object.lockScalingY = boxed ? editing : true;
 				object.hasControls = !editing;
 
 				return;

@@ -18,8 +18,38 @@ const { TextboxMock } = vi.hoisted(() => {
 			Object.assign(this, props);
 		}
 
+		_set(key: string, value: unknown) {
+			this[key] = value;
+
+			return this;
+		}
+
 		get(key: string) {
 			return this[key];
+		}
+
+		initDimensions() {
+			this.height = Number(this.fontSize) || 24;
+		}
+
+		isOnScreen() {
+			return true;
+		}
+
+		setCoords() {
+			return this;
+		}
+
+		on() {
+			return this;
+		}
+
+		off() {
+			return this;
+		}
+
+		fire() {
+			return this;
 		}
 	}
 
@@ -35,11 +65,26 @@ vi.mock('fabric', async (importOriginal) => {
 	};
 });
 
-const { textBlockFromFabric, textBlockToFabric } = await import(
-	'@/lib/fabric/textFabric'
-);
+const {
+	boxedTextTop,
+	installBoxedTextControls,
+	resolveBoxedOuterHeight,
+	resolveBoxedOuterWidth,
+	textBlockFromFabric,
+	textBlockToFabric,
+} = await import('@/lib/fabric/textFabric');
 
 describe('textFabric', () => {
+	it('maps simple text without a box style', () => {
+		const text = TextBlock.create(30, 40);
+		const fabricText = textBlockToFabric(text, {
+			layerId: 'layer-1',
+			interactive: true,
+		});
+
+		expect(textBlockFromFabric(fabricText).box).toBeNull();
+	});
+
 	it('maps TextBlock to a fabric text object', () => {
 		const text = TextBlock.create(30, 40);
 
@@ -117,6 +162,7 @@ describe('textFabric', () => {
 					'0': { fill: '#ff0000', fontWeight: 'bold' },
 				},
 			},
+			box: null,
 		});
 	});
 
@@ -283,5 +329,46 @@ describe('textFabric', () => {
 
 		expect(fabricText.lineHeight).toBe(1.8);
 		expect(textBlockFromFabric(fabricText).lineHeight).toBe(1.8);
+	});
+
+	it('gives boxed text lateral resize controls (ml/mr)', async () => {
+		const { Group } = await import('fabric');
+		const rotate = { kind: 'rotate' };
+		const group = Object.assign(new Group([], { objectCaching: false }), {
+			controls: {
+				tl: {},
+				tr: {},
+				ml: {},
+				mr: {},
+				mtr: rotate,
+			},
+		});
+
+		installBoxedTextControls(group);
+
+		expect(group.controls.ml).toBeDefined();
+		expect(group.controls.mr).toBeDefined();
+		expect(group.controls.mtr).toBe(rotate);
+		expect(group.controls.ml?.actionName).toBe('resizing');
+		expect(group.controls.mr?.actionName).toBe('resizing');
+		expect(group.controls.mt?.actionName).toBe('resizing');
+		expect(group.controls.mb?.actionName).toBe('resizing');
+		expect(group.controls.tl?.actionName).toBe('resizing');
+		expect(group.controls.br?.actionName).toBe('resizing');
+	});
+
+	it('computes vertical text top inside a taller box', () => {
+		expect(resolveBoxedOuterHeight(120, 40, 12)).toBe(120);
+		expect(resolveBoxedOuterHeight(20, 40, 12)).toBe(64);
+		expect(boxedTextTop(120, 40, 12, 'top')).toBe(12);
+		expect(boxedTextTop(120, 40, 12, 'middle')).toBe(40);
+		expect(boxedTextTop(120, 40, 12, 'bottom')).toBe(68);
+	});
+
+	it('resolves boxed outer width from explicit box width', () => {
+		expect(resolveBoxedOuterWidth(0, 200, 12)).toBe(224);
+		expect(resolveBoxedOuterWidth(300, 200, 12)).toBe(300);
+		// No puede quedar por debajo del texto + padding.
+		expect(resolveBoxedOuterWidth(10, 200, 12)).toBe(224);
 	});
 });

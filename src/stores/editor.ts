@@ -41,6 +41,7 @@ export const useEditorStore = defineStore('editor', () => {
 			exportDataUrl: () => null,
 			resetZoomView: () => undefined,
 			addSimpleText: () => undefined,
+			addBoxedText: () => undefined,
 		};
 	};
 
@@ -150,6 +151,9 @@ export const useEditorStore = defineStore('editor', () => {
 		},
 		addSimpleText: () => {
 			return canvasActions.addSimpleText();
+		},
+		addBoxedText: () => {
+			return canvasActions.addBoxedText();
 		},
 		exportPage,
 		exportPageJson,

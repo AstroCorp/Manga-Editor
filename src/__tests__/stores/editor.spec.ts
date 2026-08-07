@@ -21,12 +21,14 @@ describe('useEditorStore selection and zoom bridge', () => {
 		const exportDataUrl = vi.fn(() => 'data:image/png;base64,abc');
 		const resetZoomView = vi.fn();
 		const addSimpleText = vi.fn();
+		const addBoxedText = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
 			exportDataUrl,
 			resetZoomView,
 			addSimpleText,
+			addBoxedText,
 		});
 
 		store.cancelStroke();
@@ -34,6 +36,9 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		store.addSimpleText();
 		expect(addSimpleText).toHaveBeenCalledOnce();
+
+		store.addBoxedText();
+		expect(addBoxedText).toHaveBeenCalledOnce();
 
 		store.resetZoom();
 
@@ -51,6 +56,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 			exportDataUrl: vi.fn(() => null),
 			resetZoomView: vi.fn(),
 			addSimpleText,
+			addBoxedText: vi.fn(),
 		});
 
 		store.unregisterCanvas();
@@ -85,6 +91,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 			exportDataUrl,
 			resetZoomView: vi.fn(),
 			addSimpleText: vi.fn(),
+			addBoxedText: vi.fn(),
 		});
 
 		store.exportPage(EXPORT_IMAGE_FORMAT.Png);

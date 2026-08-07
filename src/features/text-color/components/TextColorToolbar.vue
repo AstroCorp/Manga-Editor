@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
+import NumberInput from '@/components/ui/NumberInput.vue';
 import { useOverlayScrollClamp } from '@/composables/ui/useOverlayScrollClamp';
 import {
 	colorSwatchBackground,
@@ -9,9 +10,6 @@ import {
 	MIN_TEXT_FONT_SIZE,
 	MIN_TEXT_LINE_HEIGHT,
 	MIN_TEXT_STROKE_WIDTH,
-	parseFontSizeInput,
-	parseLineHeightInput,
-	parseStrokeWidthInput,
 	TEXT_LINE_HEIGHT_STEP,
 } from '@/lib/fabric/textStyles';
 import {
@@ -25,9 +23,7 @@ import type {
 	TextColorToolbarEmits,
 	TextColorToolbarProps,
 } from '@/types/panel';
-import type { PageTextAnchor, TextTextAlign } from '@/types/page';
-
-const MIXED_VALUE_LABEL = 'mix';
+import type { PageTextAnchor, TextBoxVerticalAlign, TextTextAlign } from '@/types/page';
 
 const props = defineProps<TextColorToolbarProps>();
 const emit = defineEmits<TextColorToolbarEmits>();
@@ -40,76 +36,6 @@ const { shiftX, shiftY } = useOverlayScrollClamp(rootRef, () => {
 		placement: props.placement,
 	};
 });
-
-const fontSizeDraft = ref('');
-const strokeWidthDraft = ref('');
-const lineHeightDraft = ref('');
-
-const isFontSizeMixed = computed(() => {
-	return props.fontSize === null;
-});
-
-const isStrokeWidthMixed = computed(() => {
-	return props.strokeWidth === null;
-});
-
-const isLineHeightMixed = computed(() => {
-	return props.lineHeight === null;
-});
-
-const fontSizeFallback = computed(() => {
-	return isFontSizeMixed.value
-		? MIXED_VALUE_LABEL
-		: String(props.fontSize);
-});
-
-const strokeWidthFallback = computed(() => {
-	return isStrokeWidthMixed.value
-		? MIXED_VALUE_LABEL
-		: String(props.strokeWidth);
-});
-
-const lineHeightFallback = computed(() => {
-	return isLineHeightMixed.value
-		? MIXED_VALUE_LABEL
-		: String(props.lineHeight);
-});
-
-const resolvedFontSize = computed(() => {
-	return props.fontSize ?? props.dominantFontSize;
-});
-
-const resolvedStrokeWidth = computed(() => {
-	return props.strokeWidth ?? props.dominantStrokeWidth;
-});
-
-const resolvedLineHeight = computed(() => {
-	return props.lineHeight ?? props.dominantLineHeight;
-});
-
-watch(
-	() => [props.fontSize, props.dominantFontSize] as const,
-	() => {
-		fontSizeDraft.value = fontSizeFallback.value;
-	},
-	{ immediate: true },
-);
-
-watch(
-	() => [props.strokeWidth, props.dominantStrokeWidth] as const,
-	() => {
-		strokeWidthDraft.value = strokeWidthFallback.value;
-	},
-	{ immediate: true },
-);
-
-watch(
-	() => [props.lineHeight, props.dominantLineHeight] as const,
-	() => {
-		lineHeightDraft.value = lineHeightFallback.value;
-	},
-	{ immediate: true },
-);
 
 const style = computed(() => {
 	if (props.left === null || props.top === null) {
@@ -149,15 +75,15 @@ const formatToggleClass = (active: boolean) => {
 };
 
 const fontSizeAriaLabel = computed(() => {
-	return isFontSizeMixed.value ? 'Font size (mixed)' : 'Font size';
+	return props.fontSize === null ? 'Font size (mixed)' : 'Font size';
 });
 
 const strokeWidthAriaLabel = computed(() => {
-	return isStrokeWidthMixed.value ? 'Stroke width (mixed)' : 'Stroke width';
+	return props.strokeWidth === null ? 'Stroke width (mixed)' : 'Stroke width';
 });
 
 const lineHeightAriaLabel = computed(() => {
-	return isLineHeightMixed.value ? 'Line height (mixed)' : 'Line height';
+	return props.lineHeight === null ? 'Line height (mixed)' : 'Line height';
 });
 
 const colorValue = computed(() => {
@@ -168,12 +94,32 @@ const strokeColorValue = computed(() => {
 	return props.strokeColors[0] ?? DEFAULT_TEXT_STROKE;
 });
 
+const boxFillValue = computed(() => {
+	return props.boxFill;
+});
+
+const boxStrokeValue = computed(() => {
+	return props.boxStroke;
+});
+
 const onColorInput = (event: Event) => {
 	emit('setColor', (event.target as HTMLInputElement).value);
 };
 
 const onStrokeColorInput = (event: Event) => {
 	emit('setStrokeColor', (event.target as HTMLInputElement).value);
+};
+
+const onBoxFillInput = (event: Event) => {
+	emit('setBoxFill', (event.target as HTMLInputElement).value);
+};
+
+const onBoxStrokeInput = (event: Event) => {
+	emit('setBoxStroke', (event.target as HTMLInputElement).value);
+};
+
+const onBoxVerticalAlign = (align: TextBoxVerticalAlign) => {
+	emit('setBoxVerticalAlign', align);
 };
 
 const onTextAlignUpdate = (next: TextTextAlign) => {
@@ -188,444 +134,387 @@ const onPageAlign = (anchor: PageTextAnchor) => {
 	emit('alignToPage', anchor);
 };
 
-const emitFontSize = (raw: string) => {
-	const next = parseFontSizeInput(raw);
+const toolbarShellClass =
+	'flex max-w-[min(100vw-2rem,52rem)] flex-wrap items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40';
 
-	if (next === null) {
-		return false;
-	}
+const boxFillSwatchStyle = computed(() => {
+	return {
+		background: boxFillValue.value,
+	};
+});
 
-	if (next === props.fontSize) {
-		return true;
-	}
+const boxStrokeRingStyle = computed(() => {
+	return {
+		background: boxStrokeValue.value,
+	};
+});
 
-	emit('setFontSize', next);
-
-	return true;
-};
-
-const emitStrokeWidth = (raw: string) => {
-	const next = parseStrokeWidthInput(raw);
-
-	if (next === null) {
-		return false;
-	}
-
-	if (next === props.strokeWidth) {
-		return true;
-	}
-
-	emit('setStrokeWidth', next);
-
-	return true;
-};
-
-const emitLineHeight = (raw: string) => {
-	const next = parseLineHeightInput(raw);
-
-	if (next === null) {
-		return false;
-	}
-
-	if (next === props.lineHeight) {
-		return true;
-	}
-
-	emit('setLineHeight', next);
-
-	return true;
-};
-
-const revealDominantFontSize = () => {
-	if (!isFontSizeMixed.value) {
-		return;
-	}
-
-	fontSizeDraft.value = String(props.dominantFontSize);
-};
-
-const revealDominantStrokeWidth = () => {
-	if (!isStrokeWidthMixed.value) {
-		return;
-	}
-
-	strokeWidthDraft.value = String(props.dominantStrokeWidth);
-};
-
-const revealDominantLineHeight = () => {
-	if (!isLineHeightMixed.value) {
-		return;
-	}
-
-	lineHeightDraft.value = String(props.dominantLineHeight);
-};
-
-const onFontSizeInput = (event: Event) => {
-	const value = (event.target as HTMLInputElement).value;
-
-	fontSizeDraft.value = value;
-	emitFontSize(value);
-};
-
-const onStrokeWidthInput = (event: Event) => {
-	const value = (event.target as HTMLInputElement).value;
-
-	strokeWidthDraft.value = value;
-	emitStrokeWidth(value);
-};
-
-const onLineHeightInput = (event: Event) => {
-	const value = (event.target as HTMLInputElement).value;
-
-	lineHeightDraft.value = value;
-	emitLineHeight(value);
-};
-
-const commitFontSize = (event?: Event) => {
-	const raw =
-		event?.target instanceof HTMLInputElement
-			? event.target.value
-			: fontSizeDraft.value;
-
-	if (raw.trim().toLowerCase() === MIXED_VALUE_LABEL) {
-		fontSizeDraft.value = fontSizeFallback.value;
-
-		return;
-	}
-
-	if (!emitFontSize(raw)) {
-		fontSizeDraft.value = fontSizeFallback.value;
-	}
-};
-
-const commitStrokeWidth = (event?: Event) => {
-	const raw =
-		event?.target instanceof HTMLInputElement
-			? event.target.value
-			: strokeWidthDraft.value;
-
-	if (raw.trim().toLowerCase() === MIXED_VALUE_LABEL) {
-		strokeWidthDraft.value = strokeWidthFallback.value;
-
-		return;
-	}
-
-	if (!emitStrokeWidth(raw)) {
-		strokeWidthDraft.value = strokeWidthFallback.value;
-	}
-};
-
-const commitLineHeight = (event?: Event) => {
-	const raw =
-		event?.target instanceof HTMLInputElement
-			? event.target.value
-			: lineHeightDraft.value;
-
-	if (raw.trim().toLowerCase() === MIXED_VALUE_LABEL) {
-		lineHeightDraft.value = lineHeightFallback.value;
-
-		return;
-	}
-
-	if (!emitLineHeight(raw)) {
-		lineHeightDraft.value = lineHeightFallback.value;
-	}
-};
-
-const nudgeFontSize = (delta: number) => {
-	const current = resolvedFontSize.value;
-	const next = Math.min(
-		MAX_TEXT_FONT_SIZE,
-		Math.max(MIN_TEXT_FONT_SIZE, current + delta),
-	);
-
-	fontSizeDraft.value = String(next);
-	emitFontSize(String(next));
-};
-
-const nudgeStrokeWidth = (delta: number) => {
-	const current = resolvedStrokeWidth.value;
-	const next = Math.max(MIN_TEXT_STROKE_WIDTH, current + delta);
-
-	strokeWidthDraft.value = String(next);
-	emitStrokeWidth(String(next));
-};
-
-const nudgeLineHeight = (delta: number) => {
-	const current = resolvedLineHeight.value;
-	const next = Math.min(
-		MAX_TEXT_LINE_HEIGHT,
-		Math.max(
-			MIN_TEXT_LINE_HEIGHT,
-			Math.round((current + delta) * 100) / 100,
-		),
-	);
-
-	lineHeightDraft.value = String(next);
-	emitLineHeight(String(next));
-};
-
-const onFontSizeKeydown = (event: KeyboardEvent) => {
-	if (event.key !== 'Enter') {
-		return;
-	}
-
-	commitFontSize(event);
-	(event.target as HTMLInputElement).blur();
-};
-
-const onStrokeWidthKeydown = (event: KeyboardEvent) => {
-	if (event.key !== 'Enter') {
-		return;
-	}
-
-	commitStrokeWidth(event);
-	(event.target as HTMLInputElement).blur();
-};
-
-const onLineHeightKeydown = (event: KeyboardEvent) => {
-	if (event.key !== 'Enter') {
-		return;
-	}
-
-	commitLineHeight(event);
-	(event.target as HTMLInputElement).blur();
-};
+const leadingIconClass = 'inline-flex items-center pl-1';
 </script>
 
 <template>
 	<div
 		v-if="style"
 		ref="rootRef"
-		class="absolute z-30 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+		class="absolute z-30 flex flex-col items-center gap-1"
 		:style="style"
-		role="toolbar"
-		aria-label="Text format"
-		@pointerdown.stop
 	>
-		<label
-			class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
-			title="Text color"
-		>
-			<span
-				class="size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-				:style="swatchStyle"
-				aria-hidden="true"
-			/>
-			<input
-				type="color"
-				class="sr-only"
-				:value="colorValue"
-				aria-label="Text color"
-				@input="onColorInput"
-			/>
-		</label>
-
-		<FontFamilySelect
-			:model-value="fontFamily"
-			:dominant-font-family="dominantFontFamily"
-			@update:model-value="onFontFamilyUpdate"
-		/>
-
 		<div
-			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"
-			title="Font size"
+			v-if="hasBox"
+			:class="toolbarShellClass"
+			role="toolbar"
+			aria-label="Box format"
+			@pointerdown.stop
 		>
-			<span class="inline-flex items-center pl-1" aria-hidden="true">
-				<Icon icon="fluent:text-font-size-24-regular" class="size-5 shrink-0" />
-			</span>
-			<input
-				:value="fontSizeDraft"
-				type="text"
-				inputmode="numeric"
-				class="h-full w-8 appearance-none border-0 bg-transparent px-0 text-center text-sm text-inherit outline-none ring-0 hover:bg-transparent focus:bg-transparent"
-				:aria-label="fontSizeAriaLabel"
-				@focus="revealDominantFontSize"
-				@keydown="onFontSizeKeydown"
-				@input="onFontSizeInput"
-				@change="commitFontSize"
-				@blur="commitFontSize"
-			/>
-			<div class="flex w-5 shrink-0 flex-col">
-				<button
-					type="button"
-					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
-					aria-label="Increase font size"
-					@click="nudgeFontSize(1)"
-				>
-					<Icon icon="fluent:chevron-up-16-regular" class="size-3" />
-				</button>
-				<button
-					type="button"
-					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
-					aria-label="Decrease font size"
-					@click="nudgeFontSize(-1)"
-				>
-					<Icon icon="fluent:chevron-down-16-regular" class="size-3" />
-				</button>
-			</div>
-		</div>
-
-		<div
-			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"
-			title="Line height"
-		>
-			<span class="inline-flex items-center pl-1" aria-hidden="true">
-				<Icon icon="fluent:text-line-spacing-24-regular" class="size-5 shrink-0" />
-			</span>
-			<input
-				:value="lineHeightDraft"
-				type="text"
-				inputmode="decimal"
-				class="h-full w-9 appearance-none border-0 bg-transparent px-0 text-center text-sm text-inherit outline-none ring-0 hover:bg-transparent focus:bg-transparent"
-				:aria-label="lineHeightAriaLabel"
-				@focus="revealDominantLineHeight"
-				@keydown="onLineHeightKeydown"
-				@input="onLineHeightInput"
-				@change="commitLineHeight"
-				@blur="commitLineHeight"
-			/>
-			<div class="flex w-5 shrink-0 flex-col">
-				<button
-					type="button"
-					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
-					aria-label="Increase line height"
-					@click="nudgeLineHeight(TEXT_LINE_HEIGHT_STEP)"
-				>
-					<Icon icon="fluent:chevron-up-16-regular" class="size-3" />
-				</button>
-				<button
-					type="button"
-					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
-					aria-label="Decrease line height"
-					@click="nudgeLineHeight(-TEXT_LINE_HEIGHT_STEP)"
-				>
-					<Icon icon="fluent:chevron-down-16-regular" class="size-3" />
-				</button>
-			</div>
-		</div>
-
-		<label
-			class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
-			title="Stroke color"
-		>
-			<span
-				class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-				aria-hidden="true"
+			<label
+				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+				title="Box fill"
 			>
 				<span
-					class="absolute inset-0 rounded-full"
-					:style="strokeSwatchStyle"
+					class="size-5 rounded-sm border border-slate-300 shadow-sm dark:border-zinc-600"
+					:style="boxFillSwatchStyle"
+					aria-hidden="true"
 				/>
-				<span
-					class="absolute inset-[4px] rounded-full border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
+				<input
+					type="color"
+					class="sr-only"
+					:value="boxFillValue"
+					aria-label="Box fill"
+					@input="onBoxFillInput"
 				/>
-			</span>
-			<input
-				type="color"
-				class="sr-only"
-				:value="strokeColorValue"
-				aria-label="Stroke color"
-				@input="onStrokeColorInput"
-			/>
-		</label>
+			</label>
 
-		<div
-			class="flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400"
-			title="Stroke width"
-		>
-			<input
-				:value="strokeWidthDraft"
-				type="text"
-				inputmode="numeric"
-				class="h-full w-8 appearance-none border-0 bg-transparent px-1 text-center text-sm text-inherit outline-none ring-0 hover:bg-transparent focus:bg-transparent"
-				:aria-label="strokeWidthAriaLabel"
-				@focus="revealDominantStrokeWidth"
-				@keydown="onStrokeWidthKeydown"
-				@input="onStrokeWidthInput"
-				@change="commitStrokeWidth"
-				@blur="commitStrokeWidth"
-			/>
-			<div class="flex w-5 shrink-0 flex-col">
+			<label
+				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+				title="Box stroke"
+			>
+				<span
+					class="relative size-5 rounded-sm border border-slate-300 shadow-sm dark:border-zinc-600"
+					aria-hidden="true"
+				>
+					<span
+						class="absolute inset-0 rounded-sm"
+						:style="boxStrokeRingStyle"
+					/>
+					<span
+						class="absolute inset-[4px] rounded-sm border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
+					/>
+				</span>
+				<input
+					type="color"
+					class="sr-only"
+					:value="boxStrokeValue"
+					aria-label="Box stroke"
+					@input="onBoxStrokeInput"
+				/>
+			</label>
+
+			<NumberInput
+				variant="toolbar"
+				:model-value="boxStrokeWidth"
+				:min="0"
+				input-width-class="w-8"
+				aria-label="Box stroke width"
+				increase-label="Increase box stroke width"
+				decrease-label="Decrease box stroke width"
+				title="Box stroke width"
+				@update:model-value="emit('setBoxStrokeWidth', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:line-thickness-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
+
+			<NumberInput
+				variant="toolbar"
+				:model-value="boxCornerRadius"
+				:min="0"
+				input-width-class="w-8"
+				aria-label="Corner radius"
+				increase-label="Increase corner radius"
+				decrease-label="Decrease corner radius"
+				title="Corner radius"
+				@update:model-value="emit('setBoxCornerRadius', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:square-hint-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
+
+			<NumberInput
+				variant="toolbar"
+				:model-value="boxPadding"
+				:min="0"
+				input-width-class="w-8"
+				aria-label="Box padding"
+				increase-label="Increase box padding"
+				decrease-label="Decrease box padding"
+				title="Box padding"
+				@update:model-value="emit('setBoxPadding', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:padding-right-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
+
+			<NumberInput
+				variant="toolbar"
+				:model-value="boxWidth"
+				:min="1"
+				input-width-class="w-9"
+				aria-label="Box width"
+				increase-label="Increase box width"
+				decrease-label="Decrease box width"
+				title="Box width"
+				@update:model-value="emit('setBoxWidth', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:arrow-autofit-width-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
+
+			<NumberInput
+				variant="toolbar"
+				:model-value="boxHeight"
+				:min="1"
+				input-width-class="w-9"
+				aria-label="Box height"
+				increase-label="Increase box height"
+				decrease-label="Decrease box height"
+				title="Box height"
+				@update:model-value="emit('setBoxHeight', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:arrow-autofit-height-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
+
+			<div
+				class="flex items-center gap-0.5"
+				role="group"
+				aria-label="Box vertical align"
+			>
 				<button
 					type="button"
-					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
-					aria-label="Increase stroke width"
-					@click="nudgeStrokeWidth(1)"
+					class="inline-flex size-9 items-center justify-center rounded-md transition"
+					:class="formatToggleClass(boxVerticalAlign === 'top')"
+					:aria-pressed="boxVerticalAlign === 'top'"
+					title="Align text top"
+					aria-label="Align text top"
+					@click="onBoxVerticalAlign('top')"
 				>
-					<Icon icon="fluent:chevron-up-16-regular" class="size-3" />
+					<Icon icon="fluent:align-top-24-regular" class="size-5" />
 				</button>
 				<button
 					type="button"
-					class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
-					aria-label="Decrease stroke width"
-					@click="nudgeStrokeWidth(-1)"
+					class="inline-flex size-9 items-center justify-center rounded-md transition"
+					:class="formatToggleClass(boxVerticalAlign === 'middle')"
+					:aria-pressed="boxVerticalAlign === 'middle'"
+					title="Align text middle"
+					aria-label="Align text middle"
+					@click="onBoxVerticalAlign('middle')"
 				>
-					<Icon icon="fluent:chevron-down-16-regular" class="size-3" />
+					<Icon icon="fluent:align-center-vertical-24-regular" class="size-5" />
+				</button>
+				<button
+					type="button"
+					class="inline-flex size-9 items-center justify-center rounded-md transition"
+					:class="formatToggleClass(boxVerticalAlign === 'bottom')"
+					:aria-pressed="boxVerticalAlign === 'bottom'"
+					title="Align text bottom"
+					aria-label="Align text bottom"
+					@click="onBoxVerticalAlign('bottom')"
+				>
+					<Icon icon="fluent:align-bottom-24-regular" class="size-5" />
 				</button>
 			</div>
 		</div>
 
-		<button
-			type="button"
-			class="inline-flex size-9 items-center justify-center rounded-md transition"
-			:class="formatToggleClass(bold)"
-			:aria-pressed="bold"
-			title="Bold"
-			aria-label="Bold"
-			@click="emit('toggleBold')"
+		<div
+			:class="toolbarShellClass"
+			role="toolbar"
+			aria-label="Text format"
+			@pointerdown.stop
 		>
-			<Icon icon="fluent:text-bold-24-regular" class="size-5" />
-		</button>
-		<button
-			type="button"
-			class="inline-flex size-9 items-center justify-center rounded-md transition"
-			:class="formatToggleClass(italic)"
-			:aria-pressed="italic"
-			title="Italic"
-			aria-label="Italic"
-			@click="emit('toggleItalic')"
-		>
-			<Icon icon="fluent:text-italic-24-regular" class="size-5" />
-		</button>
-		<button
-			type="button"
-			class="inline-flex size-9 items-center justify-center rounded-md transition"
-			:class="formatToggleClass(underline)"
-			:aria-pressed="underline"
-			title="Underline"
-			aria-label="Underline"
-			@click="emit('toggleUnderline')"
-		>
-			<Icon icon="fluent:text-underline-24-regular" class="size-5" />
-		</button>
-		<button
-			type="button"
-			class="inline-flex size-9 items-center justify-center rounded-md transition"
-			:class="formatToggleClass(linethrough)"
-			:aria-pressed="linethrough"
-			title="Strikethrough"
-			aria-label="Strikethrough"
-			@click="emit('toggleLinethrough')"
-		>
-			<Icon icon="fluent:text-strikethrough-24-regular" class="size-5" />
-		</button>
+			<label
+				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+				title="Text color"
+			>
+				<span
+					class="size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+					:style="swatchStyle"
+					aria-hidden="true"
+				/>
+				<input
+					type="color"
+					class="sr-only"
+					:value="colorValue"
+					aria-label="Text color"
+					@input="onColorInput"
+				/>
+			</label>
 
-		<TextAlignSelect
-			:model-value="textAlign"
-			@update:model-value="onTextAlignUpdate"
-		/>
+			<FontFamilySelect
+				:model-value="fontFamily"
+				:dominant-font-family="dominantFontFamily"
+				@update:model-value="onFontFamilyUpdate"
+			/>
 
-		<PageAlignSelect @align="onPageAlign" />
+			<NumberInput
+				variant="toolbar"
+				:model-value="fontSize"
+				:fallback-value="dominantFontSize"
+				:min="MIN_TEXT_FONT_SIZE"
+				:max="MAX_TEXT_FONT_SIZE"
+				input-width-class="w-8"
+				commit-on-input
+				:aria-label="fontSizeAriaLabel"
+				increase-label="Increase font size"
+				decrease-label="Decrease font size"
+				title="Font size"
+				@update:model-value="emit('setFontSize', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:text-font-size-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
 
-		<button
-			type="button"
-			class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
-			title="Delete text"
-			aria-label="Delete text"
-			@click="emit('deleteText')"
-		>
-			<Icon icon="fluent:delete-24-regular" class="size-5" />
-		</button>
+			<NumberInput
+				variant="toolbar"
+				:model-value="lineHeight"
+				:fallback-value="dominantLineHeight"
+				:min="MIN_TEXT_LINE_HEIGHT"
+				:max="MAX_TEXT_LINE_HEIGHT"
+				:step="TEXT_LINE_HEIGHT_STEP"
+				:decimals="2"
+				inputmode="decimal"
+				input-width-class="w-9"
+				commit-on-input
+				:aria-label="lineHeightAriaLabel"
+				increase-label="Increase line height"
+				decrease-label="Decrease line height"
+				title="Line height"
+				@update:model-value="emit('setLineHeight', $event)"
+			>
+				<template #leading>
+					<span :class="leadingIconClass" aria-hidden="true">
+						<Icon icon="fluent:text-line-spacing-24-regular" class="size-5 shrink-0" />
+					</span>
+				</template>
+			</NumberInput>
+
+			<label
+				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+				title="Stroke color"
+			>
+				<span
+					class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+					aria-hidden="true"
+				>
+					<span
+						class="absolute inset-0 rounded-full"
+						:style="strokeSwatchStyle"
+					/>
+					<span
+						class="absolute inset-[4px] rounded-full border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
+					/>
+				</span>
+				<input
+					type="color"
+					class="sr-only"
+					:value="strokeColorValue"
+					aria-label="Stroke color"
+					@input="onStrokeColorInput"
+				/>
+			</label>
+
+			<NumberInput
+				variant="toolbar"
+				:model-value="strokeWidth"
+				:fallback-value="dominantStrokeWidth"
+				:min="MIN_TEXT_STROKE_WIDTH"
+				input-width-class="w-8"
+				commit-on-input
+				:aria-label="strokeWidthAriaLabel"
+				increase-label="Increase stroke width"
+				decrease-label="Decrease stroke width"
+				title="Stroke width"
+				@update:model-value="emit('setStrokeWidth', $event)"
+			/>
+
+			<button
+				type="button"
+				class="inline-flex size-9 items-center justify-center rounded-md transition"
+				:class="formatToggleClass(bold)"
+				:aria-pressed="bold"
+				title="Bold"
+				aria-label="Bold"
+				@click="emit('toggleBold')"
+			>
+				<Icon icon="fluent:text-bold-24-regular" class="size-5" />
+			</button>
+			<button
+				type="button"
+				class="inline-flex size-9 items-center justify-center rounded-md transition"
+				:class="formatToggleClass(italic)"
+				:aria-pressed="italic"
+				title="Italic"
+				aria-label="Italic"
+				@click="emit('toggleItalic')"
+			>
+				<Icon icon="fluent:text-italic-24-regular" class="size-5" />
+			</button>
+			<button
+				type="button"
+				class="inline-flex size-9 items-center justify-center rounded-md transition"
+				:class="formatToggleClass(underline)"
+				:aria-pressed="underline"
+				title="Underline"
+				aria-label="Underline"
+				@click="emit('toggleUnderline')"
+			>
+				<Icon icon="fluent:text-underline-24-regular" class="size-5" />
+			</button>
+			<button
+				type="button"
+				class="inline-flex size-9 items-center justify-center rounded-md transition"
+				:class="formatToggleClass(linethrough)"
+				:aria-pressed="linethrough"
+				title="Strikethrough"
+				aria-label="Strikethrough"
+				@click="emit('toggleLinethrough')"
+			>
+				<Icon icon="fluent:text-strikethrough-24-regular" class="size-5" />
+			</button>
+
+			<TextAlignSelect
+				:model-value="textAlign"
+				@update:model-value="onTextAlignUpdate"
+			/>
+
+			<PageAlignSelect @align="onPageAlign" />
+
+			<button
+				type="button"
+				class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+				title="Delete text"
+				aria-label="Delete text"
+				@click="emit('deleteText')"
+			>
+				<Icon icon="fluent:delete-24-regular" class="size-5" />
+			</button>
+		</div>
 	</div>
 </template>

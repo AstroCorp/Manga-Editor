@@ -1,9 +1,15 @@
 import { computed, nextTick, shallowRef, watch } from 'vue';
-import type { Canvas, FabricObject } from 'fabric';
+import type { Canvas, FabricObject, Textbox } from 'fabric';
 import { getTextId, isGuide, isPageText } from '@/lib/fabric/isGuide';
 import { getObjectOverlayAnchor } from '@/lib/fabric/overlayAnchor';
 import { alignTextToPage } from '@/lib/fabric/pageAlign';
-import { textBlockFromFabric } from '@/lib/fabric/textFabric';
+import {
+	applyTextBoxStyle,
+	getPageTextbox,
+	getTextBoxStyle,
+	syncBoxedTextGeometry,
+	textBlockFromFabric,
+} from '@/lib/fabric/textFabric';
 import {
 	applyTextAlign,
 	applyTextFontFamily,
@@ -26,6 +32,7 @@ import { ensureFontFamilyLoaded } from '@/lib/fonts/loadGoogleFont';
 import { scrollPageRectIntoView } from '@/lib/fabric/visiblePagePoint';
 import {
 	DEFAULT_TEXT_ALIGN,
+	DEFAULT_TEXT_BOX,
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_FAMILY,
 	DEFAULT_TEXT_FONT_SIZE,
@@ -40,7 +47,7 @@ import type {
 	PageOverlayPosition,
 	TextColorToolbarDeps,
 } from '@/types/panel';
-import type { PageTextAnchor, TextCharStyle, TextTextAlign } from '@/types/page';
+import type { PageTextAnchor, TextBoxVerticalAlign, TextCharStyle, TextTextAlign } from '@/types/page';
 
 const DEFAULT_FLAGS: TextFormatFlags = {
 	bold: false,
@@ -64,6 +71,7 @@ const REFRESH_EVENTS = [
 	'object:modified',
 	'object:moving',
 	'object:scaling',
+	'object:resizing',
 	'object:rotating',
 	'text:editing:entered',
 	'text:editing:exited',
@@ -93,6 +101,17 @@ export const useTextColorToolbar = ({
 	const lineHeight = shallowRef<number | null>(DEFAULT_FLAGS.lineHeight);
 	const dominantLineHeight = shallowRef(DEFAULT_FLAGS.dominantLineHeight);
 	const textAlign = shallowRef<TextTextAlign>(DEFAULT_FLAGS.textAlign);
+	const hasBox = shallowRef(false);
+	const boxFill = shallowRef(DEFAULT_TEXT_BOX.fill);
+	const boxStroke = shallowRef(DEFAULT_TEXT_BOX.stroke);
+	const boxStrokeWidth = shallowRef(DEFAULT_TEXT_BOX.strokeWidth);
+	const boxCornerRadius = shallowRef(DEFAULT_TEXT_BOX.cornerRadius);
+	const boxPadding = shallowRef(DEFAULT_TEXT_BOX.padding);
+	const boxWidth = shallowRef(DEFAULT_TEXT_BOX.width);
+	const boxHeight = shallowRef(DEFAULT_TEXT_BOX.height);
+	const boxVerticalAlign = shallowRef<TextBoxVerticalAlign>(
+		DEFAULT_TEXT_BOX.verticalAlign,
+	);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
 
@@ -116,6 +135,15 @@ export const useTextColorToolbar = ({
 		lineHeight.value = DEFAULT_FLAGS.lineHeight;
 		dominantLineHeight.value = DEFAULT_FLAGS.dominantLineHeight;
 		textAlign.value = DEFAULT_FLAGS.textAlign;
+		hasBox.value = false;
+		boxFill.value = DEFAULT_TEXT_BOX.fill;
+		boxStroke.value = DEFAULT_TEXT_BOX.stroke;
+		boxStrokeWidth.value = DEFAULT_TEXT_BOX.strokeWidth;
+		boxCornerRadius.value = DEFAULT_TEXT_BOX.cornerRadius;
+		boxPadding.value = DEFAULT_TEXT_BOX.padding;
+		boxWidth.value = DEFAULT_TEXT_BOX.width;
+		boxHeight.value = DEFAULT_TEXT_BOX.height;
+		boxVerticalAlign.value = DEFAULT_TEXT_BOX.verticalAlign;
 		position.value = null;
 		placement.value = 'above';
 	};
@@ -130,14 +158,15 @@ export const useTextColorToolbar = ({
 		return active as PageTextObject;
 	};
 
-	const persistActiveText = (textbox: PageTextObject) => {
-		const id = getTextId(textbox);
+	const persistActiveText = (object: PageTextObject) => {
+		const id = getTextId(object);
 
 		if (!id) {
 			return;
 		}
 
-		mangaStore.updateText(id, textBlockFromFabric(textbox));
+		syncBoxedTextGeometry(object);
+		mangaStore.updateText(id, textBlockFromFabric(object));
 	};
 
 	const applyFlags = (flags: TextFormatFlags) => {
@@ -156,53 +185,86 @@ export const useTextColorToolbar = ({
 		textAlign.value = flags.textAlign;
 	};
 
+	const applyBoxFlags = (object: PageTextObject) => {
+		const box = getTextBoxStyle(object);
+
+		hasBox.value = Boolean(box);
+
+		if (!box) {
+			return;
+		}
+
+		boxFill.value = box.fill;
+		boxStroke.value = box.stroke;
+		boxStrokeWidth.value = box.strokeWidth;
+		boxCornerRadius.value = box.cornerRadius;
+		boxPadding.value = box.padding;
+		boxWidth.value = box.width;
+		boxHeight.value = box.height;
+		boxVerticalAlign.value = box.verticalAlign;
+	};
+
 	const refreshMenu = () => {
 		const canvas = fabricCanvas.value;
-		const textbox = getActiveText();
+		const active = getActiveText();
+		const textbox = active ? getPageTextbox(active) : null;
 
-		if (!canvas || !textbox || !getTextId(textbox)) {
+		if (!canvas || !active || !textbox || !getTextId(active)) {
 			clearMenu();
 
 			return;
 		}
 
-		const anchor = getObjectOverlayAnchor(textbox);
+		const anchor = getObjectOverlayAnchor(active);
 
 		colors.value = collectTextColors(textbox);
 		strokeColors.value = collectTextStrokeColors(textbox);
 		applyFlags(collectTextFormat(textbox));
+		applyBoxFlags(active);
 		position.value = { left: anchor.left, top: anchor.top };
 		placement.value = anchor.placement;
 	};
 
-	const withActiveText = (mutate: (textbox: PageTextObject) => void) => {
+	const withActivePageText = (mutate: (object: PageTextObject) => void) => {
 		const canvas = fabricCanvas.value;
-		const textbox = getActiveText();
+		const active = getActiveText();
 
-		if (!canvas || !textbox) {
+		if (!canvas || !active) {
 			return;
 		}
 
-		mutate(textbox);
-		persistActiveText(textbox);
+		mutate(active);
+		persistActiveText(active);
 		canvas.requestRenderAll();
 		refreshMenu();
 	};
 
+	const withActiveTextbox = (mutate: (textbox: Textbox) => void) => {
+		withActivePageText((active) => {
+			const textbox = getPageTextbox(active);
+
+			if (!textbox) {
+				return;
+			}
+
+			mutate(textbox);
+		});
+	};
+
 	const setColor = (nextColor: string) => {
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextStyle(textbox, { fill: toHexColor(nextColor) });
 		});
 	};
 
 	const setStrokeColor = (nextColor: string) => {
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextStyle(textbox, { stroke: toHexColor(nextColor, DEFAULT_TEXT_STROKE) });
 		});
 	};
 
 	const applyToggle = (styles: Partial<TextCharStyle>) => {
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextStyle(textbox, styles);
 		});
 	};
@@ -230,7 +292,7 @@ export const useTextColorToolbar = ({
 			return;
 		}
 
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextFontSize(textbox, size);
 		});
 	};
@@ -244,7 +306,7 @@ export const useTextColorToolbar = ({
 
 		await ensureFontFamilyLoaded(family);
 
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextFontFamily(textbox, family);
 		});
 	};
@@ -256,7 +318,7 @@ export const useTextColorToolbar = ({
 			return;
 		}
 
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextStrokeWidth(textbox, width);
 		});
 	};
@@ -268,7 +330,7 @@ export const useTextColorToolbar = ({
 			return;
 		}
 
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextLineHeight(textbox, height);
 		});
 	};
@@ -280,7 +342,7 @@ export const useTextColorToolbar = ({
 			return;
 		}
 
-		withActiveText((textbox) => {
+		withActiveTextbox((textbox) => {
 			applyTextAlign(textbox, align);
 		});
 	};
@@ -290,9 +352,9 @@ export const useTextColorToolbar = ({
 		const root = rootEl.value;
 		const zoom = zoomFactor.value;
 
-		withActiveText((textbox) => {
+		withActivePageText((object) => {
 			alignTextToPage(
-				textbox,
+				object,
 				{ width: page.width, height: page.height },
 				anchor,
 			);
@@ -300,30 +362,94 @@ export const useTextColorToolbar = ({
 
 		// Tras el focus del select (preventScroll) y el reposition de la toolbar.
 		void nextTick(() => {
-			const textbox = getActiveText();
+			const object = getActiveText();
 
-			if (!root || !textbox) {
+			if (!root || !object) {
 				return;
 			}
 
-			textbox.setCoords?.();
-			scrollPageRectIntoView(root, textbox.getBoundingRect(), zoom);
+			object.setCoords?.();
+			scrollPageRectIntoView(root, object.getBoundingRect(), zoom);
 			fabricCanvas.value?.calcOffset();
 			refreshMenu();
 		});
 	};
 
+	const clampBoxMetric = (value: number) => {
+		return Math.max(0, Math.round(value));
+	};
+
+	const setBoxFill = (color: string) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, { fill: toHexColor(color, DEFAULT_TEXT_BOX.fill) });
+		});
+	};
+
+	const setBoxStroke = (color: string) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, {
+				stroke: toHexColor(color, DEFAULT_TEXT_BOX.stroke),
+			});
+		});
+	};
+
+	const setBoxStrokeWidth = (strokeWidth: number) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, {
+				strokeWidth: clampBoxMetric(strokeWidth),
+			});
+		});
+	};
+
+	const setBoxCornerRadius = (cornerRadius: number) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, {
+				cornerRadius: clampBoxMetric(cornerRadius),
+			});
+		});
+	};
+
+	const setBoxPadding = (padding: number) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, {
+				padding: clampBoxMetric(padding),
+			});
+		});
+	};
+
+	const setBoxWidth = (width: number) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, {
+				width: Math.max(1, clampBoxMetric(width)),
+			});
+		});
+	};
+
+	const setBoxHeight = (height: number) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, {
+				height: Math.max(1, clampBoxMetric(height)),
+			});
+		});
+	};
+
+	const setBoxVerticalAlign = (verticalAlign: TextBoxVerticalAlign) => {
+		withActivePageText((object) => {
+			applyTextBoxStyle(object, { verticalAlign });
+		});
+	};
+
 	const deleteText = () => {
 		const canvas = fabricCanvas.value;
-		const textbox = getActiveText();
-		const id = textbox ? getTextId(textbox) : null;
+		const object = getActiveText();
+		const id = object ? getTextId(object) : null;
 
-		if (!canvas || !textbox || !id) {
+		if (!canvas || !object || !id) {
 			return;
 		}
 
 		mangaStore.removeText(id);
-		canvas.remove(textbox);
+		canvas.remove(object);
 		canvas.discardActiveObject();
 		clearMenu();
 		onChanged?.();
@@ -382,6 +508,15 @@ export const useTextColorToolbar = ({
 		lineHeight,
 		dominantLineHeight,
 		textAlign,
+		hasBox,
+		boxFill,
+		boxStroke,
+		boxStrokeWidth,
+		boxCornerRadius,
+		boxPadding,
+		boxWidth,
+		boxHeight,
+		boxVerticalAlign,
 		position,
 		placement,
 		setColor,
@@ -395,6 +530,14 @@ export const useTextColorToolbar = ({
 		setStrokeWidth,
 		setLineHeight,
 		setTextAlign,
+		setBoxFill,
+		setBoxStroke,
+		setBoxStrokeWidth,
+		setBoxCornerRadius,
+		setBoxPadding,
+		setBoxWidth,
+		setBoxHeight,
+		setBoxVerticalAlign,
 		alignToPage,
 		deleteText,
 		clearMenu,

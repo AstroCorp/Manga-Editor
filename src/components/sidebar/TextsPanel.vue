@@ -7,6 +7,10 @@ const editorStore = useEditorStore();
 const addSimpleText = () => {
 	editorStore.addSimpleText();
 };
+
+const addBoxedText = () => {
+	editorStore.addBoxedText();
+};
 </script>
 
 <template>
@@ -34,6 +38,26 @@ const addSimpleText = () => {
 					class="text-sm font-medium text-slate-900 dark:text-slate-100"
 				>
 					Simple text
+				</span>
+			</button>
+			<button
+				type="button"
+				class="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-left transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-500/25"
+				aria-label="Add boxed text"
+				@click="addBoxedText"
+			>
+				<span
+					class="flex size-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-200"
+				>
+					<Icon
+						icon="fluent:textbox-align-bottom-24-regular"
+						class="size-5"
+					/>
+				</span>
+				<span
+					class="text-sm font-medium text-slate-900 dark:text-slate-100"
+				>
+					Boxed text
 				</span>
 			</button>
 		</section>

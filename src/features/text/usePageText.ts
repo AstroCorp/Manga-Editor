@@ -11,7 +11,7 @@ import type { FeatureContext } from '@/features/types';
 export const usePageText = (ctx: FeatureContext) => {
 	const mangaStore = useMangaStore();
 
-	const addSimpleText = () => {
+	const addTextAtVisibleCenter = (text: TextBlock) => {
 		const canvas = ctx.fabricCanvas.value;
 		const root = ctx.rootEl.value;
 
@@ -21,6 +21,26 @@ export const usePageText = (ctx: FeatureContext) => {
 
 		ctx.actions.cancelStroke();
 		ctx.discardSelection();
+
+		mangaStore.addText(text);
+
+		const fabricText = textBlockToFabric(text, {
+			layerId: mangaStore.activeLayer.id,
+			interactive: true,
+		});
+
+		canvas.add(fabricText);
+		canvas.setActiveObject(fabricText);
+		ctx.actions.syncInteractionMode();
+		canvas.requestRenderAll();
+	};
+
+	const createCenteredText = (boxed: boolean) => {
+		const root = ctx.rootEl.value;
+
+		if (!root) {
+			return;
+		}
 
 		const page = mangaStore.activePage;
 		const center = getVisiblePageCenter(
@@ -39,22 +59,23 @@ export const usePageText = (ctx: FeatureContext) => {
 			Math.max(0, page.height - DEFAULT_TEXT_FONT_SIZE),
 		);
 
-		const text = TextBlock.create(left, top);
+		const text = boxed
+			? TextBlock.createBoxed(left, top)
+			: TextBlock.create(left, top);
 
-		mangaStore.addText(text);
+		addTextAtVisibleCenter(text);
+	};
 
-		const fabricText = textBlockToFabric(text, {
-			layerId: mangaStore.activeLayer.id,
-			interactive: true,
-		});
+	const addSimpleText = () => {
+		createCenteredText(false);
+	};
 
-		canvas.add(fabricText);
-		canvas.setActiveObject(fabricText);
-		ctx.actions.syncInteractionMode();
-		canvas.requestRenderAll();
+	const addBoxedText = () => {
+		createCenteredText(true);
 	};
 
 	return {
 		addSimpleText,
+		addBoxedText,
 	};
 };

@@ -149,8 +149,28 @@ describe('pagePreview', () => {
 				angle: 12,
 				originX: 12,
 				originY: 24,
+				box: null,
 			},
 		]);
+	});
+
+	it('includes rounded box metrics for boxed text', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const preview = buildPagePreview(200, 200, [], [text]);
+
+		expect(preview.texts[0]?.box).toEqual({
+			fill: '#ffffff',
+			stroke: '#000000',
+			strokeWidth: 2,
+			cornerRadius: 8,
+			padding: 12,
+			width: 0,
+			height: 0,
+			verticalAlign: 'middle',
+		});
+		expect(preview.texts[0]?.x).toBe(22);
+		// middle align with auto height ≈ padding top
+		expect(preview.texts[0]?.y).toBe(20 + 12 + text.fontSize);
 	});
 
 	it('soft-wraps long preview lines to the text width', () => {

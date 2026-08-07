@@ -39,6 +39,15 @@ export const textColorFeature: CanvasFeature = {
 					lineHeight: api.lineHeight.value,
 					dominantLineHeight: api.dominantLineHeight.value,
 					textAlign: api.textAlign.value,
+					hasBox: api.hasBox.value,
+					boxFill: api.boxFill.value,
+					boxStroke: api.boxStroke.value,
+					boxStrokeWidth: api.boxStrokeWidth.value,
+					boxCornerRadius: api.boxCornerRadius.value,
+					boxPadding: api.boxPadding.value,
+					boxWidth: api.boxWidth.value,
+					boxHeight: api.boxHeight.value,
+					boxVerticalAlign: api.boxVerticalAlign.value,
 					left: stage.left,
 					top: stage.top,
 					placement: api.placement.value,
@@ -56,6 +65,20 @@ export const textColorFeature: CanvasFeature = {
 				setStrokeWidth: api.setStrokeWidth as (...args: never[]) => unknown,
 				setLineHeight: api.setLineHeight as (...args: never[]) => unknown,
 				setTextAlign: api.setTextAlign as (...args: never[]) => unknown,
+				setBoxFill: api.setBoxFill as (...args: never[]) => unknown,
+				setBoxStroke: api.setBoxStroke as (...args: never[]) => unknown,
+				setBoxStrokeWidth: api.setBoxStrokeWidth as (
+					...args: never[]
+				) => unknown,
+				setBoxCornerRadius: api.setBoxCornerRadius as (
+					...args: never[]
+				) => unknown,
+				setBoxPadding: api.setBoxPadding as (...args: never[]) => unknown,
+				setBoxWidth: api.setBoxWidth as (...args: never[]) => unknown,
+				setBoxHeight: api.setBoxHeight as (...args: never[]) => unknown,
+				setBoxVerticalAlign: api.setBoxVerticalAlign as (
+					...args: never[]
+				) => unknown,
 				alignToPage: api.alignToPage as (...args: never[]) => unknown,
 				deleteText: api.deleteText,
 			},

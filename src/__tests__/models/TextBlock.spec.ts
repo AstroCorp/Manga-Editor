@@ -8,6 +8,22 @@ import {
 } from '@/models/TextBlock';
 
 describe('TextBlock', () => {
+	it('creates boxed text with default box style', () => {
+		const text = TextBlock.createBoxed(10, 20);
+
+		expect(text.box).toEqual({
+			fill: '#ffffff',
+			stroke: '#000000',
+			strokeWidth: 2,
+			cornerRadius: 8,
+			padding: 12,
+			width: 0,
+			height: 0,
+			verticalAlign: 'middle',
+		});
+		expect(text.toJSON().box).toEqual(text.box);
+	});
+
 	it('creates a default simple text', () => {
 		const text = TextBlock.create(40, 80);
 

@@ -51,6 +51,23 @@ export type TextStylesJSON = {
 	};
 };
 
+/** Fondo / borde del rectángulo alrededor del texto (boxed text). */
+export type TextBoxVerticalAlign = 'top' | 'middle' | 'bottom';
+
+export type TextBoxStyle = {
+	fill: string;
+	stroke: string;
+	strokeWidth: number;
+	cornerRadius: number;
+	padding: number;
+	/** Ancho exterior de la caja. */
+	width: number;
+	/** Alto exterior de la caja (crece si el texto necesita más). */
+	height: number;
+	/** Alineación vertical del texto dentro de la caja. */
+	verticalAlign: TextBoxVerticalAlign;
+};
+
 export type TextBlockJSON = {
 	id: string;
 	content: string;
@@ -70,6 +87,7 @@ export type TextBlockJSON = {
 	textAlign?: TextTextAlign;
 	angle?: number;
 	styles?: TextStylesJSON | null;
+	box?: TextBoxStyle | null;
 };
 
 export type TextBlockPatch = Partial<Omit<TextBlockJSON, 'id'>>;
@@ -93,6 +111,9 @@ export type PagePreviewText = {
 	angle: number;
 	originX: number;
 	originY: number;
+	boxWidth?: number;
+	boxHeight?: number;
+	box?: TextBoxStyle | null;
 };
 
 export type PreviewTextMeasureStyle = {

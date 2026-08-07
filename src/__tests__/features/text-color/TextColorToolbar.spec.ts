@@ -18,6 +18,15 @@ const baseProps = {
 	lineHeight: 1.16 as number | null,
 	dominantLineHeight: 1.16,
 	textAlign: 'left' as const,
+	hasBox: false,
+	boxFill: '#ffffff',
+	boxStroke: '#000000',
+	boxStrokeWidth: 2,
+	boxCornerRadius: 8,
+	boxPadding: 12,
+	boxWidth: 224,
+	boxHeight: 48,
+	boxVerticalAlign: 'middle' as const,
 	left: 100,
 	top: 50,
 	placement: 'above' as const,
@@ -34,11 +43,15 @@ describe('TextColorToolbar', () => {
 			},
 		});
 
-		await wrapper.get('button[aria-label="Increase font size"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase font size"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([25]);
 
-		await wrapper.get('button[aria-label="Decrease font size"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Decrease font size"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([23]);
 	});
@@ -169,12 +182,16 @@ describe('TextColorToolbar', () => {
 			},
 		});
 
-		await wrapper.get('button[aria-label="Decrease font size"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Decrease font size"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([8]);
 
 		await wrapper.setProps({ fontSize: 199, dominantFontSize: 199 });
-		await wrapper.get('button[aria-label="Increase font size"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase font size"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([200]);
 	});
@@ -233,7 +250,9 @@ describe('TextColorToolbar', () => {
 
 		expect((input.element as HTMLInputElement).value).toBe('mix');
 
-		await wrapper.get('button[aria-label="Increase font size"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase font size"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setFontSize')?.at(-1)).toEqual([19]);
 	});
@@ -291,7 +310,9 @@ describe('TextColorToolbar', () => {
 
 		strokeEl.value = '#00ff00';
 		await strokeInput.trigger('input');
-		await wrapper.get('button[aria-label="Increase stroke width"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase stroke width"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setStrokeColor')?.at(-1)).toEqual(['#00ff00']);
 		expect(wrapper.emitted('setStrokeWidth')?.at(-1)).toEqual([1]);
@@ -391,7 +412,9 @@ describe('TextColorToolbar', () => {
 
 		expect((input.element as HTMLInputElement).value).toBe('mix');
 
-		await wrapper.get('button[aria-label="Increase stroke width"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase stroke width"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setStrokeWidth')?.at(-1)).toEqual([4]);
 	});
@@ -406,11 +429,15 @@ describe('TextColorToolbar', () => {
 			},
 		});
 
-		await wrapper.get('button[aria-label="Increase line height"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase line height"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setLineHeight')?.at(-1)).toEqual([1.26]);
 
-		await wrapper.get('button[aria-label="Decrease line height"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Decrease line height"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setLineHeight')?.at(-1)).toEqual([1.06]);
 	});
@@ -433,8 +460,49 @@ describe('TextColorToolbar', () => {
 
 		expect((input.element as HTMLInputElement).value).toBe('mix');
 
-		await wrapper.get('button[aria-label="Increase line height"]').trigger('click');
+		await wrapper
+			.get('button[aria-label="Increase line height"]')
+			.trigger('pointerdown');
 
 		expect(wrapper.emitted('setLineHeight')?.at(-1)).toEqual([1.6]);
+	});
+
+	it('emits box style updates when hasBox is true', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				hasBox: true,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		expect(wrapper.get('[aria-label="Box format"]').exists()).toBe(true);
+		expect(wrapper.get('[aria-label="Text format"]').exists()).toBe(true);
+
+		await wrapper.get('input[aria-label="Box fill"]').setValue('#ff0000');
+		expect(wrapper.emitted('setBoxFill')?.at(-1)).toEqual(['#ff0000']);
+
+		await wrapper.get('input[aria-label="Corner radius"]').setValue('20');
+		await wrapper.get('input[aria-label="Corner radius"]').trigger('change');
+
+		expect(wrapper.emitted('setBoxCornerRadius')?.at(-1)).toEqual([20]);
+	});
+
+	it('hides the box toolbar when hasBox is false', () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		expect(wrapper.find('[aria-label="Box format"]').exists()).toBe(false);
+		expect(wrapper.get('[aria-label="Text format"]').exists()).toBe(true);
 	});
 });

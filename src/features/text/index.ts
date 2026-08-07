@@ -7,6 +7,7 @@ export const textFeature: CanvasFeature = {
 
 		ctx.registerCanvasAction({
 			addSimpleText: api.addSimpleText,
+			addBoxedText: api.addBoxedText,
 		});
 	},
 };

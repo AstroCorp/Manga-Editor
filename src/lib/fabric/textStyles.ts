@@ -116,7 +116,7 @@ const LAYOUT_STYLE_KEYS: Array<keyof TextCharStyle> = [
 
 /** Ancho temporal para medir el texto sin soft-wrap de Textbox. */
 const UNBOUNDED_TEXT_WIDTH = 1_000_000;
-const MIN_TEXTBOX_WIDTH = 20;
+export const MIN_TEXTBOX_WIDTH = 20;
 /** null en fontSize/fontFamily/strokeWidth/lineHeight = mezcla; dominant* = el más frecuente. */
 export type TextFormatFlags = {
 	bold: boolean;
@@ -855,6 +855,24 @@ export const fitTextboxWidthToContent = (textbox: TextStyleMutable) => {
 	textbox.set('width', nextWidth);
 	textbox.initDimensions?.();
 	textbox.setCoords?.();
+};
+
+/** Ancho del texto sin soft-wrap (línea completa / más ancha). */
+export const measureTextContentWidth = (textbox: TextStyleMutable): number => {
+	const previous =
+		typeof textbox.width === 'number' && Number.isFinite(textbox.width)
+			? textbox.width
+			: MIN_TEXTBOX_WIDTH;
+
+	textbox.set('width', UNBOUNDED_TEXT_WIDTH);
+	textbox.initDimensions?.();
+
+	const measured = Math.ceil(textbox.calcTextWidth?.() ?? 0);
+
+	textbox.set('width', previous);
+	textbox.initDimensions?.();
+
+	return Math.max(MIN_TEXTBOX_WIDTH, measured);
 };
 
 const refreshTextLayout = (

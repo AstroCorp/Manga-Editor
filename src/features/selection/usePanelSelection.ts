@@ -2,7 +2,6 @@ import { watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import {
 	FabricImage,
-	Textbox,
 	type Canvas,
 	type FabricObject,
 } from 'fabric';
@@ -14,6 +13,7 @@ import {
 	isPanel,
 	isPanelImage,
 	removeObjectsByPanelId,
+	resolvePageTextObject,
 } from '@/lib/fabric/isGuide';
 import {
 	captureScrollSnapshot,
@@ -24,7 +24,12 @@ import {
 	nudgeFabricObject,
 } from '@/lib/fabric/nudgeObject';
 import { shapeImageFromFabric } from '@/lib/fabric/panelImageFabric';
-import { textBlockFromFabric, textBlockToFabric } from '@/lib/fabric/textFabric';
+import {
+	getPageTextbox,
+	syncBoxedTextGeometry,
+	textBlockFromFabric,
+	textBlockToFabric,
+} from '@/lib/fabric/textFabric';
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
 import {
 	cloneTextBlockAt,
@@ -103,6 +108,7 @@ const snapshotFromFabricText = (
 		textAlign: patch.textAlign,
 		angle: patch.angle,
 		styles: patch.styles,
+		box: patch.box ?? null,
 	};
 };
 
@@ -120,7 +126,9 @@ export const usePanelSelection = ({
 			return false;
 		}
 
-		return Boolean((object as Textbox).isEditing);
+		const textbox = getPageTextbox(object as PageTextObject);
+
+		return Boolean(textbox?.isEditing);
 	};
 
 	const removeActive = (): boolean => {
@@ -212,10 +220,9 @@ export const usePanelSelection = ({
 			return;
 		}
 
-		mangaStore.updateText(
-			textId,
-			textBlockFromFabric(object as PageTextObject),
-		);
+		const pageText = resolvePageTextObject(object) as PageTextObject;
+		syncBoxedTextGeometry(pageText);
+		mangaStore.updateText(textId, textBlockFromFabric(pageText));
 	};
 
 	const onObjectModified = (event: { target?: FabricObject }) => {
@@ -277,7 +284,9 @@ export const usePanelSelection = ({
 			return;
 		}
 
-		target.set({
+		const pageText = resolvePageTextObject(target);
+
+		pageText.set({
 			lockMovementX: true,
 			lockMovementY: true,
 			lockRotation: true,
@@ -286,6 +295,31 @@ export const usePanelSelection = ({
 		});
 		fabricCanvas.value?.requestRenderAll();
 		restoreScrollAfterTextEditing(rootEl.value, scrollBeforeEdit);
+	};
+
+	/** El Group boxed no es interactivo: doble clic entra en edición del Textbox interno. */
+	const onDblClick = (event: { target?: FabricObject }) => {
+		const canvas = fabricCanvas.value;
+		const target = event.target;
+
+		if (!canvas || !target || !isPageText(target)) {
+			return;
+		}
+
+		const pageText = resolvePageTextObject(target) as PageTextObject;
+		const textbox = getPageTextbox(pageText);
+
+		if (!textbox || textbox.isEditing) {
+			return;
+		}
+
+		if (canvas.getActiveObject() !== pageText) {
+			canvas.setActiveObject(pageText);
+		}
+
+		textbox.enterEditing();
+		textbox.selectAll();
+		canvas.requestRenderAll();
 	};
 
 	const onEditingExited = (event: { target?: FabricObject }) => {
@@ -430,6 +464,7 @@ export const usePanelSelection = ({
 	const bindSelectionEvents = (canvas: Canvas) => {
 		canvas.on('mouse:down', onMouseDown);
 		canvas.on('mouse:move', onMouseMove);
+		canvas.on('mouse:dblclick', onDblClick);
 		canvas.on('object:modified', onObjectModified);
 		canvas.on('text:changed', onTextChanged);
 		canvas.on('text:editing:entered', onEditingEntered);
@@ -439,6 +474,7 @@ export const usePanelSelection = ({
 	const unbindSelectionEvents = (canvas: Canvas) => {
 		canvas.off('mouse:down', onMouseDown);
 		canvas.off('mouse:move', onMouseMove);
+		canvas.off('mouse:dblclick', onDblClick);
 		canvas.off('object:modified', onObjectModified);
 		canvas.off('text:changed', onTextChanged);
 		canvas.off('text:editing:entered', onEditingEntered);

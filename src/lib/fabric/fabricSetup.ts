@@ -69,7 +69,16 @@ export const setupFabricCustomProperties = () => {
 	setupFabricHiddenTextarea();
 	setupPerCharLineHeight();
 
-	FabricObject.customProperties = ['objectType', 'panelId', 'textId', 'layerId'];
+	FabricObject.customProperties = [
+		'objectType',
+		'panelId',
+		'textId',
+		'layerId',
+		'boxPadding',
+		'boxWidth',
+		'boxHeight',
+		'boxVerticalAlign',
+	];
 	FabricObject.ownDefaults.borderColor = ACCENT_COLOR;
 	FabricObject.ownDefaults.cornerColor = ACCENT_COLOR;
 	FabricObject.ownDefaults.cornerStrokeColor = ACCENT_COLOR;

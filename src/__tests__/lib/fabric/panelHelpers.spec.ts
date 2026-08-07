@@ -125,6 +125,19 @@ describe('panel fabric helpers', () => {
 		expect(getTextId(createObject({ textId: '' }))).toBeUndefined();
 	});
 
+	it('isPageText / getTextId resuelven hijos del Group boxed', () => {
+		const group = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Text,
+			textId: 'boxed-1',
+			layerId: 'layer-a',
+		});
+		const child = createObject({});
+		(child as { group?: unknown }).group = group;
+
+		expect(isPageText(child)).toBe(true);
+		expect(getTextId(child)).toBe('boxed-1');
+	});
+
 	it('findPanelById returns only panel polygons', () => {
 		const panel = createObject({
 			objectType: FABRIC_OBJECT_TYPE.Panel,

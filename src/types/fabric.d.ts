@@ -1,4 +1,13 @@
-import type { Canvas, FabricImage, FabricObject, Point, Polygon, Polyline, Textbox } from 'fabric';
+import type {
+	Canvas,
+	FabricImage,
+	FabricObject,
+	Group,
+	Point,
+	Polygon,
+	Polyline,
+	Textbox,
+} from 'fabric';
 import type { ShallowRef } from 'vue';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
@@ -30,11 +39,14 @@ export type PanelLikeObject = FabricObject & {
 	isGuide?: boolean;
 };
 
-export type PageTextObject = Textbox & {
+export type PageTextMeta = {
 	objectType?: FabricObjectType;
 	textId?: string;
 	layerId?: string;
 };
+
+/** Simple text = Textbox; boxed text = Group(Rect + Textbox). */
+export type PageTextObject = (Textbox | Group) & PageTextMeta;
 
 export type PanelBounds = {
 	left: number;

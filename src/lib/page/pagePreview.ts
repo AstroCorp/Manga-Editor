@@ -269,20 +269,42 @@ const toPreviewTexts = (
 	texts: TextBlock[] | null | undefined,
 ): PagePreviewText[] => {
 	return (texts ?? []).map((text) => {
+		const box = text.box;
+		const padding = box?.padding ?? 0;
+		const lines = buildPreviewTextLines(text.content, text.width, {
+			fontSize: text.fontSize,
+			fontWeight: text.fontWeight,
+			fontStyle: text.fontStyle,
+		});
+		const lineHeight =
+			typeof text.lineHeight === 'number' && text.lineHeight > 0
+				? text.lineHeight
+				: DEFAULT_TEXT_LINE_HEIGHT;
+		const textBlockHeight = Math.max(
+			text.fontSize,
+			lines.length * text.fontSize * lineHeight,
+		);
+		const outerWidth = box
+			? Math.max(box.width || 0, text.width + padding * 2)
+			: undefined;
+		const outerHeight = box
+			? Math.max(box.height || 0, textBlockHeight + padding * 2)
+			: undefined;
+		const textTop = box
+			? box.verticalAlign === 'bottom'
+				? Math.max(padding, (outerHeight ?? 0) - padding - textBlockHeight)
+				: box.verticalAlign === 'middle'
+					? ((outerHeight ?? 0) - textBlockHeight) / 2
+					: padding
+			: 0;
+
 		return {
-			lines: buildPreviewTextLines(text.content, text.width, {
-				fontSize: text.fontSize,
-				fontWeight: text.fontWeight,
-				fontStyle: text.fontStyle,
-			}),
-			x: text.left,
-			y: text.top + text.fontSize,
+			lines,
+			x: text.left + padding,
+			y: text.top + textTop + text.fontSize,
 			fontSize: text.fontSize,
 			fontFamily: text.fontFamily,
-			lineHeight:
-				typeof text.lineHeight === 'number' && text.lineHeight > 0
-					? text.lineHeight
-					: DEFAULT_TEXT_LINE_HEIGHT,
+			lineHeight,
 			fill: text.fill,
 			fontWeight: text.fontWeight,
 			fontStyle: text.fontStyle,
@@ -295,6 +317,9 @@ const toPreviewTexts = (
 			angle: text.angle,
 			originX: text.left,
 			originY: text.top,
+			...(outerWidth !== undefined ? { boxWidth: outerWidth } : {}),
+			...(outerHeight !== undefined ? { boxHeight: outerHeight } : {}),
+			box,
 		};
 	});
 };

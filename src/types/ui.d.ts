@@ -28,3 +28,27 @@ export type OverlayAnchorSource = {
 	top: number | null;
 	placement: OverlayPlacement;
 };
+
+export type NumberInputVariant = 'toolbar' | 'field';
+
+export type NumberInputProps = {
+	modelValue: number | null;
+	min?: number;
+	max?: number;
+	step?: number;
+	decimals?: number;
+	/** Valor base para nudge/focus cuando `modelValue` es null (p. ej. estilos mixed). */
+	fallbackValue?: number;
+	mixedLabel?: string;
+	variant?: NumberInputVariant;
+	/** Clases de ancho del input (p. ej. `w-8`). */
+	inputWidthClass?: string;
+	/** Emite mientras se escribe si el valor parsea y está en rango. */
+	commitOnInput?: boolean;
+	inputmode?: 'numeric' | 'decimal';
+	ariaLabel: string;
+	increaseLabel?: string;
+	decreaseLabel?: string;
+	title?: string;
+	suffix?: string;
+};

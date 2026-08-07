@@ -3,6 +3,7 @@ import { DEFAULT_TEXT_FONT_FAMILY } from '@/lib/fonts/googleFontsCatalog';
 import type {
 	TextBlockJSON,
 	TextBlockPatch,
+	TextBoxStyle,
 	TextFontStyle,
 	TextFontWeight,
 	TextStylesJSON,
@@ -20,6 +21,17 @@ const DEFAULT_TEXT_FONT_WEIGHT: TextFontWeight = 'normal';
 const DEFAULT_TEXT_FONT_STYLE: TextFontStyle = 'normal';
 export const DEFAULT_TEXT_ALIGN: TextTextAlign = 'left';
 
+export const DEFAULT_TEXT_BOX: TextBoxStyle = {
+	fill: '#ffffff',
+	stroke: '#000000',
+	strokeWidth: 2,
+	cornerRadius: 8,
+	padding: 12,
+	width: 0,
+	height: 0,
+	verticalAlign: 'middle',
+};
+
 export { DEFAULT_TEXT_FONT_FAMILY };
 
 const cloneStyles = (
@@ -30,6 +42,26 @@ const cloneStyles = (
 	}
 
 	return JSON.parse(JSON.stringify(styles)) as TextStylesJSON;
+};
+
+const cloneBox = (box: TextBoxStyle | null | undefined): TextBoxStyle | null => {
+	if (!box) {
+		return null;
+	}
+
+	return {
+		fill: box.fill,
+		stroke: box.stroke,
+		strokeWidth: box.strokeWidth,
+		cornerRadius: box.cornerRadius,
+		padding: box.padding,
+		width: Math.max(0, Number(box.width) || 0),
+		height: Math.max(0, Number(box.height) || 0),
+		verticalAlign:
+			box.verticalAlign === 'top' || box.verticalAlign === 'bottom'
+				? box.verticalAlign
+				: 'middle',
+	};
 };
 
 export class TextBlock {
@@ -51,6 +83,7 @@ export class TextBlock {
 	public textAlign: TextTextAlign;
 	public angle: number;
 	public styles: TextStylesJSON | null;
+	public box: TextBoxStyle | null;
 
 	constructor(value: TextBlockJSON) {
 		this.id = value.id;
@@ -71,6 +104,7 @@ export class TextBlock {
 		this.textAlign = value.textAlign ?? DEFAULT_TEXT_ALIGN;
 		this.angle = value.angle ?? 0;
 		this.styles = cloneStyles(value.styles);
+		this.box = cloneBox(value.box);
 	}
 
 	static create(left: number, top: number): TextBlock {
@@ -93,7 +127,15 @@ export class TextBlock {
 			textAlign: DEFAULT_TEXT_ALIGN,
 			angle: 0,
 			styles: undefined,
+			box: null,
 		});
+	}
+
+	static createBoxed(left: number, top: number): TextBlock {
+		const text = TextBlock.create(left, top);
+		text.box = cloneBox(DEFAULT_TEXT_BOX);
+
+		return text;
 	}
 
 	applyPatch(patch: TextBlockPatch) {
@@ -164,6 +206,10 @@ export class TextBlock {
 		if ('styles' in patch) {
 			this.styles = cloneStyles(patch.styles);
 		}
+
+		if ('box' in patch) {
+			this.box = cloneBox(patch.box);
+		}
 	}
 
 	toJSON(): TextBlockJSON {
@@ -186,10 +232,11 @@ export class TextBlock {
 			textAlign: this.textAlign,
 			angle: this.angle,
 			...(this.styles ? { styles: cloneStyles(this.styles) ?? undefined } : {}),
+			...(this.box ? { box: cloneBox(this.box) ?? undefined } : {}),
 		};
 	}
 
 	static fromJSON(data: TextBlockJSON): TextBlock {
 		return new TextBlock(data);
 	}
-}
+};

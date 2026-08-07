@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
+import NumberInput from '@/components/ui/NumberInput.vue';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { useLayerConfigActions } from '@/composables/page/useLayerConfigActions';
 import { usePageConfigActions } from '@/composables/page/usePageConfigActions';
@@ -29,36 +30,9 @@ const {
 
 const { setCols, setRows, setMargin, setStrokeWidth } = useLayerConfigActions();
 
-const numberFromEvent = (event: Event) => {
-	return Number((event.target as HTMLInputElement).value);
+const onMarginUpdate = (side: PageMarginSide, value: number) => {
+	setMargin(side, value);
 };
-
-const onWidthChange = (event: Event) => {
-	setWidth(numberFromEvent(event));
-};
-
-const onHeightChange = (event: Event) => {
-	setHeight(numberFromEvent(event));
-};
-
-const onColsChange = (event: Event) => {
-	setCols(numberFromEvent(event));
-};
-
-const onRowsChange = (event: Event) => {
-	setRows(numberFromEvent(event));
-};
-
-const onMarginChange = (side: PageMarginSide, event: Event) => {
-	setMargin(side, numberFromEvent(event));
-};
-
-const onStrokeWidthChange = (event: Event) => {
-	setStrokeWidth(numberFromEvent(event));
-};
-
-const inputClass =
-	'w-18 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none transition hover:border-blue-600/50 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus:border-blue-500 dark:focus:ring-blue-500/25';
 
 const labelClass =
 	'flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100';
@@ -76,24 +50,28 @@ const sectionClass =
 			<h3 :class="sectionTitleClass">Page</h3>
 			<label :class="labelClass">
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Width</span>
-				<input
-					type="number"
-					:class="inputClass"
-					:value="pageSize.width"
+				<NumberInput
+					:model-value="pageSize.width"
 					:min="MIN_PAGE_SIZE"
 					:max="MAX_PAGE_SIZE"
-					@change="onWidthChange"
+					input-width-class="w-16"
+					aria-label="Page width"
+					increase-label="Increase page width"
+					decrease-label="Decrease page width"
+					@update:model-value="setWidth"
 				/>
 			</label>
 			<label :class="labelClass">
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Height</span>
-				<input
-					type="number"
-					:class="inputClass"
-					:value="pageSize.height"
+				<NumberInput
+					:model-value="pageSize.height"
 					:min="MIN_PAGE_SIZE"
 					:max="MAX_PAGE_SIZE"
-					@change="onHeightChange"
+					input-width-class="w-16"
+					aria-label="Page height"
+					increase-label="Increase page height"
+					decrease-label="Decrease page height"
+					@update:model-value="setHeight"
 				/>
 			</label>
 			<div
@@ -146,24 +124,28 @@ const sectionClass =
 
 			<label :class="labelClass">
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Columns</span>
-				<input
-					type="number"
-					:class="inputClass"
-					:value="gridSize.cols"
+				<NumberInput
+					:model-value="gridSize.cols"
 					:min="MIN_GRID_POINTS"
 					:max="MAX_GRID_POINTS"
-					@change="onColsChange"
+					input-width-class="w-14"
+					aria-label="Grid columns"
+					increase-label="Increase columns"
+					decrease-label="Decrease columns"
+					@update:model-value="setCols"
 				/>
 			</label>
 			<label :class="labelClass">
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Rows</span>
-				<input
-					type="number"
-					:class="inputClass"
-					:value="gridSize.rows"
+				<NumberInput
+					:model-value="gridSize.rows"
 					:min="MIN_GRID_POINTS"
 					:max="MAX_GRID_POINTS"
-					@change="onRowsChange"
+					input-width-class="w-14"
+					aria-label="Grid rows"
+					increase-label="Increase rows"
+					decrease-label="Decrease rows"
+					@update:model-value="setRows"
 				/>
 			</label>
 
@@ -180,24 +162,29 @@ const sectionClass =
 				<span class="pr-2 text-slate-500 dark:text-slate-400">{{
 					side.label
 				}}</span>
-				<input
-					type="number"
-					:class="inputClass"
-					min="0"
-					:value="margins[side.key]"
-					@change="onMarginChange(side.key, $event)"
+				<NumberInput
+					:model-value="margins[side.key]"
+					:min="0"
+					input-width-class="w-14"
+					:aria-label="side.label"
+					:increase-label="`Increase ${side.label.toLowerCase()}`"
+					:decrease-label="`Decrease ${side.label.toLowerCase()}`"
+					@update:model-value="onMarginUpdate(side.key, $event)"
 				/>
 			</label>
 
 			<label :class="labelClass">
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke</span>
-				<input
-					type="number"
-					:class="inputClass"
-					:value="strokeWidth"
+				<NumberInput
+					:model-value="strokeWidth"
 					:min="MIN_STROKE_WIDTH"
 					:max="MAX_STROKE_WIDTH"
-					@input="onStrokeWidthChange"
+					input-width-class="w-14"
+					commit-on-input
+					aria-label="Stroke width"
+					increase-label="Increase stroke width"
+					decrease-label="Decrease stroke width"
+					@update:model-value="setStrokeWidth"
 				/>
 			</label>
 		</section>
