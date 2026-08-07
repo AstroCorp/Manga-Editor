@@ -33,7 +33,7 @@ export const DEFAULT_TEXT_BOX: TextBoxStyle = {
 };
 
 /** Boxed text con esquinas máximas → cápsula / pill. */
-export const DEFAULT_ROUNDED_TEXT_BOX: TextBoxStyle = {
+const DEFAULT_ROUNDED_TEXT_BOX: TextBoxStyle = {
 	...DEFAULT_TEXT_BOX,
 	cornerRadius: 9999,
 };

@@ -3,6 +3,7 @@ import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import {
 	collectPanelIdsWithImage,
 	findPanelById,
+	findTextById,
 	getPanelId,
 	getTextId,
 	isGridGuide,
@@ -157,6 +158,25 @@ describe('panel fabric helpers', () => {
 		expect(findPanelById(canvas, 'missing')).toBeNull();
 		expect(isPanel(panel)).toBe(true);
 		expect(isPanel(image)).toBe(false);
+	});
+
+	it('findTextById returns page text objects', () => {
+		const text = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Text,
+			textId: 't1',
+		});
+		const panel = createObject({
+			objectType: FABRIC_OBJECT_TYPE.Panel,
+			panelId: 'p1',
+		});
+		const canvas = {
+			getObjects: () => {
+				return [panel, text];
+			},
+		} as unknown as Canvas;
+
+		expect(findTextById(canvas, 't1')).toBe(text);
+		expect(findTextById(canvas, 'missing')).toBeNull();
 	});
 
 	it('collectPanelIdsWithImage gathers panel ids from images', () => {

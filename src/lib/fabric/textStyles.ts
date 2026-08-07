@@ -116,7 +116,7 @@ const LAYOUT_STYLE_KEYS: Array<keyof TextCharStyle> = [
 
 /** Ancho temporal para medir el texto sin soft-wrap de Textbox. */
 const UNBOUNDED_TEXT_WIDTH = 1_000_000;
-export const MIN_TEXTBOX_WIDTH = 20;
+const MIN_TEXTBOX_WIDTH = 20;
 /** null en fontSize/fontFamily/strokeWidth/lineHeight = mezcla; dominant* = el más frecuente. */
 export type TextFormatFlags = {
 	bold: boolean;

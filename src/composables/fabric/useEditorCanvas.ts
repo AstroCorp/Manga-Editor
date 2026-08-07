@@ -16,6 +16,7 @@ import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import type { FeatureContext, FeatureOverlay } from '@/features/types';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
+import { useSelectionStore } from '@/stores/selection';
 import type { CanvasActions } from '@/types/editor';
 
 /**
@@ -52,6 +53,8 @@ export const useEditorCanvas = (
 		addSimpleText: () => undefined,
 		addBoxedText: () => undefined,
 		addRoundedBoxedText: () => undefined,
+		focusLayerElement: () => undefined,
+		deleteLayerElement: () => undefined,
 	};
 
 	const afterPageApplyHooks: Array<() => void> = [];
@@ -63,6 +66,8 @@ export const useEditorCanvas = (
 		fabricCanvas.value?.discardActiveObject();
 		ctx.actions.clearShapeMenu();
 		ctx.actions.clearTextColorMenu();
+		useSelectionStore().clearFocused();
+		useSelectionStore().clearPendingFocus();
 	};
 
 	const applyActivePage = async () => {

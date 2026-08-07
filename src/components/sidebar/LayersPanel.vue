@@ -10,11 +10,14 @@ const { pageSize } = useActivePageLayout();
 const {
 	displayLayers,
 	activeLayer,
+	focused,
 	pendingRemoveId,
 	removeMessage,
 	canRemove,
 	dragFromVisualIndex,
 	dropTargetVisualIndex,
+	isLayerExpanded,
+	toggleExpand,
 	selectLayer,
 	addLayer,
 	requestRemove,
@@ -22,6 +25,8 @@ const {
 	confirmRemove,
 	toggleVisible,
 	renameLayer,
+	focusElement,
+	deleteElement,
 	onDragStart,
 	onDragOver,
 	onDrop,
@@ -66,12 +71,25 @@ const {
 					:width="pageSize.width"
 					:height="pageSize.height"
 					:shapes="layer.shapes"
+					:texts="layer.texts"
+					:expanded="isLayerExpanded(layer.id)"
+					:focused-kind="
+						focused?.layerId === layer.id ? focused.kind : null
+					"
+					:focused-id="focused?.layerId === layer.id ? focused.id : null"
 					:dragging="dragFromVisualIndex === visualIndex"
 					:drop-target="dropTargetVisualIndex === visualIndex"
 					@select="selectLayer(layer.id)"
 					@remove="requestRemove(layer.id)"
 					@rename="renameLayer(layer.id, $event)"
 					@toggle-visible="toggleVisible(layer.id)"
+					@toggle-expand="toggleExpand(layer.id)"
+					@focus-element="
+						(kind, id) => focusElement(layer.id, kind, id)
+					"
+					@delete-element="
+						(kind, id) => deleteElement(layer.id, kind, id)
+					"
 					@dragstart="onDragStart(visualIndex, $event)"
 					@dragover="onDragOver(visualIndex, $event)"
 					@drop="onDrop(visualIndex, $event)"

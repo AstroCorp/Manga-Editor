@@ -13,6 +13,8 @@ describe('createFeatureContext', () => {
 			addSimpleText: () => undefined,
 			addBoxedText: () => undefined,
 			addRoundedBoxedText: () => undefined,
+			focusLayerElement: () => undefined,
+			deleteLayerElement: () => undefined,
 		};
 		const afterPageApplyHooks: Array<() => void> = [];
 		const overlays: Array<{ id: string }> = [];

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { nextTick } from 'vue';
 import { useLayersPanelActions } from '@/composables/page/useLayersPanelActions';
+import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 
 vi.mock('vue3-toastify', () => {
@@ -96,5 +98,75 @@ describe('useLayersPanelActions', () => {
 
 		expect(toast.warn).not.toHaveBeenCalled();
 		expect(mangaStore.activeLayer.name).toBe('Tone');
+	});
+
+	it('toggles layer expansion and expands the active layer', async () => {
+		const mangaStore = useMangaStore();
+		const { isLayerExpanded, toggleExpand, selectLayer } =
+			useLayersPanelActions();
+		const firstId = mangaStore.activeLayer.id;
+
+		expect(isLayerExpanded(firstId)).toBe(true);
+
+		toggleExpand(firstId);
+		expect(isLayerExpanded(firstId)).toBe(false);
+
+		mangaStore.addLayer();
+		const secondId = mangaStore.activeLayer.id;
+
+		await nextTick();
+
+		expect(isLayerExpanded(secondId)).toBe(true);
+
+		selectLayer(firstId);
+		await nextTick();
+
+		expect(mangaStore.activeLayer.id).toBe(firstId);
+		expect(isLayerExpanded(firstId)).toBe(true);
+	});
+
+	it('forwards focusElement and deleteElement to the editor store', () => {
+		const mangaStore = useMangaStore();
+		const editorStore = useEditorStore();
+		const focusLayerElement = vi.fn();
+		const deleteLayerElement = vi.fn();
+		const {
+			focusElement,
+			deleteElement,
+			isLayerExpanded,
+			toggleExpand,
+		} = useLayersPanelActions();
+		const layerId = mangaStore.activeLayer.id;
+
+		editorStore.registerCanvas({
+			cancelStroke: vi.fn(),
+			exportDataUrl: vi.fn(() => null),
+			resetZoomView: vi.fn(),
+			addSimpleText: vi.fn(),
+			addBoxedText: vi.fn(),
+			addRoundedBoxedText: vi.fn(),
+			focusLayerElement,
+			deleteLayerElement,
+		});
+
+		toggleExpand(layerId);
+		expect(isLayerExpanded(layerId)).toBe(false);
+
+		focusElement(layerId, 'shape', 'panel-1');
+
+		expect(focusLayerElement).toHaveBeenCalledExactlyOnceWith({
+			layerId,
+			kind: 'shape',
+			id: 'panel-1',
+		});
+		expect(isLayerExpanded(layerId)).toBe(true);
+
+		deleteElement(layerId, 'text', 'text-1');
+
+		expect(deleteLayerElement).toHaveBeenCalledExactlyOnceWith({
+			layerId,
+			kind: 'text',
+			id: 'text-1',
+		});
 	});
 });

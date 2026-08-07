@@ -116,6 +116,40 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes).toHaveLength(0);
 	});
 
+	it('removeShape and removeText reach inactive layers', () => {
+		const store = useMangaStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 8, y: 0 },
+				{ x: 8, y: 8 },
+			],
+			2,
+		);
+		const text = TextBlock.create(2, 2);
+
+		store.addShape(shape);
+		store.addText(text);
+
+		const bottomId = store.activeLayer.id;
+
+		store.addLayer();
+
+		store.removeShape(shape.id);
+		store.removeText(text.id);
+
+		expect(
+			store.layers.find((layer) => {
+				return layer.id === bottomId;
+			})?.shapes,
+		).toHaveLength(0);
+		expect(
+			store.layers.find((layer) => {
+				return layer.id === bottomId;
+			})?.texts,
+		).toHaveLength(0);
+	});
+
 	it('applyActivePageLayout applies a single-layer layout to the active layer', () => {
 		const store = useMangaStore();
 		const originalName = store.activePage.name;

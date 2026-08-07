@@ -15,7 +15,7 @@ import {
 } from '@/lib/zoom';
 import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
-import type { CanvasActions, ExportImageFormat } from '@/types/editor';
+import type { CanvasActions, ExportImageFormat, LayerElementFocusPayload } from '@/types/editor';
 import type { LayoutJSON } from '@/types/layouts';
 
 const warnHiddenLayersIfNeeded = () => {
@@ -43,6 +43,8 @@ export const useEditorStore = defineStore('editor', () => {
 			addSimpleText: () => undefined,
 			addBoxedText: () => undefined,
 			addRoundedBoxedText: () => undefined,
+			focusLayerElement: () => undefined,
+			deleteLayerElement: () => undefined,
 		};
 	};
 
@@ -153,6 +155,12 @@ export const useEditorStore = defineStore('editor', () => {
 		},
 		addRoundedBoxedText: () => {
 			return canvasActions.addRoundedBoxedText();
+		},
+		focusLayerElement: (payload: LayerElementFocusPayload) => {
+			return canvasActions.focusLayerElement(payload);
+		},
+		deleteLayerElement: (payload: LayerElementFocusPayload) => {
+			return canvasActions.deleteLayerElement(payload);
 		},
 		exportPage,
 		exportPageJson,

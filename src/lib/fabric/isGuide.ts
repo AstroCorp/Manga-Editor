@@ -71,6 +71,14 @@ export const findPanelById = (canvas: Canvas, panelId: string): PanelLikeObject 
 	);
 };
 
+export const findTextById = (canvas: Canvas, textId: string): FabricObject | null => {
+	return (
+		canvas.getObjects().find((object) => {
+			return isPageText(object) && getTextId(object) === textId;
+		}) ?? null
+	);
+};
+
 export const collectPanelIdsWithImage = (canvas: Canvas): Set<string> => {
 	const ids = new Set<string>();
 

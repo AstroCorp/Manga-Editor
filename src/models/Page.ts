@@ -336,7 +336,13 @@ export class Page {
 	}
 
 	removeShape(shapeId: string): boolean {
-		return this.getActiveLayer().removeShape(shapeId);
+		for (const layer of this.layers) {
+			if (layer.removeShape(shapeId)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	addText(text: TextBlock) {
@@ -344,7 +350,13 @@ export class Page {
 	}
 
 	removeText(textId: string): boolean {
-		return this.getActiveLayer().removeText(textId);
+		for (const layer of this.layers) {
+			if (layer.removeText(textId)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	updateText(textId: string, patch: TextBlockPatch): boolean {

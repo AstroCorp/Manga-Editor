@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { toast } from 'vue3-toastify';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
@@ -6,18 +6,23 @@ import { setDragMoveEffect } from '@/lib/ui/setDragMoveEffect';
 import { normalizeNameKey } from '@/lib/ui/uniqueName';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
+import { useSelectionStore } from '@/stores/selection';
+import type { LayerElementKind } from '@/stores/selection';
 
 /**
- * Listado de capas: CRUD, visibilidad, rename y reorder por drag.
+ * Listado de capas: CRUD, visibilidad, rename, reorder y elementos.
  * La UI muestra arriba = encima (índice de dominio invertido).
  */
 export const useLayersPanelActions = () => {
 	const mangaStore = useMangaStore();
 	const editorStore = useEditorStore();
+	const selectionStore = useSelectionStore();
 	const { layers, activeLayer } = storeToRefs(mangaStore);
+	const { focused } = storeToRefs(selectionStore);
 
 	const dragFromVisualIndex = ref<number | null>(null);
 	const dropTargetVisualIndex = ref<number | null>(null);
+	const expandedLayerIds = ref<Set<string>>(new Set([activeLayer.value.id]));
 
 	const {
 		pending: pendingRemoveId,
@@ -49,6 +54,39 @@ export const useLayersPanelActions = () => {
 		return layers.value.length - 1 - visualIndex;
 	};
 
+	const isLayerExpanded = (layerId: string) => {
+		return expandedLayerIds.value.has(layerId);
+	};
+
+	const toggleExpand = (layerId: string) => {
+		const next = new Set(expandedLayerIds.value);
+
+		if (next.has(layerId)) {
+			next.delete(layerId);
+		} else {
+			next.add(layerId);
+		}
+
+		expandedLayerIds.value = next;
+	};
+
+	const expandLayer = (layerId: string) => {
+		if (expandedLayerIds.value.has(layerId)) {
+			return;
+		}
+
+		const next = new Set(expandedLayerIds.value);
+		next.add(layerId);
+		expandedLayerIds.value = next;
+	};
+
+	watch(
+		() => activeLayer.value.id,
+		(layerId) => {
+			expandLayer(layerId);
+		},
+	);
+
 	const selectLayer = (layerId: string) => {
 		if (layerId === activeLayer.value.id) {
 			return;
@@ -56,11 +94,13 @@ export const useLayersPanelActions = () => {
 
 		editorStore.cancelStroke();
 		mangaStore.selectLayer(layerId);
+		expandLayer(layerId);
 	};
 
 	const addLayer = () => {
 		editorStore.cancelStroke();
 		mangaStore.addLayer();
+		expandLayer(mangaStore.activeLayer.id);
 	};
 
 	const requestRemove = (layerId: string) => {
@@ -128,6 +168,23 @@ export const useLayersPanelActions = () => {
 		}
 	};
 
+	const focusElement = (
+		layerId: string,
+		kind: LayerElementKind,
+		id: string,
+	) => {
+		expandLayer(layerId);
+		editorStore.focusLayerElement({ layerId, kind, id });
+	};
+
+	const deleteElement = (
+		layerId: string,
+		kind: LayerElementKind,
+		id: string,
+	) => {
+		editorStore.deleteLayerElement({ layerId, kind, id });
+	};
+
 	const clearDragState = () => {
 		dragFromVisualIndex.value = null;
 		dropTargetVisualIndex.value = null;
@@ -170,11 +227,14 @@ export const useLayersPanelActions = () => {
 	return {
 		displayLayers,
 		activeLayer,
+		focused,
 		pendingRemoveId,
 		removeMessage,
 		canRemove,
 		dragFromVisualIndex,
 		dropTargetVisualIndex,
+		isLayerExpanded,
+		toggleExpand,
 		selectLayer,
 		addLayer,
 		requestRemove,
@@ -182,6 +242,8 @@ export const useLayersPanelActions = () => {
 		confirmRemove,
 		toggleVisible,
 		renameLayer,
+		focusElement,
+		deleteElement,
 		onDragStart,
 		onDragOver,
 		onDrop,

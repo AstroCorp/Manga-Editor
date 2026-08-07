@@ -8,6 +8,9 @@ export const selectionFeature: CanvasFeature = {
 			rootEl: ctx.rootEl,
 			syncInteractionMode: () => ctx.actions.syncInteractionMode(),
 			cancelStroke: () => ctx.actions.cancelStroke(),
+			discardSelection: ctx.discardSelection,
+			registerCanvasAction: ctx.registerCanvasAction,
+			onAfterPageApply: ctx.onAfterPageApply,
 		});
 	},
 };

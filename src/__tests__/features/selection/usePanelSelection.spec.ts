@@ -10,6 +10,7 @@ import {
 import {
 	peekCopiedText,
 } from '@/lib/text/textClipboard';
+import { Shape } from '@/models/Shape';
 import { TextBlock } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
@@ -21,6 +22,18 @@ type ObjectMock = {
 	get: (key: string) => unknown;
 	set: ReturnType<typeof vi.fn>;
 	setCoords: ReturnType<typeof vi.fn>;
+};
+
+const selectionDeps = (canvas: Canvas) => {
+	return {
+		fabricCanvas: shallowRef(canvas),
+		rootEl: ref(null),
+		syncInteractionMode: vi.fn(),
+		cancelStroke: vi.fn(),
+		discardSelection: vi.fn(),
+		registerCanvasAction: vi.fn(),
+		onAfterPageApply: vi.fn(),
+	};
 };
 
 const createTextMock = (text: TextBlock, isEditing = false): ObjectMock => {
@@ -124,12 +137,7 @@ describe('usePanelSelection nudge', () => {
 		const textObject = createTextMock(text);
 		const { canvas } = createCanvas(textObject);
 
-		usePanelSelection({
-			fabricCanvas: shallowRef(canvas),
-			rootEl: ref(null),
-			syncInteractionMode: vi.fn(),
-			cancelStroke: vi.fn(),
-		});
+		usePanelSelection(selectionDeps(canvas));
 
 		const event = new KeyboardEvent('keydown', { key: 'ArrowRight' });
 		const preventDefault = vi.spyOn(event, 'preventDefault');
@@ -151,12 +159,7 @@ describe('usePanelSelection nudge', () => {
 		const textObject = createTextMock(text, true);
 		const { canvas } = createCanvas(textObject);
 
-		usePanelSelection({
-			fabricCanvas: shallowRef(canvas),
-			rootEl: ref(null),
-			syncInteractionMode: vi.fn(),
-			cancelStroke: vi.fn(),
-		});
+		usePanelSelection(selectionDeps(canvas));
 
 		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
 
@@ -168,12 +171,7 @@ describe('usePanelSelection nudge', () => {
 		const imageObject = createImageMock('panel-1', 40, 50);
 		const { canvas } = createCanvas(imageObject);
 
-		usePanelSelection({
-			fabricCanvas: shallowRef(canvas),
-			rootEl: ref(null),
-			syncInteractionMode: vi.fn(),
-			cancelStroke: vi.fn(),
-		});
+		usePanelSelection(selectionDeps(canvas));
 
 		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
 
@@ -192,12 +190,7 @@ describe('usePanelSelection nudge', () => {
 		const textObject = createTextMock(text);
 		const { canvas } = createCanvas(textObject);
 
-		usePanelSelection({
-			fabricCanvas: shallowRef(canvas),
-			rootEl: ref(null),
-			syncInteractionMode: vi.fn(),
-			cancelStroke: vi.fn(),
-		});
+		usePanelSelection(selectionDeps(canvas));
 
 		window.dispatchEvent(
 			new KeyboardEvent('keydown', { key: 'ArrowLeft', repeat: true }),
@@ -230,10 +223,8 @@ describe('usePanelSelection text clipboard', () => {
 			});
 
 		usePanelSelection({
-			fabricCanvas: shallowRef(canvas),
-			rootEl: ref(null),
+			...selectionDeps(canvas),
 			syncInteractionMode,
-			cancelStroke: vi.fn(),
 		});
 
 		handlers['mouse:move']?.({
@@ -272,12 +263,7 @@ describe('usePanelSelection text clipboard', () => {
 		const textObject = createTextMock(text, true);
 		const { canvas } = createCanvas(textObject);
 
-		usePanelSelection({
-			fabricCanvas: shallowRef(canvas),
-			rootEl: ref(null),
-			syncInteractionMode: vi.fn(),
-			cancelStroke: vi.fn(),
-		});
+		usePanelSelection(selectionDeps(canvas));
 
 		clearClipboard();
 
@@ -286,5 +272,123 @@ describe('usePanelSelection text clipboard', () => {
 		);
 
 		expect(peekCopiedText()?.id).not.toBe(text.id);
+	});
+});
+
+describe('usePanelSelection Escape and layer element actions', () => {
+	beforeEach(() => {
+		setActivePinia(createPinia());
+	});
+
+	it('Escape cancels stroke and discards selection', () => {
+		const { canvas } = createCanvas(null);
+		const cancelStroke = vi.fn();
+		const discardSelection = vi.fn();
+
+		usePanelSelection({
+			...selectionDeps(canvas),
+			cancelStroke,
+			discardSelection,
+		});
+
+		const event = new KeyboardEvent('keydown', { key: 'Escape' });
+		const preventDefault = vi.spyOn(event, 'preventDefault');
+
+		window.dispatchEvent(event);
+
+		expect(cancelStroke).toHaveBeenCalledOnce();
+		expect(discardSelection).toHaveBeenCalledOnce();
+		expect(canvas.requestRenderAll).toHaveBeenCalled();
+		expect(preventDefault).toHaveBeenCalled();
+	});
+
+	it('registers focusLayerElement and selects on the active layer', () => {
+		const mangaStore = useMangaStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		mangaStore.addShape(shape);
+
+		const panel = {
+			left: 0,
+			top: 0,
+			selectable: true,
+			get: (key: string) => {
+				if (key === 'objectType') {
+					return FABRIC_OBJECT_TYPE.Panel;
+				}
+
+				if (key === 'panelId') {
+					return shape.id;
+				}
+
+				if (key === 'layerId') {
+					return mangaStore.activeLayer.id;
+				}
+
+				return undefined;
+			},
+		};
+		const registered: Record<string, (payload: unknown) => void> = {};
+		const { canvas } = createCanvas(null);
+
+		(canvas as { getObjects?: () => unknown[] }).getObjects = () => {
+			return [panel];
+		};
+		(canvas as { setActiveObject: ReturnType<typeof vi.fn> }).setActiveObject =
+			vi.fn();
+
+		usePanelSelection({
+			...selectionDeps(canvas),
+			registerCanvasAction: (actions) => {
+				Object.assign(registered, actions);
+			},
+		});
+
+		registered.focusLayerElement?.({
+			layerId: mangaStore.activeLayer.id,
+			kind: 'shape',
+			id: shape.id,
+		});
+
+		expect(canvas.setActiveObject).toHaveBeenCalledWith(panel);
+	});
+
+	it('deleteLayerElement removes text from store and canvas', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(4, 5);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text);
+		const registered: Record<string, (payload: unknown) => void> = {};
+		const { canvas } = createCanvas(textObject);
+
+		(canvas as { getObjects?: () => unknown[] }).getObjects = () => {
+			return [textObject];
+		};
+
+		usePanelSelection({
+			...selectionDeps(canvas),
+			registerCanvasAction: (actions) => {
+				Object.assign(registered, actions);
+			},
+		});
+
+		registered.deleteLayerElement?.({
+			layerId: mangaStore.activeLayer.id,
+			kind: 'text',
+			id: text.id,
+		});
+
+		expect(mangaStore.texts).toHaveLength(0);
+		expect(canvas.remove).toHaveBeenCalledWith(textObject);
+		expect(canvas.discardActiveObject).toHaveBeenCalled();
 	});
 });

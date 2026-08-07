@@ -6,6 +6,8 @@ import {
 	type FabricObject,
 } from 'fabric';
 import {
+	findPanelById,
+	findTextById,
 	getLayerId,
 	getPanelId,
 	getTextId,
@@ -42,7 +44,9 @@ import {
 	DEFAULT_TEXT_FONT_SIZE,
 } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
+import { useSelectionStore } from '@/stores/selection';
 import type { PageTextObject } from '@/types/fabric';
+import type { LayerElementFocusPayload } from '@/types/editor';
 import type { PagePoint, TextBlockJSON } from '@/types/page';
 import type { SelectionDeps } from '@/types/panel';
 
@@ -118,9 +122,164 @@ export const usePanelSelection = ({
 	rootEl,
 	syncInteractionMode,
 	cancelStroke,
+	discardSelection,
+	registerCanvasAction,
+	onAfterPageApply,
 }: SelectionDeps) => {
 	const mangaStore = useMangaStore();
+	const selectionStore = useSelectionStore();
 	let lastPointer: PagePoint | null = null;
+
+	const syncFocusedFromCanvas = () => {
+		const canvas = fabricCanvas.value;
+		const active = canvas?.getActiveObject() as FabricObject | null | undefined;
+
+		if (!canvas || !active || isGuide(active)) {
+			selectionStore.clearFocused();
+
+			return;
+		}
+
+		const layerId = getLayerId(active) ?? mangaStore.activeLayer.id;
+		const panelId = getPanelId(active);
+
+		if ((isPanel(active) || isPanelImage(active)) && panelId) {
+			selectionStore.setFocused({
+				kind: 'shape',
+				id: panelId,
+				layerId,
+			});
+
+			return;
+		}
+
+		const textId = getTextId(active);
+
+		if (isPageText(active) && textId) {
+			selectionStore.setFocused({
+				kind: 'text',
+				id: textId,
+				layerId,
+			});
+
+			return;
+		}
+
+		selectionStore.clearFocused();
+	};
+
+	const selectShapeOnCanvas = (shapeId: string): boolean => {
+		const canvas = fabricCanvas.value;
+		const panel = canvas ? findPanelById(canvas, shapeId) : null;
+
+		if (!canvas || !panel || !panel.selectable) {
+			return false;
+		}
+
+		canvas.setActiveObject(panel);
+		syncInteractionMode();
+		canvas.requestRenderAll();
+		syncFocusedFromCanvas();
+
+		return true;
+	};
+
+	const selectTextOnCanvas = (textId: string): boolean => {
+		const canvas = fabricCanvas.value;
+		const textObject = canvas ? findTextById(canvas, textId) : null;
+
+		if (!canvas || !textObject || !textObject.selectable) {
+			return false;
+		}
+
+		canvas.setActiveObject(textObject);
+		syncInteractionMode();
+		canvas.requestRenderAll();
+		syncFocusedFromCanvas();
+
+		return true;
+	};
+
+	const applyPendingFocus = () => {
+		const pending = selectionStore.takePendingFocus();
+
+		if (!pending) {
+			return;
+		}
+
+		if (pending.kind === 'shape') {
+			selectShapeOnCanvas(pending.id);
+
+			return;
+		}
+
+		selectTextOnCanvas(pending.id);
+	};
+
+	const focusLayerElement = (payload: LayerElementFocusPayload) => {
+		cancelStroke();
+		selectionStore.setFocused({
+			kind: payload.kind,
+			id: payload.id,
+			layerId: payload.layerId,
+		});
+
+		if (payload.layerId !== mangaStore.activeLayer.id) {
+			selectionStore.queuePendingFocus({
+				kind: payload.kind,
+				id: payload.id,
+			});
+			mangaStore.selectLayer(payload.layerId);
+
+			return;
+		}
+
+		if (payload.kind === 'shape') {
+			selectShapeOnCanvas(payload.id);
+
+			return;
+		}
+
+		selectTextOnCanvas(payload.id);
+	};
+
+	const deleteLayerElement = (payload: LayerElementFocusPayload) => {
+		const canvas = fabricCanvas.value;
+
+		cancelStroke();
+
+		if (payload.kind === 'shape') {
+			mangaStore.removeShape(payload.id);
+
+			if (canvas) {
+				removeObjectsByPanelId(canvas, payload.id);
+				canvas.discardActiveObject();
+				syncInteractionMode();
+				canvas.requestRenderAll();
+			}
+		} else {
+			mangaStore.removeText(payload.id);
+
+			if (canvas) {
+				const textObject = findTextById(canvas, payload.id);
+
+				if (textObject) {
+					canvas.remove(textObject);
+				}
+
+				canvas.discardActiveObject();
+				syncInteractionMode();
+				canvas.requestRenderAll();
+			}
+		}
+
+		if (
+			selectionStore.focused?.id === payload.id &&
+			selectionStore.focused.kind === payload.kind
+		) {
+			selectionStore.clearFocused();
+		}
+	};
 
 	const isEditingText = (object: FabricObject | null | undefined): boolean => {
 		if (!object || !isPageText(object)) {
@@ -152,6 +311,7 @@ export const usePanelSelection = ({
 			removeObjectsByPanelId(canvas, panelId);
 
 			canvas.discardActiveObject();
+			selectionStore.clearFocused();
 
 			syncInteractionMode();
 
@@ -165,6 +325,7 @@ export const usePanelSelection = ({
 
 			canvas.remove(active);
 			canvas.discardActiveObject();
+			selectionStore.clearFocused();
 
 			syncInteractionMode();
 
@@ -179,6 +340,7 @@ export const usePanelSelection = ({
 			mangaStore.removeText(textId);
 			canvas.remove(active);
 			canvas.discardActiveObject();
+			selectionStore.clearFocused();
 
 			syncInteractionMode();
 
@@ -430,6 +592,9 @@ export const usePanelSelection = ({
 
 		if (event.key === 'Escape') {
 			cancelStroke();
+			discardSelection();
+			fabricCanvas.value?.requestRenderAll();
+			event.preventDefault();
 
 			return;
 		}
@@ -471,6 +636,9 @@ export const usePanelSelection = ({
 		canvas.on('text:changed', onTextChanged);
 		canvas.on('text:editing:entered', onEditingEntered);
 		canvas.on('text:editing:exited', onEditingExited);
+		canvas.on('selection:created', syncFocusedFromCanvas);
+		canvas.on('selection:updated', syncFocusedFromCanvas);
+		canvas.on('selection:cleared', syncFocusedFromCanvas);
 	};
 
 	const unbindSelectionEvents = (canvas: Canvas) => {
@@ -481,7 +649,17 @@ export const usePanelSelection = ({
 		canvas.off('text:changed', onTextChanged);
 		canvas.off('text:editing:entered', onEditingEntered);
 		canvas.off('text:editing:exited', onEditingExited);
+		canvas.off('selection:created', syncFocusedFromCanvas);
+		canvas.off('selection:updated', syncFocusedFromCanvas);
+		canvas.off('selection:cleared', syncFocusedFromCanvas);
 	};
+
+	registerCanvasAction({
+		focusLayerElement,
+		deleteLayerElement,
+	});
+
+	onAfterPageApply(applyPendingFocus);
 
 	watch(
 		fabricCanvas,

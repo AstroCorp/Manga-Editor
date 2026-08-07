@@ -1,5 +1,6 @@
 import type { Canvas } from 'fabric';
 import type { Ref, ShallowRef } from 'vue';
+import type { CanvasActions } from '@/types/editor';
 import type { GridPoint } from '@/types/geometry';
 import type {
 	PageTextAnchor,
@@ -12,6 +13,9 @@ export type SelectionDeps = {
 	rootEl: Ref<HTMLElement | null>;
 	syncInteractionMode: () => void;
 	cancelStroke: () => void;
+	discardSelection: () => void;
+	registerCanvasAction: (partial: Partial<CanvasActions>) => void;
+	onAfterPageApply: (hook: () => void) => void;
 };
 
 export type TextColorToolbarDeps = {

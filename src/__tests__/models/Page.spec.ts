@@ -499,6 +499,40 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(page.hasDrawing()).toBe(false);
 	});
 
+	it('removeShape and removeText work on inactive layers', () => {
+		const page = Page.createBlank(1);
+		const bottomShape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+		const bottomText = TextBlock.create(1, 1);
+
+		page.addShape(bottomShape);
+		page.addText(bottomText);
+
+		const bottomId = page.activeLayerId;
+
+		page.addLayer();
+
+		expect(page.activeLayerId).not.toBe(bottomId);
+		expect(page.removeShape(bottomShape.id)).toBe(true);
+		expect(page.removeText(bottomText.id)).toBe(true);
+		expect(
+			page.layers.find((layer) => {
+				return layer.id === bottomId;
+			})?.shapes,
+		).toHaveLength(0);
+		expect(
+			page.layers.find((layer) => {
+				return layer.id === bottomId;
+			})?.texts,
+		).toHaveLength(0);
+	});
+
 	it('getVisibleTexts flattens visible layers only', () => {
 		const page = Page.createBlank(1);
 

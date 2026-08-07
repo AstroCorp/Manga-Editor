@@ -23,6 +23,8 @@ describe('useEditorStore selection and zoom bridge', () => {
 		const addSimpleText = vi.fn();
 		const addBoxedText = vi.fn();
 		const addRoundedBoxedText = vi.fn();
+		const focusLayerElement = vi.fn();
+		const deleteLayerElement = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
@@ -31,6 +33,8 @@ describe('useEditorStore selection and zoom bridge', () => {
 			addSimpleText,
 			addBoxedText,
 			addRoundedBoxedText,
+			focusLayerElement,
+			deleteLayerElement,
 		});
 
 		store.cancelStroke();
@@ -44,6 +48,28 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		store.addRoundedBoxedText();
 		expect(addRoundedBoxedText).toHaveBeenCalledOnce();
+
+		store.focusLayerElement({
+			layerId: 'layer-1',
+			kind: 'shape',
+			id: 'shape-1',
+		});
+		expect(focusLayerElement).toHaveBeenCalledExactlyOnceWith({
+			layerId: 'layer-1',
+			kind: 'shape',
+			id: 'shape-1',
+		});
+
+		store.deleteLayerElement({
+			layerId: 'layer-1',
+			kind: 'text',
+			id: 'text-1',
+		});
+		expect(deleteLayerElement).toHaveBeenCalledExactlyOnceWith({
+			layerId: 'layer-1',
+			kind: 'text',
+			id: 'text-1',
+		});
 
 		store.resetZoom();
 
@@ -63,6 +89,8 @@ describe('useEditorStore selection and zoom bridge', () => {
 			addSimpleText,
 			addBoxedText: vi.fn(),
 			addRoundedBoxedText: vi.fn(),
+			focusLayerElement: vi.fn(),
+			deleteLayerElement: vi.fn(),
 		});
 
 		store.unregisterCanvas();
@@ -100,6 +128,8 @@ describe('useEditorStore selection and zoom bridge', () => {
 			addSimpleText: vi.fn(),
 			addBoxedText: vi.fn(),
 			addRoundedBoxedText: vi.fn(),
+			focusLayerElement: vi.fn(),
+			deleteLayerElement: vi.fn(),
 		});
 
 		store.exportPage(EXPORT_IMAGE_FORMAT.Png);
