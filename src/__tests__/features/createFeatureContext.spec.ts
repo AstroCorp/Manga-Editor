@@ -12,6 +12,7 @@ describe('createFeatureContext', () => {
 			resetZoomView: () => undefined,
 			addSimpleText: () => undefined,
 			addBoxedText: () => undefined,
+			addRoundedBoxedText: () => undefined,
 		};
 		const afterPageApplyHooks: Array<() => void> = [];
 		const overlays: Array<{ id: string }> = [];

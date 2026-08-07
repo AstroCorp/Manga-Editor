@@ -6,6 +6,7 @@ export type CanvasActions = {
 	resetZoomView: () => void;
 	addSimpleText: () => void;
 	addBoxedText: () => void;
+	addRoundedBoxedText: () => void;
 };
 
 export type ThemePreference = 'auto' | 'light' | 'dark';

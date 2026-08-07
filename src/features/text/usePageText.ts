@@ -35,7 +35,9 @@ export const usePageText = (ctx: FeatureContext) => {
 		canvas.requestRenderAll();
 	};
 
-	const createCenteredText = (boxed: boolean) => {
+	const createCenteredText = (
+		factory: (left: number, top: number) => TextBlock,
+	) => {
 		const root = ctx.rootEl.value;
 
 		if (!root) {
@@ -59,23 +61,24 @@ export const usePageText = (ctx: FeatureContext) => {
 			Math.max(0, page.height - DEFAULT_TEXT_FONT_SIZE),
 		);
 
-		const text = boxed
-			? TextBlock.createBoxed(left, top)
-			: TextBlock.create(left, top);
-
-		addTextAtVisibleCenter(text);
+		addTextAtVisibleCenter(factory(left, top));
 	};
 
 	const addSimpleText = () => {
-		createCenteredText(false);
+		createCenteredText(TextBlock.create);
 	};
 
 	const addBoxedText = () => {
-		createCenteredText(true);
+		createCenteredText(TextBlock.createBoxed);
+	};
+
+	const addRoundedBoxedText = () => {
+		createCenteredText(TextBlock.createRoundedBoxed);
 	};
 
 	return {
 		addSimpleText,
 		addBoxedText,
+		addRoundedBoxedText,
 	};
 };

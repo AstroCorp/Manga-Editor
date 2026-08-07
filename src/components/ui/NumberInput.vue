@@ -226,10 +226,10 @@ const onChange = () => {
 
 const rootClass = computed(() => {
 	if (props.variant === 'toolbar') {
-		return 'flex h-9 items-stretch overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400';
+		return 'flex h-9 items-stretch gap-0.5 overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400';
 	}
 
-	return 'inline-flex h-9 items-stretch overflow-hidden rounded-md border border-slate-200 bg-white text-slate-900 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-within:border-blue-500 dark:focus-within:ring-blue-500/25';
+	return 'inline-flex h-9 items-stretch gap-px overflow-hidden rounded-md border border-slate-200 bg-white text-slate-900 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-within:border-blue-500 dark:focus-within:ring-blue-500/25';
 });
 
 const fieldInputClass = computed(() => {

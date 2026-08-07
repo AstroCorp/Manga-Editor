@@ -51,6 +51,7 @@ export const useEditorCanvas = (
 		resetZoomView: () => undefined,
 		addSimpleText: () => undefined,
 		addBoxedText: () => undefined,
+		addRoundedBoxedText: () => undefined,
 	};
 
 	const afterPageApplyHooks: Array<() => void> = [];

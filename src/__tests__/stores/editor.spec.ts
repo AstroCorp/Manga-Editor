@@ -22,6 +22,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 		const resetZoomView = vi.fn();
 		const addSimpleText = vi.fn();
 		const addBoxedText = vi.fn();
+		const addRoundedBoxedText = vi.fn();
 
 		store.registerCanvas({
 			cancelStroke,
@@ -29,6 +30,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 			resetZoomView,
 			addSimpleText,
 			addBoxedText,
+			addRoundedBoxedText,
 		});
 
 		store.cancelStroke();
@@ -39,6 +41,9 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		store.addBoxedText();
 		expect(addBoxedText).toHaveBeenCalledOnce();
+
+		store.addRoundedBoxedText();
+		expect(addRoundedBoxedText).toHaveBeenCalledOnce();
 
 		store.resetZoom();
 
@@ -57,11 +62,13 @@ describe('useEditorStore selection and zoom bridge', () => {
 			resetZoomView: vi.fn(),
 			addSimpleText,
 			addBoxedText: vi.fn(),
+			addRoundedBoxedText: vi.fn(),
 		});
 
 		store.unregisterCanvas();
 		store.cancelStroke();
 		store.addSimpleText();
+		store.addRoundedBoxedText();
 
 		expect(cancelStroke).not.toHaveBeenCalled();
 		expect(addSimpleText).not.toHaveBeenCalled();
@@ -92,6 +99,7 @@ describe('useEditorStore selection and zoom bridge', () => {
 			resetZoomView: vi.fn(),
 			addSimpleText: vi.fn(),
 			addBoxedText: vi.fn(),
+			addRoundedBoxedText: vi.fn(),
 		});
 
 		store.exportPage(EXPORT_IMAGE_FORMAT.Png);

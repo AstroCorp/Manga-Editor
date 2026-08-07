@@ -32,6 +32,12 @@ export const DEFAULT_TEXT_BOX: TextBoxStyle = {
 	verticalAlign: 'middle',
 };
 
+/** Boxed text con esquinas máximas → cápsula / pill. */
+export const DEFAULT_ROUNDED_TEXT_BOX: TextBoxStyle = {
+	...DEFAULT_TEXT_BOX,
+	cornerRadius: 9999,
+};
+
 export { DEFAULT_TEXT_FONT_FAMILY };
 
 const cloneStyles = (
@@ -134,6 +140,13 @@ export class TextBlock {
 	static createBoxed(left: number, top: number): TextBlock {
 		const text = TextBlock.create(left, top);
 		text.box = cloneBox(DEFAULT_TEXT_BOX);
+
+		return text;
+	}
+
+	static createRoundedBoxed(left: number, top: number): TextBlock {
+		const text = TextBlock.create(left, top);
+		text.box = cloneBox(DEFAULT_ROUNDED_TEXT_BOX);
 
 		return text;
 	}

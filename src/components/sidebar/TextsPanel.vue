@@ -11,6 +11,10 @@ const addSimpleText = () => {
 const addBoxedText = () => {
 	editorStore.addBoxedText();
 };
+
+const addRoundedBoxedText = () => {
+	editorStore.addRoundedBoxedText();
+};
 </script>
 
 <template>
@@ -58,6 +62,23 @@ const addBoxedText = () => {
 					class="text-sm font-medium text-slate-900 dark:text-slate-100"
 				>
 					Boxed text
+				</span>
+			</button>
+			<button
+				type="button"
+				class="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-left transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-500/25"
+				aria-label="Add rounded boxed text"
+				@click="addRoundedBoxedText"
+			>
+				<span
+					class="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-200"
+				>
+					<Icon icon="fluent:oval-24-regular" class="size-5" />
+				</span>
+				<span
+					class="text-sm font-medium text-slate-900 dark:text-slate-100"
+				>
+					Rounded boxed text
 				</span>
 			</button>
 		</section>
