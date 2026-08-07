@@ -7,6 +7,10 @@ import LayoutThumbSkeleton from '@/components/sidebar/LayoutThumbSkeleton.vue';
 import { useLayoutsPanelActions } from '@/composables/layouts/useLayoutsPanelActions';
 import { useScrollPagedSlice } from '@/composables/ui/useScrollPagedSlice';
 import { layoutPreviewShapes } from '@/lib/page/layoutPreviewShapes';
+import {
+	isMultiLayerLayout,
+	layoutLayerCount,
+} from '@/lib/page/resolveLayoutFields';
 
 const PRESET_SKELETON_COUNT = 6;
 const LAYOUT_PAGE_SIZE = 6;
@@ -110,8 +114,12 @@ const onFileChange = (event: Event) => {
 					<li v-for="preset in visiblePresets" :key="preset.id">
 						<button
 							type="button"
-							class="group w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
-							:aria-label="`Apply layout ${preset.id}`"
+							class="group relative w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
+							:aria-label="
+								isMultiLayerLayout(preset.layout)
+									? `Apply multi-layer layout ${preset.id}`
+									: `Apply layout ${preset.id}`
+							"
 							@click="requestApply(preset)"
 						>
 							<span
@@ -122,6 +130,18 @@ const onFileChange = (event: Event) => {
 									:height="preset.layout.height"
 									:shapes="layoutPreviewShapes(preset.layout)"
 								/>
+							</span>
+							<span
+								v-if="isMultiLayerLayout(preset.layout)"
+								class="absolute bottom-2.5 left-2.5 inline-flex items-center gap-0.5 rounded bg-black/55 px-1 py-0.5 text-[0.65rem] leading-none font-medium text-white"
+								title="Multi-layer layout"
+							>
+								<Icon
+									icon="fluent:layer-24-regular"
+									class="size-3 shrink-0"
+									aria-hidden="true"
+								/>
+								{{ layoutLayerCount(preset.layout) }}
 							</span>
 						</button>
 					</li>
@@ -177,8 +197,12 @@ const onFileChange = (event: Event) => {
 					>
 						<button
 							type="button"
-							class="w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
-							aria-label="Apply custom layout"
+							class="relative w-full rounded-lg border border-slate-200 bg-white p-2 transition hover:border-blue-600 hover:bg-blue-50 focus-visible:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:focus-visible:border-blue-500"
+							:aria-label="
+								isMultiLayerLayout(preset.layout)
+									? 'Apply multi-layer custom layout'
+									: 'Apply custom layout'
+							"
 							@click="requestApply(preset)"
 						>
 							<span
@@ -189,6 +213,18 @@ const onFileChange = (event: Event) => {
 									:height="preset.layout.height"
 									:shapes="layoutPreviewShapes(preset.layout)"
 								/>
+							</span>
+							<span
+								v-if="isMultiLayerLayout(preset.layout)"
+								class="absolute bottom-2.5 left-2.5 inline-flex items-center gap-0.5 rounded bg-black/55 px-1 py-0.5 text-[0.65rem] leading-none font-medium text-white"
+								title="Multi-layer layout"
+							>
+								<Icon
+									icon="fluent:layer-24-regular"
+									class="size-3 shrink-0"
+									aria-hidden="true"
+								/>
+								{{ layoutLayerCount(preset.layout) }}
 							</span>
 						</button>
 						<button

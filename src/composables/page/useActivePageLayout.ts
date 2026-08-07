@@ -42,7 +42,10 @@ export const useActivePageLayout = () => {
 	});
 
 	const activeLayerHasDrawing = computed(() => {
-		return activeLayer.value.shapes.length > 0;
+		return (
+			activeLayer.value.shapes.length > 0 ||
+			activeLayer.value.texts.length > 0
+		);
 	});
 
 	return {

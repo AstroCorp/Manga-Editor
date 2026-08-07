@@ -5,16 +5,17 @@ import {
 	DEFAULT_MARGIN,
 	DEFAULT_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
-import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
+import {
+	isMultiLayerLayout,
+	isSingleLayerLayout,
+	layoutLayerCount,
+	resolveLayoutFields,
+	resolveLayoutLayerSources,
+} from '@/lib/page/resolveLayoutFields';
 
 describe('resolveLayoutFields', () => {
 	it('fills missing fields with page defaults', () => {
-		expect(
-			resolveLayoutFields({
-				width: 800,
-				height: 1200,
-			}),
-		).toEqual({
+		expect(resolveLayoutFields({})).toEqual({
 			gridCols: DEFAULT_GRID_COLS,
 			gridRows: DEFAULT_GRID_ROWS,
 			marginTop: DEFAULT_MARGIN,
@@ -28,8 +29,6 @@ describe('resolveLayoutFields', () => {
 	it('keeps provided layout fields', () => {
 		expect(
 			resolveLayoutFields({
-				width: 800,
-				height: 1200,
 				gridCols: 10,
 				gridRows: 20,
 				marginTop: 1,
@@ -47,5 +46,33 @@ describe('resolveLayoutFields', () => {
 			marginLeft: 4,
 			strokeWidth: 8,
 		});
+	});
+});
+
+describe('resolveLayoutLayerSources', () => {
+	it('returns layers as-is', () => {
+		const layout = {
+			width: 600,
+			height: 900,
+			layers: [{ shapes: [], strokeWidth: 3 }],
+		};
+
+		expect(resolveLayoutLayerSources(layout)).toHaveLength(1);
+		expect(resolveLayoutLayerSources(layout)[0]?.strokeWidth).toBe(3);
+		expect(isSingleLayerLayout(layout)).toBe(true);
+		expect(isMultiLayerLayout(layout)).toBe(false);
+	});
+
+	it('reports multi-layer layouts', () => {
+		const layout = {
+			width: 600,
+			height: 900,
+			layers: [{ name: 'A', shapes: [] }, { name: 'B', shapes: [] }],
+		};
+
+		expect(resolveLayoutLayerSources(layout)).toHaveLength(2);
+		expect(layoutLayerCount(layout)).toBe(2);
+		expect(isSingleLayerLayout(layout)).toBe(false);
+		expect(isMultiLayerLayout(layout)).toBe(true);
 	});
 });

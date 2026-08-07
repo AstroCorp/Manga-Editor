@@ -230,7 +230,9 @@ export class Layer {
 		this.strokeWidth = layerStroke;
 		this.shapes = (data.shapes ?? []).map((shapeJson) => {
 			return Shape.fromJSON({
-				...shapeJson,
+				id: shapeJson.id,
+				points: shapeJson.points,
+				image: shapeJson.image,
 				strokeWidth: layerStroke,
 			});
 		});
@@ -242,10 +244,9 @@ export class Layer {
 	} {
 		return {
 			shapes: this.shapes.map((shape) => {
-				return {
-					...shape.toLayoutJSON(),
-					strokeWidth: this.strokeWidth,
-				};
+				const { id, points, image } = shape.toLayoutJSON();
+
+				return { id, points, image };
 			}),
 			gridCols: this.gridCols,
 			gridRows: this.gridRows,

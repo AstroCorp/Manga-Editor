@@ -1,10 +1,17 @@
-import type { ShapeJSON } from '@/types/page';
+import type { PagePoint, ShapeImageJSON } from '@/types/page';
 
-/** Una capa dentro de un layout (formato multi-capa). */
+/** Geometría de panel en un layout (el stroke vive en la capa). */
+export type LayoutShapeJSON = {
+	id: string;
+	points: PagePoint[];
+	image: ShapeImageJSON | null;
+};
+
+/** Una capa: grid, márgenes y stroke propios. */
 export type LayoutLayerJSON = {
 	name?: string;
 	visible?: boolean;
-	shapes?: ShapeJSON[];
+	shapes?: LayoutShapeJSON[];
 	gridCols?: number;
 	gridRows?: number;
 	marginTop?: number;
@@ -15,22 +22,12 @@ export type LayoutLayerJSON = {
 };
 
 /**
- * Layout de página.
- * Legado: `shapes` + métricas en la raíz = una sola capa.
- * Multi-capa: `layers` (si hay ítems, tiene prioridad sobre la raíz).
+ * Layout de página: tamaño + capas (contenido solo en `layers`).
  */
 export type LayoutJSON = {
 	width: number;
 	height: number;
-	shapes: ShapeJSON[];
-	gridCols?: number;
-	gridRows?: number;
-	marginTop?: number;
-	marginRight?: number;
-	marginBottom?: number;
-	marginLeft?: number;
-	strokeWidth?: number;
-	layers?: LayoutLayerJSON[];
+	layers: LayoutLayerJSON[];
 };
 
 export type PresetLayout = {

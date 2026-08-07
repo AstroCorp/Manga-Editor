@@ -32,21 +32,6 @@ const onUpdate = (value: string) => {
 
 	emit('align', value);
 };
-
-const anchorDotClass = (anchor: PageTextAnchor) => {
-	const horizontal = anchor.endsWith('left')
-		? 'justify-start'
-		: anchor.endsWith('right')
-			? 'justify-end'
-			: 'justify-center';
-	const vertical = anchor.startsWith('top')
-		? 'items-start'
-		: anchor.startsWith('bottom')
-			? 'items-end'
-			: 'items-center';
-
-	return `${horizontal} ${vertical}`;
-};
 </script>
 
 <template>
@@ -74,11 +59,18 @@ const anchorDotClass = (anchor: PageTextAnchor) => {
 		<template #option="{ option }">
 			<span
 				class="flex size-4 shrink-0 rounded-sm border border-current/40 p-0.5"
-				:class="
-					anchorDotClass(
-						isPageTextAnchor(option.value) ? option.value : 'middle-center',
-					)
-				"
+				:class="{
+					'justify-start': String(option.value).endsWith('left'),
+					'justify-end': String(option.value).endsWith('right'),
+					'justify-center':
+						!String(option.value).endsWith('left') &&
+						!String(option.value).endsWith('right'),
+					'items-start': String(option.value).startsWith('top'),
+					'items-end': String(option.value).startsWith('bottom'),
+					'items-center':
+						!String(option.value).startsWith('top') &&
+						!String(option.value).startsWith('bottom'),
+				}"
 				aria-hidden="true"
 			>
 				<span class="size-1 rounded-full bg-current" />

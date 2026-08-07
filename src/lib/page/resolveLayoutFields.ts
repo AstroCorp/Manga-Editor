@@ -6,7 +6,7 @@ import {
 } from '@/lib/page/pageLimits';
 import type { LayoutJSON, LayoutLayerJSON } from '@/types/layouts';
 
-export const resolveLayoutFields = (data: LayoutLayerJSON | LayoutJSON) => {
+export const resolveLayoutFields = (data: LayoutLayerJSON) => {
 	return {
 		gridCols: data.gridCols ?? DEFAULT_GRID_COLS,
 		gridRows: data.gridRows ?? DEFAULT_GRID_ROWS,
@@ -16,4 +16,22 @@ export const resolveLayoutFields = (data: LayoutLayerJSON | LayoutJSON) => {
 		marginLeft: data.marginLeft ?? DEFAULT_MARGIN,
 		strokeWidth: data.strokeWidth ?? DEFAULT_STROKE_WIDTH,
 	};
+};
+
+export const resolveLayoutLayerSources = (
+	data: LayoutJSON,
+): LayoutLayerJSON[] => {
+	return data.layers;
+};
+
+export const layoutLayerCount = (data: LayoutJSON): number => {
+	return data.layers.length;
+};
+
+export const isSingleLayerLayout = (data: LayoutJSON): boolean => {
+	return data.layers.length === 1;
+};
+
+export const isMultiLayerLayout = (data: LayoutJSON): boolean => {
+	return data.layers.length > 1;
 };

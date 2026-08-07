@@ -1,36 +1,39 @@
 {
   "width": 2580,
   "height": 1720,
-  "shapes": [
+  "layers": [
     {
-      "id": "cce000e1-7443-4c8d-9914-76318a284b20",
-      "points": [
+      "shapes": [
         {
-          "x": 18,
-          "y": 18
-        },
-        {
-          "x": 18,
-          "y": 1702
-        },
-        {
-          "x": 2562,
-          "y": 1702
-        },
-        {
-          "x": 2562,
-          "y": 18
+          "id": "cce000e1-7443-4c8d-9914-76318a284b20",
+          "points": [
+            {
+              "x": 18,
+              "y": 18
+            },
+            {
+              "x": 18,
+              "y": 1702
+            },
+            {
+              "x": 2562,
+              "y": 1702
+            },
+            {
+              "x": 2562,
+              "y": 18
+            }
+          ],
+          "image": null
         }
       ],
-      "strokeWidth": 5,
-      "image": null
+      "gridCols": 129,
+      "gridRows": 86,
+      "marginTop": 18,
+      "marginRight": 18,
+      "marginBottom": 18,
+      "marginLeft": 18,
+      "strokeWidth": 5
     }
-  ],
-  "gridCols": 129,
-  "gridRows": 86,
-  "marginTop": 18,
-  "marginRight": 18,
-  "marginBottom": 18,
-  "marginLeft": 18,
-  "strokeWidth": 5
+  ]
 }

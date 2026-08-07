@@ -6,19 +6,12 @@ import {
 import type { PresetLayout } from '@/types/layouts';
 
 describe('presetLayouts', () => {
-	it('isLayoutJSON accepts minimal page geometry', () => {
+	it('isLayoutJSON accepts width, height and layers', () => {
 		expect(
 			isLayoutJSON({
 				width: 100,
 				height: 200,
-			}),
-		).toBe(true);
-
-		expect(
-			isLayoutJSON({
-				width: 100,
-				height: 200,
-				shapes: [],
+				layers: [{ shapes: [] }],
 			}),
 		).toBe(true);
 	});
@@ -30,7 +23,20 @@ describe('presetLayouts', () => {
 			isLayoutJSON({
 				width: 1,
 				height: 1,
-				shapes: 'nope',
+			}),
+		).toBe(false);
+		expect(
+			isLayoutJSON({
+				width: 1,
+				height: 1,
+				layers: [],
+			}),
+		).toBe(false);
+		expect(
+			isLayoutJSON({
+				width: 1,
+				height: 1,
+				layers: 'nope',
 			}),
 		).toBe(false);
 	});
@@ -49,9 +55,9 @@ describe('presetLayouts', () => {
 				const layout = preset.layout;
 
 				return (
-					Array.isArray(layout.shapes) &&
 					Array.isArray(layout.layers) &&
 					layout.layers.length >= 1 &&
+					!('shapes' in layout) &&
 					!('id' in layout) &&
 					!('name' in layout)
 				);

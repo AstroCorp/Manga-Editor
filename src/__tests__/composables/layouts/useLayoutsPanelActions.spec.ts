@@ -13,16 +13,19 @@ const samplePreset = (id: string): PresetLayout => {
 		layout: {
 			width: 600,
 			height: 900,
-			shapes: [
+			layers: [
 				{
-					id: 'panel-1',
-					points: [
-						{ x: 0, y: 0 },
-						{ x: 40, y: 0 },
-						{ x: 40, y: 40 },
+					shapes: [
+						{
+							id: 'panel-1',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 40, y: 0 },
+								{ x: 40, y: 40 },
+							],
+							image: null,
+						},
 					],
-					strokeWidth: 2,
-					image: null,
 				},
 			],
 		},
@@ -79,13 +82,94 @@ describe('useLayoutsPanelActions', () => {
 		expect(applyPageLayout).toHaveBeenCalledExactlyOnceWith(preset.layout);
 	});
 
-	it('confirms apply when there are multiple layers even if empty', () => {
+	it('applies a single-layer layout to the active layer without confirm when empty', () => {
 		const mangaStore = useMangaStore();
 		const editorStore = useEditorStore();
 		const applyPageLayout = vi.spyOn(editorStore, 'applyPageLayout');
 		const { requestApply, pendingPreset } = useLayoutsPanelActions();
 		const preset = samplePreset('03');
 
+		mangaStore.addLayer();
+		requestApply(preset);
+
+		expect(pendingPreset.value).toBeNull();
+		expect(applyPageLayout).toHaveBeenCalledExactlyOnceWith(preset.layout);
+	});
+
+	it('does not confirm a single-layer layout when only other layers have content', () => {
+		const mangaStore = useMangaStore();
+		const editorStore = useEditorStore();
+		const applyPageLayout = vi.spyOn(editorStore, 'applyPageLayout');
+		const { requestApply, pendingPreset } = useLayoutsPanelActions();
+		const preset = samplePreset('03b');
+
+		mangaStore.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				2,
+			),
+		);
+		mangaStore.addLayer();
+
+		requestApply(preset);
+
+		expect(pendingPreset.value).toBeNull();
+		expect(applyPageLayout).toHaveBeenCalledExactlyOnceWith(preset.layout);
+	});
+
+	it('applies a multi-layer layout without confirm on an empty page', () => {
+		const editorStore = useEditorStore();
+		const applyPageLayout = vi.spyOn(editorStore, 'applyPageLayout');
+		const { requestApply, pendingPreset } = useLayoutsPanelActions();
+		const preset: PresetLayout = {
+			id: 'multi-empty',
+			layout: {
+				width: 600,
+				height: 900,
+				layers: [
+					{ name: 'Base', shapes: [] },
+					{ name: 'Ink', shapes: [] },
+				],
+			},
+		};
+
+		requestApply(preset);
+
+		expect(pendingPreset.value).toBeNull();
+		expect(applyPageLayout).toHaveBeenCalledExactlyOnceWith(preset.layout);
+	});
+
+	it('confirms apply for a multi-layer layout when any layer has content', () => {
+		const mangaStore = useMangaStore();
+		const editorStore = useEditorStore();
+		const applyPageLayout = vi.spyOn(editorStore, 'applyPageLayout');
+		const { requestApply, pendingPreset } = useLayoutsPanelActions();
+		const preset: PresetLayout = {
+			id: 'multi',
+			layout: {
+				width: 600,
+				height: 900,
+				layers: [
+					{ name: 'Base', shapes: [] },
+					{ name: 'Ink', shapes: [] },
+				],
+			},
+		};
+
+		mangaStore.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				2,
+			),
+		);
 		mangaStore.addLayer();
 		requestApply(preset);
 

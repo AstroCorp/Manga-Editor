@@ -192,10 +192,7 @@ export const useMangaStore = defineStore('manga', () => {
 	};
 
 	const applyActivePageLayout = (layoutJson: LayoutJSON) => {
-		getActivePage().applyLayout({
-			...layoutJson,
-			shapes: layoutJson.shapes ?? [],
-		});
+		getActivePage().applyLayout(layoutJson);
 		bumpContent();
 	};
 

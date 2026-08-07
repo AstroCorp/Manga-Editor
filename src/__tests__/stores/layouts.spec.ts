@@ -34,24 +34,30 @@ describe('useLayoutsStore', () => {
 		const entry = store.addCustomLayout({
 			width: 600,
 			height: 900,
-			shapes: [
+			layers: [
 				{
-					id: 'p1',
-					points: [
-						{ x: 0, y: 0 },
-						{ x: 10, y: 0 },
-						{ x: 10, y: 10 },
+					shapes: [
+						{
+							id: 'p1',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 10, y: 0 },
+								{ x: 10, y: 10 },
+							],
+							image: null,
+						},
 					],
-					strokeWidth: 2,
-					image: null,
+					strokeWidth: 4,
 				},
 			],
-			strokeWidth: 4,
 		});
 
 		expect(store.customLayouts).toHaveLength(1);
 		expect(store.customLayouts[0]?.id).toBe(entry.id);
-		expect(store.customLayouts[0]?.layout.shapes?.[0]?.strokeWidth).toBe(4);
+		expect(store.customLayouts[0]?.layout.layers[0]?.strokeWidth).toBe(4);
+		expect(
+			store.customLayouts[0]?.layout.layers[0]?.shapes?.[0],
+		).not.toHaveProperty('strokeWidth');
 
 		expect(store.removeCustomLayout('missing')).toBe(false);
 		expect(store.removeCustomLayout(entry.id)).toBe(true);

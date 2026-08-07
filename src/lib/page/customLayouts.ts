@@ -1,35 +1,50 @@
 import type { Serializer } from '@vueuse/core';
 import { createId } from '@/lib/id';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
-import type { LayoutJSON, PresetLayout } from '@/types/layouts';
+import type {
+	LayoutJSON,
+	LayoutLayerJSON,
+	LayoutShapeJSON,
+	PresetLayout,
+} from '@/types/layouts';
 
 export const CUSTOM_LAYOUTS_STORAGE_KEY = 'manga-editor-custom-layouts';
 
-/** Geometría lista para catálogo (sin id/name de página ni imágenes). */
-const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
-	const pageStroke = layout.strokeWidth;
-	const shapes = (layout.shapes ?? []).map((shape) => {
+const stripShapeImages = (
+	shapes: LayoutShapeJSON[] | undefined,
+): LayoutShapeJSON[] => {
+	return (shapes ?? []).map((shape) => {
 		return {
 			id: shape.id,
 			points: shape.points.map((point) => {
 				return { x: point.x, y: point.y };
 			}),
-			strokeWidth: pageStroke ?? shape.strokeWidth,
 			image: null,
+		};
+	});
+};
+
+/** Geometría lista para catálogo (sin id/name de página ni imágenes). */
+const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
+	const layers: LayoutLayerJSON[] = layout.layers.map((layer) => {
+		return {
+			name: layer.name,
+			visible: layer.visible,
+			shapes: stripShapeImages(layer.shapes),
+			gridCols: layer.gridCols,
+			gridRows: layer.gridRows,
+			marginTop: layer.marginTop,
+			marginRight: layer.marginRight,
+			marginBottom: layer.marginBottom,
+			marginLeft: layer.marginLeft,
+			strokeWidth: layer.strokeWidth,
 		};
 	});
 
 	return {
 		width: layout.width,
 		height: layout.height,
-		shapes,
-		gridCols: layout.gridCols,
-		gridRows: layout.gridRows,
-		marginTop: layout.marginTop,
-		marginRight: layout.marginRight,
-		marginBottom: layout.marginBottom,
-		marginLeft: layout.marginLeft,
-		strokeWidth: layout.strokeWidth,
+		layers,
 	};
 };
 
@@ -54,10 +69,7 @@ const parseCustomLayouts = (raw: string): PresetLayout[] => {
 		return parsed.filter(isPresetLayoutEntry).map((entry) => {
 			return {
 				id: entry.id,
-				layout: normalizeLayoutForCatalog({
-					...entry.layout,
-					shapes: entry.layout.shapes ?? [],
-				}),
+				layout: normalizeLayoutForCatalog(entry.layout),
 			};
 		});
 	} catch {
@@ -77,9 +89,6 @@ export const customLayoutsSerializer: Serializer<PresetLayout[]> = {
 export const createCustomLayoutEntry = (layout: LayoutJSON): PresetLayout => {
 	return {
 		id: createId(),
-		layout: normalizeLayoutForCatalog({
-			...layout,
-			shapes: layout.shapes ?? [],
-		}),
+		layout: normalizeLayoutForCatalog(layout),
 	};
 };

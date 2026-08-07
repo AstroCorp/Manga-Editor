@@ -6,6 +6,7 @@ import {
 	type FabricObject,
 } from 'fabric';
 import {
+	getLayerId,
 	getPanelId,
 	getTextId,
 	isGuide,
@@ -197,9 +198,10 @@ export const usePanelSelection = ({
 		}
 
 		const nextWidth = clampStrokeWidth(width);
+		const activeLayerId = mangaStore.activeLayer.id;
 
 		canvas.getObjects().forEach((object) => {
-			if (!isPanel(object)) {
+			if (!isPanel(object) || getLayerId(object) !== activeLayerId) {
 				return;
 			}
 

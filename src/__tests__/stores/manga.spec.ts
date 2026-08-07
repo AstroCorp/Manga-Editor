@@ -116,7 +116,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes).toHaveLength(0);
 	});
 
-	it('applyActivePageLayout replaces all layers and keeps the page name', () => {
+	it('applyActivePageLayout applies a single-layer layout to the active layer', () => {
 		const store = useMangaStore();
 		const originalName = store.activePage.name;
 		const originalId = store.activePage.id;
@@ -135,38 +135,42 @@ describe('useMangaStore config layout', () => {
 
 		expect(store.layers.length).toBeGreaterThan(1);
 
+		const activeId = store.activeLayer.id;
 		const epochBeforeApply = store.contentResetEpoch;
 
 		store.applyActivePageLayout({
 			width: 800,
 			height: 1200,
-			shapes: [
+			layers: [
 				{
-					id: 'panel-1',
-					points: [
-						{ x: 0, y: 0 },
-						{ x: 40, y: 0 },
-						{ x: 40, y: 40 },
+					shapes: [
+						{
+							id: 'panel-1',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 40, y: 0 },
+								{ x: 40, y: 40 },
+							],
+							image: null,
+						},
 					],
+					gridCols: 10,
+					gridRows: 20,
+					marginTop: 5,
+					marginRight: 5,
+					marginBottom: 5,
+					marginLeft: 5,
 					strokeWidth: 5,
-					image: null,
 				},
 			],
-			gridCols: 10,
-			gridRows: 20,
-			marginTop: 5,
-			marginRight: 5,
-			marginBottom: 5,
-			marginLeft: 5,
-			strokeWidth: 5,
 		});
 
 		expect(store.activePage.name).toBe(originalName);
 		expect(store.activePage.id).toBe(originalId);
 		expect(store.activePage.width).toBe(800);
 		expect(store.activePage.height).toBe(1200);
-		expect(store.layers).toHaveLength(1);
-		expect(store.layers[0]?.name).toBe('Layer 1');
+		expect(store.layers).toHaveLength(2);
+		expect(store.activeLayer.id).toBe(activeId);
 		expect(store.shapes).toHaveLength(1);
 		expect(store.shapes[0]?.strokeWidth).toBe(5);
 		expect(store.contentResetEpoch).toBe(epochBeforeApply + 1);
@@ -176,7 +180,9 @@ describe('useMangaStore config layout', () => {
 		const store = useMangaStore();
 		const layout = store.getActivePageLayout();
 
-		expect(layout.shapes).toEqual([]);
+		expect(layout.layers).toHaveLength(1);
+		expect(layout.layers[0]?.shapes).toEqual([]);
+		expect(layout).not.toHaveProperty('shapes');
 		expect(layout).not.toHaveProperty('id');
 		expect(layout).not.toHaveProperty('name');
 	});

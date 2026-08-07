@@ -48,19 +48,18 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 
 		const layout = page.toLayoutJSON();
 
-		expect(layout.strokeWidth).toBe(4);
-		expect(layout.shapes).toHaveLength(1);
-		expect(layout.shapes[0]?.strokeWidth).toBe(4);
-		expect(layout.shapes[0]?.image).toBeNull();
+		expect(layout.layers).toHaveLength(1);
+		expect(layout.layers[0]?.strokeWidth).toBe(4);
+		expect(layout.layers[0]?.shapes).toHaveLength(1);
+		expect(layout.layers[0]?.shapes?.[0]).not.toHaveProperty('strokeWidth');
+		expect(layout.layers[0]?.shapes?.[0]?.image).toBeNull();
+		expect(layout).not.toHaveProperty('shapes');
 		expect(layout).not.toHaveProperty('id');
 		expect(layout).not.toHaveProperty('name');
 
 		const other = Page.createBlank(2);
 
-		other.applyLayout({
-			...layout,
-			shapes: layout.shapes ?? [],
-		});
+		other.applyLayout(layout);
 
 		expect(other.getActiveLayer().shapes).toHaveLength(1);
 		expect(other.getActiveLayer().strokeWidth).toBe(4);
@@ -164,51 +163,63 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		page.applyLayout({
 			width: 800,
 			height: 1200,
-			shapes: [
+			layers: [
 				{
-					id: 'a',
-					points: [
-						{ x: 0, y: 0 },
-						{ x: 10, y: 0 },
-						{ x: 10, y: 10 },
+					shapes: [
+						{
+							id: 'a',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 10, y: 0 },
+								{ x: 10, y: 10 },
+							],
+							image: null,
+						},
 					],
-					strokeWidth: 2,
-					image: null,
+					strokeWidth: 12,
 				},
 			],
-			strokeWidth: 12,
 		});
 
 		expect(page.getActiveLayer().strokeWidth).toBe(12);
 		expect(page.getActiveLayer().shapes[0]?.strokeWidth).toBe(12);
 	});
 
-	it('applyLayout replaces every existing layer', () => {
+	it('applyLayout with a single layer updates only the active layer', () => {
 		const page = Page.createBlank(1);
+		const bottomId = page.activeLayerId;
 
 		page.addLayer();
 		page.addLayer();
 		expect(page.layers).toHaveLength(3);
+		expect(page.activeLayerId).not.toBe(bottomId);
+
+		const activeId = page.activeLayerId;
 
 		page.applyLayout({
 			width: 600,
 			height: 900,
-			shapes: [
+			layers: [
 				{
-					id: 'p1',
-					points: [
-						{ x: 0, y: 0 },
-						{ x: 10, y: 0 },
-						{ x: 10, y: 10 },
+					shapes: [
+						{
+							id: 'p1',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 10, y: 0 },
+								{ x: 10, y: 10 },
+							],
+							image: null,
+						},
 					],
-					strokeWidth: 2,
-					image: null,
 				},
 			],
 		});
 
-		expect(page.layers).toHaveLength(1);
+		expect(page.layers).toHaveLength(3);
+		expect(page.activeLayerId).toBe(activeId);
 		expect(page.getActiveLayer().shapes).toHaveLength(1);
+		expect(page.layers[0]?.shapes).toHaveLength(0);
 	});
 
 	it('applyLayout supports multi-layer payloads', () => {
@@ -217,7 +228,6 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		page.applyLayout({
 			width: 600,
 			height: 900,
-			shapes: [],
 			layers: [
 				{
 					name: 'Base',
@@ -229,7 +239,6 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 								{ x: 5, y: 0 },
 								{ x: 5, y: 5 },
 							],
-							strokeWidth: 2,
 							image: null,
 						},
 					],
@@ -245,7 +254,6 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 								{ x: 8, y: 0 },
 								{ x: 8, y: 8 },
 							],
-							strokeWidth: 2,
 							image: null,
 						},
 					],
@@ -261,6 +269,68 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(page.layers[1]?.strokeWidth).toBe(4);
 		expect(page.activeLayerId).toBe(page.layers[0]?.id);
 		expect(page.toLayoutJSON().layers).toHaveLength(2);
+		expect(page.toLayoutJSON().layers[1]?.strokeWidth).toBe(4);
+		expect(page.toLayoutJSON().layers[0]?.shapes?.[0]).not.toHaveProperty(
+			'strokeWidth',
+		);
+	});
+
+	it('toLayoutJSON keeps grid, margins and stroke independent per layer', () => {
+		const page = Page.createBlank(1);
+		const bottom = page.getActiveLayer();
+
+		bottom.setGrid(10, 12);
+		bottom.setMargins(
+			{
+				marginTop: 5,
+				marginRight: 6,
+				marginBottom: 7,
+				marginLeft: 8,
+			},
+			page.width,
+			page.height,
+		);
+		bottom.setStrokeWidth(3);
+
+		page.addLayer();
+		const top = page.getActiveLayer();
+
+		top.setGrid(20, 24);
+		top.setMargins(
+			{
+				marginTop: 15,
+				marginRight: 16,
+				marginBottom: 17,
+				marginLeft: 18,
+			},
+			page.width,
+			page.height,
+		);
+		top.setStrokeWidth(9);
+
+		const layout = page.toLayoutJSON();
+
+		expect(layout.layers).toHaveLength(2);
+		expect(layout.layers[0]).toMatchObject({
+			gridCols: 10,
+			gridRows: 12,
+			marginTop: 5,
+			marginRight: 6,
+			marginBottom: 7,
+			marginLeft: 8,
+			strokeWidth: 3,
+		});
+		expect(layout.layers[1]).toMatchObject({
+			gridCols: 20,
+			gridRows: 24,
+			marginTop: 15,
+			marginRight: 16,
+			marginBottom: 17,
+			marginLeft: 18,
+			strokeWidth: 9,
+		});
+		expect(layout).not.toHaveProperty('strokeWidth');
+		expect(layout).not.toHaveProperty('gridCols');
 	});
 
 	it('applyLayout uniquifies duplicate layer names', () => {
@@ -269,7 +339,6 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		page.applyLayout({
 			width: 600,
 			height: 900,
-			shapes: [],
 			layers: [
 				{ name: 'Ink', shapes: [] },
 				{ name: 'Ink', shapes: [] },

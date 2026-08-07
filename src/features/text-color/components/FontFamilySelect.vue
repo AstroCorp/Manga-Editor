@@ -120,14 +120,6 @@ const onPreviewError = (fontId: string) => {
 	next.add(fontId);
 	failedPreviewIds.value = next;
 };
-
-const optionClass = (family: string) => {
-	if (family === props.modelValue) {
-		return 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400';
-	}
-
-	return 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800';
-};
 </script>
 
 <template>
@@ -203,7 +195,11 @@ const optionClass = (family: string) => {
 					<button
 						type="button"
 						class="flex h-11 w-full items-center px-2.5 text-left text-xs transition"
-						:class="optionClass(font.family)"
+						:class="
+							font.family === modelValue
+								? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+								: 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800'
+						"
 						:title="font.family"
 						@click="selectFamily(font.family)"
 					>

@@ -223,38 +223,28 @@ const onKeydown = (event: KeyboardEvent) => {
 const onChange = () => {
 	commitDraft();
 };
-
-const rootClass = computed(() => {
-	if (props.variant === 'toolbar') {
-		return 'flex h-9 items-stretch gap-0.5 overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400';
-	}
-
-	return 'inline-flex h-9 items-stretch gap-px overflow-hidden rounded-md border border-slate-200 bg-white text-slate-900 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-within:border-blue-500 dark:focus-within:ring-blue-500/25';
-});
-
-const fieldInputClass = computed(() => {
-	const base =
-		'h-full appearance-none border-0 bg-transparent text-center text-sm text-inherit outline-none ring-0 tabular-nums';
-
-	if (props.variant === 'toolbar') {
-		return `${base} px-0 hover:bg-transparent focus:bg-transparent ${props.inputWidthClass}`;
-	}
-
-	return `${base} px-2 ${props.inputWidthClass}`;
-});
-
-const stepperButtonClass =
-	'flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent';
 </script>
 
 <template>
-	<div :class="rootClass" :title="title">
+	<div
+		:class="
+			variant === 'toolbar'
+				? 'flex h-9 items-stretch gap-0.5 overflow-hidden rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-within:bg-blue-50 focus-within:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:focus-within:bg-blue-950 dark:focus-within:text-blue-400'
+				: 'inline-flex h-9 items-stretch gap-px overflow-hidden rounded-md border border-slate-200 bg-white text-slate-900 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-within:border-blue-500 dark:focus-within:ring-blue-500/25'
+		"
+		:title="title"
+	>
 		<slot name="leading" />
 		<input
 			:value="draft"
 			type="text"
 			:inputmode="inputmode"
-			:class="fieldInputClass"
+			class="h-full appearance-none border-0 bg-transparent text-center text-sm text-inherit outline-none ring-0 tabular-nums"
+			:class="
+				variant === 'toolbar'
+					? ['px-0 hover:bg-transparent focus:bg-transparent', inputWidthClass]
+					: ['px-2', inputWidthClass]
+			"
 			:aria-label="ariaLabel"
 			@focus="onFocus"
 			@blur="onBlur"
@@ -273,7 +263,7 @@ const stepperButtonClass =
 			<button
 				type="button"
 				tabindex="-1"
-				:class="stepperButtonClass"
+				class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
 				:aria-label="increaseLabel"
 				@pointerdown="onIncreasePointerDown"
 			>
@@ -282,7 +272,7 @@ const stepperButtonClass =
 			<button
 				type="button"
 				tabindex="-1"
-				:class="stepperButtonClass"
+				class="flex flex-1 items-center justify-center bg-transparent text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent"
 				:aria-label="decreaseLabel"
 				@pointerdown="onDecreasePointerDown"
 			>

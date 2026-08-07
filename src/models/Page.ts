@@ -4,13 +4,17 @@ import {
 	DEFAULT_PAGE_WIDTH,
 	clampPageSize,
 } from '@/lib/page/pageLimits';
+import {
+	isSingleLayerLayout,
+	resolveLayoutLayerSources,
+} from '@/lib/page/resolveLayoutFields';
 import { rotatePageMargins } from '@/lib/page/rotatePageMargins';
 import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
 import { DEFAULT_LAYER_NAME, Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { TextBlock } from '@/models/TextBlock';
-import type { LayoutJSON, LayoutLayerJSON } from '@/types/layouts';
+import type { LayoutJSON } from '@/types/layouts';
 import type {
 	PageMargins,
 	PageRotateDirection,
@@ -356,28 +360,25 @@ export class Page {
 	}
 
 	/**
-	 * Sustituye tamaño y todas las capas por el layout.
-	 * Si `layers` tiene ítems, usa multi-capa; si no, una capa desde los campos raíz.
+	 * Aplica el layout a la página.
+	 * Una sola capa → sustituye el contenido de la capa activa (mantiene el resto).
+	 * Varias capas → sustituye tamaño y todas las capas.
 	 */
 	applyLayout(data: LayoutJSON) {
 		this.width = clampPageSize(data.width);
 		this.height = clampPageSize(data.height);
 
-		const sources: LayoutLayerJSON[] =
-			data.layers && data.layers.length > 0
-				? data.layers
-				: [
-						{
-							shapes: data.shapes ?? [],
-							gridCols: data.gridCols,
-							gridRows: data.gridRows,
-							marginTop: data.marginTop,
-							marginRight: data.marginRight,
-							marginBottom: data.marginBottom,
-							marginLeft: data.marginLeft,
-							strokeWidth: data.strokeWidth,
-						},
-					];
+		const sources = resolveLayoutLayerSources(data);
+
+		if (isSingleLayerLayout(data)) {
+			this.getActiveLayer().applyLayoutContent(
+				sources[0]!,
+				this.width,
+				this.height,
+			);
+
+			return;
+		}
 
 		const takenNames: string[] = [];
 		const nextLayers = sources.map((source, index) => {
@@ -399,31 +400,19 @@ export class Page {
 	}
 
 	/**
-	 * Layout exportable. Raíz = capa inferior (compat); `layers` si hay más de una.
-	 * Sin imágenes.
+	 * Layout exportable: tamaño + capas (sin imágenes).
 	 */
 	toLayoutJSON(): LayoutJSON {
-		const layerPayloads: LayoutLayerJSON[] = this.layers.map((layer) => {
-			return {
-				name: layer.name,
-				visible: layer.visible,
-				...layer.toLayoutFields(),
-			};
-		});
-		const primary = layerPayloads[0]!;
-
 		return {
 			width: this.width,
 			height: this.height,
-			shapes: primary.shapes ?? [],
-			gridCols: primary.gridCols,
-			gridRows: primary.gridRows,
-			marginTop: primary.marginTop,
-			marginRight: primary.marginRight,
-			marginBottom: primary.marginBottom,
-			marginLeft: primary.marginLeft,
-			strokeWidth: primary.strokeWidth,
-			...(layerPayloads.length > 1 ? { layers: layerPayloads } : {}),
+			layers: this.layers.map((layer) => {
+				return {
+					name: layer.name,
+					visible: layer.visible,
+					...layer.toLayoutFields(),
+				};
+			}),
 		};
 	}
 }

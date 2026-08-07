@@ -343,7 +343,7 @@ export const buildPagePreview = (
 		if (clipPoints) {
 			panels.push({
 				points: clipPoints,
-				strokeWidth: Math.max(1, shape.strokeWidth),
+				strokeWidth: Math.max(0, shape.strokeWidth),
 				whiteFill: Boolean(shape.whiteFill),
 			});
 		}

@@ -2,6 +2,7 @@ import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
+import { isSingleLayerLayout } from '@/lib/page/resolveLayoutFields';
 import { PRESETS_LOAD_STATUS } from '@/lib/layouts/presetsLoadStatus';
 import { useEditorStore } from '@/stores/editor';
 import { useLayoutsStore } from '@/stores/layouts';
@@ -11,7 +12,7 @@ import type { PresetLayout } from '@/types/layouts';
 export const useLayoutsPanelActions = () => {
 	const editorStore = useEditorStore();
 	const layoutsStore = useLayoutsStore();
-	const { activePage, pageHasDrawing } = useActivePageLayout();
+	const { pageHasDrawing, activeLayerHasDrawing } = useActivePageLayout();
 	const { presets, presetsStatus, customLayouts } = storeToRefs(layoutsStore);
 
 	const {
@@ -32,12 +33,20 @@ export const useLayoutsPanelActions = () => {
 		return presetsStatus.value === PRESETS_LOAD_STATUS.Loading;
 	});
 
-	/** Confirmar si hay dibujo o más de una capa (el apply borra todo). */
-	const shouldConfirmApply = computed(() => {
-		return pageHasDrawing.value || activePage.value.layers.length > 1;
-	});
+	/** 1 capa → capa activa; multi → cualquier capa con contenido. */
+	const shouldConfirmApply = (preset: PresetLayout): boolean => {
+		if (isSingleLayerLayout(preset.layout)) {
+			return activeLayerHasDrawing.value;
+		}
+
+		return pageHasDrawing.value;
+	};
 
 	const applyMessage = computed(() => {
+		if (pendingPreset.value && isSingleLayerLayout(pendingPreset.value.layout)) {
+			return 'Replace the content of the current layer with the selected layout?';
+		}
+
 		return 'Replace all layers on this page with the selected layout?';
 	});
 
@@ -46,7 +55,7 @@ export const useLayoutsPanelActions = () => {
 	};
 
 	const requestApply = (preset: PresetLayout) => {
-		if (shouldConfirmApply.value) {
+		if (shouldConfirmApply(preset)) {
 			requestPendingPreset(preset);
 
 			return;
@@ -70,7 +79,6 @@ export const useLayoutsPanelActions = () => {
 	};
 
 	return {
-		activePage,
 		presets,
 		customLayouts,
 		presetsLoading,

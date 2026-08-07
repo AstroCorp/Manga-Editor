@@ -1,7 +1,6 @@
 {
   "width": 1720,
   "height": 2580,
-  "shapes": [],
   "layers": [
     {
       "name": "Layer 1",
@@ -27,7 +26,6 @@
               "y": 18
             }
           ],
-          "strokeWidth": 5,
           "image": null
         },
         {
@@ -50,7 +48,6 @@
               "y": 2562
             }
           ],
-          "strokeWidth": 5,
           "image": null
         }
       ],

@@ -120,13 +120,8 @@ export const useEditorStore = defineStore('editor', () => {
 				return;
 			}
 
-			const layout: LayoutJSON = {
-				...parsed,
-				shapes: parsed.shapes ?? [],
-			};
-
-			useLayoutsStore().addCustomLayout(layout);
-			useMangaStore().applyActivePageLayout(layout);
+			useLayoutsStore().addCustomLayout(parsed);
+			useMangaStore().applyActivePageLayout(parsed);
 		} catch {
 			window.alert('Could not read the JSON file.');
 		}

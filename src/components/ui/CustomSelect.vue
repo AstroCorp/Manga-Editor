@@ -120,21 +120,6 @@ const onListKeydown = (event: KeyboardEvent) => {
 		}
 	}
 };
-
-const optionClass = (value: string, index: number) => {
-	const selected = value === props.modelValue;
-	const active = index === activeIndex.value;
-
-	if (selected) {
-		return 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400';
-	}
-
-	if (active) {
-		return 'bg-slate-100 text-slate-800 dark:bg-zinc-800 dark:text-slate-100';
-	}
-
-	return 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800';
-};
 </script>
 
 <template>
@@ -186,7 +171,13 @@ const optionClass = (value: string, index: number) => {
 				<button
 					type="button"
 					class="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition"
-					:class="optionClass(option.value, index)"
+					:class="
+						option.value === modelValue
+							? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+							: index === activeIndex
+								? 'bg-slate-100 text-slate-800 dark:bg-zinc-800 dark:text-slate-100'
+								: 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800'
+					"
 					@click="selectOption(option.value)"
 					@mouseenter="activeIndex = index"
 				>

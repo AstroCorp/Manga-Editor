@@ -33,22 +33,22 @@ const { setCols, setRows, setMargin, setStrokeWidth } = useLayerConfigActions();
 const onMarginUpdate = (side: PageMarginSide, value: number) => {
 	setMargin(side, value);
 };
-
-const labelClass =
-	'flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100';
-
-const sectionTitleClass =
-	"mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500";
-
-const sectionClass =
-	'flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70';
 </script>
 
 <template>
 	<div class="flex flex-col px-4 pb-6" aria-label="Configuration">
-		<section :class="sectionClass" aria-label="Page settings">
-			<h3 :class="sectionTitleClass">Page</h3>
-			<label :class="labelClass">
+		<section
+			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
+			aria-label="Page settings"
+		>
+			<h3
+				class="mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
+			>
+				Page
+			</h3>
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Width</span>
 				<NumberInput
 					:model-value="pageSize.width"
@@ -61,7 +61,9 @@ const sectionClass =
 					@update:model-value="setWidth"
 				/>
 			</label>
-			<label :class="labelClass">
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Height</span>
 				<NumberInput
 					:model-value="pageSize.height"
@@ -108,8 +110,13 @@ const sectionClass =
 			</div>
 		</section>
 
-		<section :class="sectionClass" aria-label="Active layer settings">
-			<h3 :class="[sectionTitleClass, 'min-w-0 overflow-hidden']">
+		<section
+			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
+			aria-label="Active layer settings"
+		>
+			<h3
+				class="mb-1 flex min-w-0 items-center gap-2.5 overflow-hidden text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
+			>
 				<span class="shrink-0">Layer</span>
 				<span
 					class="min-w-0 flex-1 truncate font-normal normal-case tracking-normal text-slate-500 dark:text-slate-400"
@@ -122,7 +129,9 @@ const sectionClass =
 				Grid, margins and stroke apply to the active layer.
 			</p>
 
-			<label :class="labelClass">
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Columns</span>
 				<NumberInput
 					:model-value="gridSize.cols"
@@ -135,7 +144,9 @@ const sectionClass =
 					@update:model-value="setCols"
 				/>
 			</label>
-			<label :class="labelClass">
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Rows</span>
 				<NumberInput
 					:model-value="gridSize.rows"
@@ -157,7 +168,7 @@ const sectionClass =
 					{ key: 'marginLeft' as const, label: 'Margin left' },
 				]"
 				:key="side.key"
-				:class="labelClass"
+				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
 			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">{{
 					side.label
@@ -173,7 +184,9 @@ const sectionClass =
 				/>
 			</label>
 
-			<label :class="labelClass">
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke</span>
 				<NumberInput
 					:model-value="strokeWidth"

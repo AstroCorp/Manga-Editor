@@ -66,14 +66,6 @@ const strokeSwatchStyle = computed(() => {
 	};
 });
 
-const formatToggleClass = (active: boolean) => {
-	if (active) {
-		return 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400';
-	}
-
-	return 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400';
-};
-
 const fontSizeAriaLabel = computed(() => {
 	return props.fontSize === null ? 'Font size (mixed)' : 'Font size';
 });
@@ -134,9 +126,6 @@ const onPageAlign = (anchor: PageTextAnchor) => {
 	emit('alignToPage', anchor);
 };
 
-const toolbarShellClass =
-	'flex max-w-[min(100vw-2rem,52rem)] flex-wrap items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40';
-
 const boxFillSwatchStyle = computed(() => {
 	return {
 		background: boxFillValue.value,
@@ -148,20 +137,18 @@ const boxStrokeRingStyle = computed(() => {
 		background: boxStrokeValue.value,
 	};
 });
-
-const leadingIconClass = 'inline-flex items-center pl-1';
 </script>
 
 <template>
 	<div
 		v-if="style"
 		ref="rootRef"
-		class="absolute z-30 flex flex-col items-center gap-1"
+		class="absolute z-30 flex w-max max-w-[min(100vw-2rem,52rem)] flex-col items-center gap-1"
 		:style="style"
 	>
 		<div
 			v-if="hasBox"
-			:class="toolbarShellClass"
+			class="flex w-max max-w-[min(100vw-2rem,52rem)] flex-wrap items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
 			role="toolbar"
 			aria-label="Box format"
 			@pointerdown.stop
@@ -221,7 +208,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setBoxStrokeWidth', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:line-thickness-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -239,7 +226,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setBoxCornerRadius', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:square-hint-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -257,7 +244,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setBoxPadding', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:padding-right-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -275,7 +262,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setBoxWidth', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:arrow-autofit-width-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -293,7 +280,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setBoxHeight', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:arrow-autofit-height-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -307,7 +294,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				<button
 					type="button"
 					class="inline-flex size-9 items-center justify-center rounded-md transition"
-					:class="formatToggleClass(boxVerticalAlign === 'top')"
+					:class="
+						boxVerticalAlign === 'top'
+							? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+							: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+					"
 					:aria-pressed="boxVerticalAlign === 'top'"
 					title="Align text top"
 					aria-label="Align text top"
@@ -318,7 +309,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				<button
 					type="button"
 					class="inline-flex size-9 items-center justify-center rounded-md transition"
-					:class="formatToggleClass(boxVerticalAlign === 'middle')"
+					:class="
+						boxVerticalAlign === 'middle'
+							? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+							: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+					"
 					:aria-pressed="boxVerticalAlign === 'middle'"
 					title="Align text middle"
 					aria-label="Align text middle"
@@ -329,7 +324,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				<button
 					type="button"
 					class="inline-flex size-9 items-center justify-center rounded-md transition"
-					:class="formatToggleClass(boxVerticalAlign === 'bottom')"
+					:class="
+						boxVerticalAlign === 'bottom'
+							? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+							: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+					"
 					:aria-pressed="boxVerticalAlign === 'bottom'"
 					title="Align text bottom"
 					aria-label="Align text bottom"
@@ -341,7 +340,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 		</div>
 
 		<div
-			:class="toolbarShellClass"
+			class="flex w-max max-w-[min(100vw-2rem,52rem)] flex-wrap items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
 			role="toolbar"
 			aria-label="Text format"
 			@pointerdown.stop
@@ -385,7 +384,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setFontSize', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:text-font-size-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -409,7 +408,7 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 				@update:model-value="emit('setLineHeight', $event)"
 			>
 				<template #leading>
-					<span :class="leadingIconClass" aria-hidden="true">
+					<span class="inline-flex items-center pl-1" aria-hidden="true">
 						<Icon icon="fluent:text-line-spacing-24-regular" class="size-5 shrink-0" />
 					</span>
 				</template>
@@ -457,7 +456,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 			<button
 				type="button"
 				class="inline-flex size-9 items-center justify-center rounded-md transition"
-				:class="formatToggleClass(bold)"
+				:class="
+					bold
+						? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+						: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+				"
 				:aria-pressed="bold"
 				title="Bold"
 				aria-label="Bold"
@@ -468,7 +471,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 			<button
 				type="button"
 				class="inline-flex size-9 items-center justify-center rounded-md transition"
-				:class="formatToggleClass(italic)"
+				:class="
+					italic
+						? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+						: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+				"
 				:aria-pressed="italic"
 				title="Italic"
 				aria-label="Italic"
@@ -479,7 +486,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 			<button
 				type="button"
 				class="inline-flex size-9 items-center justify-center rounded-md transition"
-				:class="formatToggleClass(underline)"
+				:class="
+					underline
+						? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+						: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+				"
 				:aria-pressed="underline"
 				title="Underline"
 				aria-label="Underline"
@@ -490,7 +501,11 @@ const leadingIconClass = 'inline-flex items-center pl-1';
 			<button
 				type="button"
 				class="inline-flex size-9 items-center justify-center rounded-md transition"
-				:class="formatToggleClass(linethrough)"
+				:class="
+					linethrough
+						? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+						: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+				"
 				:aria-pressed="linethrough"
 				title="Strikethrough"
 				aria-label="Strikethrough"

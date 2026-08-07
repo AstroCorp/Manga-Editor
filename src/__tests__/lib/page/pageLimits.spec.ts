@@ -35,9 +35,10 @@ describe('pageLimits clamps', () => {
 		expect(clampMargin(Number.NaN, 800, 1200)).toBe(0);
 	});
 
-	it('clampStrokeWidth falls back to default when non-finite', () => {
+	it('clampStrokeWidth allows zero and falls back to default when non-finite', () => {
 		expect(clampStrokeWidth(7.2)).toBe(7);
-		expect(clampStrokeWidth(0)).toBe(MIN_STROKE_WIDTH);
+		expect(clampStrokeWidth(0)).toBe(0);
+		expect(clampStrokeWidth(-1)).toBe(MIN_STROKE_WIDTH);
 		expect(clampStrokeWidth(100)).toBe(MAX_STROKE_WIDTH);
 		expect(clampStrokeWidth(Number.NaN)).toBe(DEFAULT_STROKE_WIDTH);
 	});

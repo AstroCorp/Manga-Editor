@@ -1,6 +1,6 @@
 import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
-/** Type guard: width/height; shapes/layers opcionales. */
+/** Type guard: width/height y al menos una capa. */
 export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
 	if (!value || typeof value !== 'object') {
 		return false;
@@ -12,47 +12,18 @@ export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
 		return false;
 	}
 
-	if (data.shapes !== undefined && !Array.isArray(data.shapes)) {
-		return false;
-	}
-
-	if (data.layers !== undefined && !Array.isArray(data.layers)) {
+	if (!Array.isArray(data.layers) || data.layers.length < 1) {
 		return false;
 	}
 
 	return true;
 };
 
-const toLayoutJSON = (value: LayoutJSON): LayoutJSON => {
-	const shapes = value.shapes ?? [];
-	const layers =
-		value.layers && value.layers.length > 0
-			? value.layers
-			: [
-					{
-						shapes,
-						gridCols: value.gridCols,
-						gridRows: value.gridRows,
-						marginTop: value.marginTop,
-						marginRight: value.marginRight,
-						marginBottom: value.marginBottom,
-						marginLeft: value.marginLeft,
-						strokeWidth: value.strokeWidth,
-					},
-				];
-
+const normalizePresetLayout = (value: LayoutJSON): LayoutJSON => {
 	return {
 		width: value.width,
 		height: value.height,
-		shapes,
-		gridCols: value.gridCols,
-		gridRows: value.gridRows,
-		marginTop: value.marginTop,
-		marginRight: value.marginRight,
-		marginBottom: value.marginBottom,
-		marginLeft: value.marginLeft,
-		strokeWidth: value.strokeWidth,
-		layers,
+		layers: value.layers,
 	};
 };
 
@@ -83,7 +54,7 @@ export const listPresetLayouts = async (): Promise<PresetLayout[]> => {
 
 			presets.push({
 				id: fileIdFromPath(path),
-				layout: toLayoutJSON(value),
+				layout: normalizePresetLayout(value),
 			});
 		}),
 	);
