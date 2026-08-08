@@ -1,9 +1,10 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { ref, shallowRef } from 'vue';
+import { effectScope, ref, shallowRef } from 'vue';
 import { usePanelSelection } from '@/features/selection/usePanelSelection';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import * as textFabric from '@/lib/fabric/textFabric';
+import * as loadGoogleFont from '@/lib/fonts/loadGoogleFont';
 import {
 	clearClipboard,
 } from '@/lib/clipboard/editorClipboard';
@@ -97,15 +98,25 @@ const createImageMock = (panelId: string, left: number, top: number): ObjectMock
 	return object;
 };
 
-const createCanvas = (active: ObjectMock | null) => {
+const createCanvas = (
+	active: ObjectMock | null,
+	objects: ObjectMock[] = active ? [active] : [],
+) => {
 	const handlers: Record<string, (event?: unknown) => void> = {};
+	const state = {
+		active,
+		objects: [...objects],
+	};
 	const canvas = {
 		on: (event: string, handler: (event?: unknown) => void) => {
 			handlers[event] = handler;
 		},
 		off: vi.fn(),
 		getActiveObject: () => {
-			return active as unknown as FabricObject;
+			return state.active as unknown as FabricObject;
+		},
+		getObjects: () => {
+			return state.objects as unknown as FabricObject[];
 		},
 		fire: vi.fn((event: string, payload?: unknown) => {
 			handlers[event]?.(payload);
@@ -120,7 +131,7 @@ const createCanvas = (active: ObjectMock | null) => {
 		}),
 	} as unknown as Canvas;
 
-	return { canvas, handlers };
+	return { canvas, handlers, state };
 };
 
 describe('usePanelSelection nudge', () => {
@@ -204,6 +215,10 @@ describe('usePanelSelection text clipboard', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
 		clearClipboard();
+		vi.restoreAllMocks();
+		vi.spyOn(loadGoogleFont, 'ensureTextFontsLoaded').mockResolvedValue(
+			undefined,
+		);
 	});
 
 	it('copies selected text and pastes a clone at the mouse position', async () => {
@@ -242,7 +257,10 @@ describe('usePanelSelection text clipboard', () => {
 			new KeyboardEvent('keydown', { key: 'v', ctrlKey: true }),
 		);
 
-		expect(mangaStore.texts).toHaveLength(2);
+		await vi.waitFor(() => {
+			expect(mangaStore.texts).toHaveLength(2);
+		});
+
 		expect(mangaStore.texts[1]?.content).toBe('Copy me');
 		expect(mangaStore.texts[1]?.id).not.toBe(text.id);
 		expect(mangaStore.texts[1]?.left).toBe(120);
@@ -250,6 +268,7 @@ describe('usePanelSelection text clipboard', () => {
 		expect(canvas.add).toHaveBeenCalled();
 		expect(canvas.setActiveObject).toHaveBeenCalled();
 		expect(syncInteractionMode).toHaveBeenCalled();
+		expect(loadGoogleFont.ensureTextFontsLoaded).toHaveBeenCalled();
 
 		toFabric.mockRestore();
 	});
@@ -272,6 +291,262 @@ describe('usePanelSelection text clipboard', () => {
 		);
 
 		expect(peekCopiedText()?.id).not.toBe(text.id);
+	});
+});
+
+describe('usePanelSelection text editing lifecycle', () => {
+	let selectionScope: ReturnType<typeof effectScope> | null = null;
+
+	const mountSelection = (
+		...args: Parameters<typeof usePanelSelection>
+	) => {
+		selectionScope?.stop();
+		selectionScope = effectScope();
+		selectionScope.run(() => {
+			usePanelSelection(...args);
+		});
+	};
+
+	beforeEach(() => {
+		setActivePinia(createPinia());
+		vi.restoreAllMocks();
+	});
+
+	afterEach(() => {
+		selectionScope?.stop();
+		selectionScope = null;
+	});
+
+	it('does not call set with locks while entering edit mode', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const cancelStroke = vi.fn();
+
+		mountSelection({
+			...selectionDeps(canvas),
+			cancelStroke,
+		});
+
+		handlers['text:editing:entered']?.({ target: textObject });
+
+		expect(cancelStroke).toHaveBeenCalledOnce();
+		expect(textObject.set).not.toHaveBeenCalled();
+	});
+
+	it('syncs interaction mode when editing exits even if persist fails', () => {
+		const textObject = createTextMock(TextBlock.create(10, 20));
+		const { canvas, handlers } = createCanvas(textObject);
+		const syncInteractionMode = vi.fn();
+
+		mountSelection({
+			...selectionDeps(canvas),
+			syncInteractionMode,
+		});
+
+		vi.spyOn(textFabric, 'textBlockFromFabric').mockImplementation(() => {
+			throw new Error('persist failed');
+		});
+
+		expect(() => {
+			handlers['text:editing:exited']?.({ target: textObject });
+		}).toThrow('persist failed');
+
+		expect(syncInteractionMode).toHaveBeenCalledOnce();
+	});
+
+	it('exits orphan boxed text editing when the group is deselected', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.createBoxed(10, 20);
+
+		mangaStore.addText(text);
+
+		const group = createTextMock(text);
+		const exitEditing = vi.fn();
+		const nestedTextbox = {
+			isEditing: true,
+			exitEditing,
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue(
+			nestedTextbox as never,
+		);
+
+		const { canvas, handlers, state } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+
+		state.active = null;
+		handlers['selection:cleared']?.();
+
+		expect(exitEditing).toHaveBeenCalledOnce();
+	});
+
+	it('keeps editing while the host text remains selected', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const exitEditing = vi.fn();
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue({
+			isEditing: true,
+			exitEditing,
+		} as never);
+
+		const { canvas, handlers } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+		handlers['selection:updated']?.();
+
+		expect(exitEditing).not.toHaveBeenCalled();
+	});
+
+	it('forwards mouse caret updates to the nested textbox while editing', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const setCursorByClick = vi.fn();
+		const register = vi.fn();
+		const unregister = vi.fn();
+		const endCurrentTransform = vi.fn();
+		const nestedTextbox = {
+			isEditing: true,
+			selectionStart: 2,
+			selectionEnd: 2,
+			setCursorByClick,
+			abortCursorAnimation: vi.fn(),
+			renderCursorOrSelection: vi.fn(),
+			hiddenTextarea: { focus: vi.fn() },
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue(
+			nestedTextbox as never,
+		);
+
+		const { canvas, handlers } = createCanvas(group);
+		Object.assign(canvas, {
+			endCurrentTransform,
+			textEditingManager: { register, unregister },
+		});
+
+		mountSelection(selectionDeps(canvas));
+
+		handlers['mouse:down']?.({
+			e: { button: 0 },
+			target: group,
+		});
+
+		expect(endCurrentTransform).toHaveBeenCalled();
+		expect(register).toHaveBeenCalledWith(nestedTextbox);
+		expect(setCursorByClick).toHaveBeenCalled();
+		expect(nestedTextbox.hiddenTextarea.focus).toHaveBeenCalled();
+
+		handlers['mouse:up']?.();
+
+		expect(unregister).toHaveBeenCalledWith(nestedTextbox);
+	});
+
+	it('selects the word on double click and all text on triple click', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const selectWord = vi.fn();
+		const selectAll = vi.fn();
+		const nestedTextbox = {
+			isEditing: true,
+			selectionStart: 3,
+			selectWord,
+			selectAll,
+			getSelectionStartFromPointer: vi.fn(() => 3),
+			renderCursorOrSelection: vi.fn(),
+			hiddenTextarea: { focus: vi.fn() },
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue(
+			nestedTextbox as never,
+		);
+
+		const { canvas, handlers } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+		handlers['mouse:dblclick']?.({
+			e: { clientX: 10, clientY: 10 },
+			target: group,
+		});
+
+		expect(selectWord).toHaveBeenCalledWith(3);
+		expect(selectAll).not.toHaveBeenCalled();
+
+		handlers['mouse:tripleclick']?.({ target: group });
+
+		expect(selectAll).toHaveBeenCalledOnce();
+		expect(nestedTextbox.hiddenTextarea.focus).toHaveBeenCalled();
+	});
+
+	it('exits editing with Escape when the textarea is not focused', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const exitEditing = vi.fn();
+		const textarea = {
+			selectionStart: 0,
+			selectionEnd: 0,
+			focus: vi.fn(),
+			setSelectionRange: vi.fn(),
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue({
+			isEditing: true,
+			hiddenTextarea: textarea,
+			exitEditing,
+		} as never);
+
+		const { canvas } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+
+		const event = new KeyboardEvent('keydown', {
+			key: 'Escape',
+			bubbles: true,
+		});
+		const preventDefault = vi.spyOn(event, 'preventDefault');
+
+		window.dispatchEvent(event);
+
+		expect(exitEditing).toHaveBeenCalled();
+		expect(preventDefault).toHaveBeenCalled();
+	});
+
+	it('enters editing and selects a word on first double click', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const enterEditing = vi.fn();
+		const selectWord = vi.fn();
+		const nestedTextbox = {
+			isEditing: false,
+			selectionStart: 0,
+			enterEditing,
+			selectWord,
+			getSelectionStartFromPointer: vi.fn(() => 2),
+			renderCursorOrSelection: vi.fn(),
+			hiddenTextarea: { focus: vi.fn() },
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue(
+			nestedTextbox as never,
+		);
+
+		const { canvas, handlers } = createCanvas(null, [group]);
+
+		mountSelection(selectionDeps(canvas));
+		handlers['mouse:dblclick']?.({
+			e: { clientX: 10, clientY: 10 },
+			target: group,
+		});
+
+		expect(canvas.setActiveObject).toHaveBeenCalledWith(group);
+		expect(enterEditing).toHaveBeenCalled();
+		expect(selectWord).toHaveBeenCalledWith(2);
 	});
 });
 

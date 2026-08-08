@@ -5,13 +5,14 @@ import {
 } from '@/models/TextBlock';
 import { getVisiblePageCenter } from '@/lib/fabric/visiblePagePoint';
 import { textBlockToFabric } from '@/lib/fabric/textFabric';
+import { ensureTextFontsLoaded } from '@/lib/fonts/loadGoogleFont';
 import { useMangaStore } from '@/stores/manga';
 import type { FeatureContext } from '@/features/types';
 
 export const usePageText = (ctx: FeatureContext) => {
 	const mangaStore = useMangaStore();
 
-	const addTextAtVisibleCenter = (text: TextBlock) => {
+	const addTextAtVisibleCenter = async (text: TextBlock) => {
 		const canvas = ctx.fabricCanvas.value;
 		const root = ctx.rootEl.value;
 
@@ -22,6 +23,14 @@ export const usePageText = (ctx: FeatureContext) => {
 		ctx.actions.cancelStroke();
 		ctx.discardSelection();
 
+		await ensureTextFontsLoaded(text);
+
+		const liveCanvas = ctx.fabricCanvas.value;
+
+		if (!liveCanvas) {
+			return;
+		}
+
 		mangaStore.addText(text);
 
 		const fabricText = textBlockToFabric(text, {
@@ -29,13 +38,13 @@ export const usePageText = (ctx: FeatureContext) => {
 			interactive: true,
 		});
 
-		canvas.add(fabricText);
-		canvas.setActiveObject(fabricText);
+		liveCanvas.add(fabricText);
+		liveCanvas.setActiveObject(fabricText);
 		ctx.actions.syncInteractionMode();
-		canvas.requestRenderAll();
+		liveCanvas.requestRenderAll();
 	};
 
-	const createCenteredText = (
+	const createCenteredText = async (
 		factory: (left: number, top: number) => TextBlock,
 	) => {
 		const root = ctx.rootEl.value;
@@ -68,19 +77,19 @@ export const usePageText = (ctx: FeatureContext) => {
 			text.box.verticalAlign = 'middle';
 		}
 
-		addTextAtVisibleCenter(text);
+		await addTextAtVisibleCenter(text);
 	};
 
-	const addSimpleText = () => {
-		createCenteredText(TextBlock.create);
+	const addSimpleText = async () => {
+		await createCenteredText(TextBlock.create);
 	};
 
-	const addBoxedText = () => {
-		createCenteredText(TextBlock.createBoxed);
+	const addBoxedText = async () => {
+		await createCenteredText(TextBlock.createBoxed);
 	};
 
-	const addRoundedBoxedText = () => {
-		createCenteredText(TextBlock.createRoundedBoxed);
+	const addRoundedBoxedText = async () => {
+		await createCenteredText(TextBlock.createRoundedBoxed);
 	};
 
 	return {

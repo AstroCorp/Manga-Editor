@@ -1,3 +1,5 @@
+import type { TextStylesJSON } from '@/types/page';
+
 export type EditorFontStyle = 'normal' | 'italic';
 
 export type EditorFontFamily = {
@@ -19,4 +21,10 @@ export type FontsourceGoogleFont = {
 	variable: boolean;
 	category?: string;
 	type?: string;
+};
+
+/** Texto (modelo o parcial) del que se pueden extraer familias tipográficas. */
+export type TextFontSource = {
+	fontFamily?: string | null;
+	styles?: TextStylesJSON | null;
 };

@@ -17,7 +17,9 @@ vi.mock('@/lib/fonts/googleFontsCss2', async () => {
 });
 
 const {
+	collectFontFamiliesFromText,
 	ensureFontFamilyLoaded,
+	ensureTextFontsLoaded,
 	resetLoadedFontFamiliesForTests,
 } = await import('@/lib/fonts/loadGoogleFont');
 
@@ -26,6 +28,20 @@ describe('loadGoogleFont', () => {
 		injectGoogleFontStylesheet.mockClear();
 		resetLoadedFontFamiliesForTests();
 		resetGoogleFontsCatalogForTests();
+	});
+
+	it('collects base and styled font families', () => {
+		expect(
+			collectFontFamiliesFromText({
+				fontFamily: 'Roboto',
+				styles: {
+					0: {
+						0: { fontFamily: 'Oswald' },
+						1: { fontFamily: ' Roboto ' },
+					},
+				},
+			}),
+		).toEqual(['Roboto', 'Oswald']);
 	});
 
 	it('skips empty family names', async () => {
@@ -86,6 +102,50 @@ describe('loadGoogleFont', () => {
 		await ensureFontFamilyLoaded('MissingFont');
 
 		expect(injectGoogleFontStylesheet).not.toHaveBeenCalled();
+
+		vi.unstubAllGlobals();
+	});
+
+	it('loads every family used by a text block', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => {
+				return {
+					ok: true,
+					json: async () => {
+						return [
+							{
+								id: 'roboto',
+								family: 'Roboto',
+								weights: [400],
+								styles: ['normal'],
+								variable: false,
+								category: 'sans-serif',
+							},
+							{
+								id: 'oswald',
+								family: 'Oswald',
+								weights: [400],
+								styles: ['normal'],
+								variable: false,
+								category: 'sans-serif',
+							},
+						];
+					},
+				};
+			}),
+		);
+
+		await ensureTextFontsLoaded({
+			fontFamily: 'Roboto',
+			styles: {
+				0: {
+					0: { fontFamily: 'Oswald' },
+				},
+			},
+		});
+
+		expect(injectGoogleFontStylesheet).toHaveBeenCalledTimes(2);
 
 		vi.unstubAllGlobals();
 	});

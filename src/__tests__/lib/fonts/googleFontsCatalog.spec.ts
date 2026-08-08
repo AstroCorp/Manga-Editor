@@ -14,7 +14,7 @@ describe('googleFontsCatalog', () => {
 		expect(normalizeFontFamilyName(12)).toBeNull();
 	});
 
-	it('defaults new text to Roboto', () => {
-		expect(DEFAULT_TEXT_FONT_FAMILY).toBe('Roboto');
+	it('defaults new text to Noto Sans', () => {
+		expect(DEFAULT_TEXT_FONT_FAMILY).toBe('Noto Sans');
 	});
 });

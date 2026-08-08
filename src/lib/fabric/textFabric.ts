@@ -668,10 +668,11 @@ export const textBlockToFabric = (
 		return textbox;
 	}
 
+	// Group seleccionable; Textbox solo editable (vía dblclick / reenvío de eventos).
 	const textbox = createInnerTextbox(text, {
 		left: box.padding,
 		top: box.padding,
-		interactive,
+		interactive: false,
 	});
 	textbox.initDimensions?.();
 

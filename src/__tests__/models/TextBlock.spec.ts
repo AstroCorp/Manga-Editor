@@ -14,7 +14,7 @@ describe('TextBlock', () => {
 		expect(text.box).toEqual({
 			fill: '#ffffff',
 			stroke: '#000000',
-			strokeWidth: 2,
+			strokeWidth: 5,
 			cornerRadius: 8,
 			padding: 12,
 			width: 0,
@@ -30,7 +30,7 @@ describe('TextBlock', () => {
 		expect(text.box).toEqual({
 			fill: '#ffffff',
 			stroke: '#000000',
-			strokeWidth: 2,
+			strokeWidth: 5,
 			cornerRadius: 9999,
 			padding: 12,
 			width: 0,

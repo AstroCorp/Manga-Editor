@@ -4,6 +4,8 @@ import {
 	FabricImage,
 	type Canvas,
 	type FabricObject,
+	type Textbox,
+	type TPointerEvent,
 } from 'fabric';
 import {
 	findPanelById,
@@ -33,7 +35,15 @@ import {
 	textBlockFromFabric,
 	textBlockToFabric,
 } from '@/lib/fabric/textFabric';
+import { ensureTextFontsLoaded } from '@/lib/fonts/loadGoogleFont';
 import { clampStrokeWidth } from '@/lib/page/pageLimits';
+import {
+	applyEditingTextareaKey,
+	exitOrphanPageTextEditing,
+	findEditingPageText,
+	isHostedTextEditing,
+	resolveEditingTextbox,
+} from '@/lib/text/pageTextEditing';
 import {
 	cloneTextBlockAt,
 	copyTextToClipboard,
@@ -49,6 +59,11 @@ import type { PageTextObject } from '@/types/fabric';
 import type { LayerElementFocusPayload } from '@/types/editor';
 import type { PagePoint, TextBlockJSON } from '@/types/page';
 import type { SelectionDeps } from '@/types/panel';
+import type {
+	EditingTextSelectMode,
+	FabricTextPointerEvent,
+	FabricTextTargetEvent,
+} from '@/types/text';
 
 const isUiKeyboardTarget = (target: EventTarget | null): boolean => {
 	if (!(target instanceof HTMLElement)) {
@@ -423,8 +438,110 @@ export const usePanelSelection = ({
 
 	let scrollBeforeEdit = captureScrollSnapshot(rootEl.value);
 
-	const onMouseDown = () => {
+	const focusEditingTextarea = (textbox: Textbox) => {
+		textbox.hiddenTextarea?.focus();
+	};
+
+	const selectEditingText = (
+		textbox: Textbox,
+		mode: EditingTextSelectMode,
+		pointerEvent?: TPointerEvent,
+	) => {
+		if (mode === 'all') {
+			textbox.selectAll();
+		} else {
+			const index = pointerEvent
+				? textbox.getSelectionStartFromPointer(pointerEvent)
+				: textbox.selectionStart;
+
+			textbox.selectWord(index);
+		}
+
+		textbox.renderCursorOrSelection();
+		focusEditingTextarea(textbox);
+	};
+
+	/** Entra en edición si hace falta (texto boxed: active = Group). */
+	const ensureTextEditing = (
+		pageText: PageTextObject,
+		textbox: Textbox,
+		pointerEvent?: TPointerEvent,
+	) => {
+		const canvas = fabricCanvas.value;
+
+		if (!canvas) {
+			return;
+		}
+
+		if (canvas.getActiveObject() !== pageText) {
+			canvas.setActiveObject(pageText);
+		}
+
+		if (!textbox.isEditing) {
+			textbox.enterEditing(pointerEvent);
+		}
+	};
+
+	/**
+	 * Texto boxed: el Group recibe el clic, no el Textbox.
+	 * Reenviamos caret/drag-select al Textbox en edición.
+	 */
+	const onMouseDown = (event: FabricTextPointerEvent) => {
 		scrollBeforeEdit = captureScrollSnapshot(rootEl.value);
+
+		const canvas = fabricCanvas.value;
+		const editing = findEditingPageText(canvas);
+		const pointerEvent = event.e;
+
+		if (
+			!canvas ||
+			!editing ||
+			!pointerEvent ||
+			!isHostedTextEditing(canvas.getActiveObject(), editing)
+		) {
+			return;
+		}
+
+		if (!event.target || resolvePageTextObject(event.target) !== editing.pageText) {
+			return;
+		}
+
+		if ('button' in pointerEvent && pointerEvent.button) {
+			return;
+		}
+
+		const { textbox } = editing;
+
+		canvas.endCurrentTransform(pointerEvent);
+		// Textbox es IText en runtime; los genéricos de Fabric chocan con register().
+		canvas.textEditingManager.register(textbox as never);
+		textbox.setCursorByClick(pointerEvent);
+		(
+			textbox as Textbox & { __selectionStartOnMouseDown?: number }
+		).__selectionStartOnMouseDown = textbox.selectionStart;
+		focusEditingTextarea(textbox);
+
+		if (textbox.selectionStart === textbox.selectionEnd) {
+			textbox.abortCursorAnimation();
+		}
+
+		textbox.renderCursorOrSelection();
+		canvas.requestRenderAll();
+	};
+
+	const onMouseUp = () => {
+		const canvas = fabricCanvas.value;
+		const editing = findEditingPageText(canvas);
+
+		if (!canvas || !editing) {
+			return;
+		}
+
+		if (isHostedTextEditing(canvas.getActiveObject(), editing)) {
+			canvas.textEditingManager.unregister(editing.textbox as never);
+		}
+
+		focusEditingTextarea(editing.textbox);
 	};
 
 	const onMouseMove = (event: { e?: Event }) => {
@@ -439,59 +556,58 @@ export const usePanelSelection = ({
 		lastPointer = { x: point.x, y: point.y };
 	};
 
-	const onEditingEntered = (event: { target?: FabricObject }) => {
+	const onEditingEntered = (event: FabricTextTargetEvent) => {
+		// Evitar textbox.set(locks) aquí: IText._set corrompe _savedProps en isEditing.
 		cancelStroke();
 
-		const target = event.target;
+		const editing = resolveEditingTextbox(event.target);
 
-		if (!target || !isPageText(target)) {
-			return;
+		if (editing) {
+			focusEditingTextarea(editing.textbox);
 		}
 
-		const pageText = resolvePageTextObject(target);
-
-		pageText.set({
-			lockMovementX: true,
-			lockMovementY: true,
-			lockRotation: true,
-			lockScalingX: true,
-			hasControls: false,
-		});
 		fabricCanvas.value?.requestRenderAll();
 		restoreScrollAfterTextEditing(rootEl.value, scrollBeforeEdit);
 	};
 
-	/** El Group boxed no es interactivo: doble clic entra en edición del Textbox interno. */
-	const onDblClick = (event: { target?: FabricObject }) => {
+	const onEditingExited = (event: FabricTextTargetEvent) => {
+		try {
+			if (event.target) {
+				persistTextObject(event.target);
+			}
+		} finally {
+			syncInteractionMode();
+		}
+	};
+
+	/** Doble clic → palabra; triple clic → todo (como un textarea). */
+	const onMultiClick = (
+		event: FabricTextPointerEvent,
+		mode: EditingTextSelectMode,
+	) => {
 		const canvas = fabricCanvas.value;
-		const target = event.target;
+		const editing = resolveEditingTextbox(event.target);
 
-		if (!canvas || !target || !isPageText(target)) {
+		if (!canvas || !editing) {
 			return;
 		}
 
-		const pageText = resolvePageTextObject(target) as PageTextObject;
-		const textbox = getPageTextbox(pageText);
-
-		if (!textbox || textbox.isEditing) {
-			return;
-		}
-
-		if (canvas.getActiveObject() !== pageText) {
-			canvas.setActiveObject(pageText);
-		}
-
-		textbox.enterEditing();
-		textbox.selectAll();
+		ensureTextEditing(editing.pageText, editing.textbox, event.e);
+		selectEditingText(editing.textbox, mode, event.e);
 		canvas.requestRenderAll();
 	};
 
-	const onEditingExited = (event: { target?: FabricObject }) => {
-		if (event.target) {
-			persistTextObject(event.target);
+	const onSelectionChanged = () => {
+		const canvas = fabricCanvas.value;
+
+		if (canvas) {
+			exitOrphanPageTextEditing(
+				canvas,
+				canvas.getActiveObject() as FabricObject | null | undefined,
+			);
 		}
 
-		syncInteractionMode();
+		syncFocusedFromCanvas();
 	};
 
 	const canNudgeObject = (object: FabricObject | null | undefined): boolean => {
@@ -564,29 +680,68 @@ export const usePanelSelection = ({
 		);
 		const text = cloneTextBlockAt(payload, origin.x, origin.y);
 
-		mangaStore.addText(text);
+		void (async () => {
+			await ensureTextFontsLoaded(text);
 
-		const fabricText = textBlockToFabric(text, {
-			layerId: mangaStore.activeLayer.id,
-			interactive: true,
-		});
+			const liveCanvas = fabricCanvas.value;
 
-		canvas.add(fabricText);
-		canvas.setActiveObject(fabricText);
-		syncInteractionMode();
-		canvas.requestRenderAll();
+			if (!liveCanvas) {
+				return;
+			}
+
+			mangaStore.addText(text);
+
+			const fabricText = textBlockToFabric(text, {
+				layerId: mangaStore.activeLayer.id,
+				interactive: true,
+			});
+
+			liveCanvas.add(fabricText);
+			liveCanvas.setActiveObject(fabricText);
+			syncInteractionMode();
+			liveCanvas.requestRenderAll();
+		})();
 
 		return true;
 	};
 
 	const onKeyDown = (event: KeyboardEvent) => {
-		if (isUiKeyboardTarget(event.target)) {
+		const editing = findEditingPageText(fabricCanvas.value);
+		const textarea = editing?.textbox.hiddenTextarea;
+
+		if (editing && textarea && event.target !== textarea) {
+			if (event.key === 'Escape') {
+				editing.textbox.exitEditing();
+				event.preventDefault();
+
+				return;
+			}
+
+			// Preservar selección: en algunos entornos focus() selecciona todo.
+			const start = textarea.selectionStart ?? 0;
+			const end = textarea.selectionEnd ?? 0;
+
+			focusEditingTextarea(editing.textbox);
+			textarea.setSelectionRange(start, end);
+
+			const result = applyEditingTextareaKey(textarea, event);
+
+			if (result === 'selectAll') {
+				event.preventDefault();
+				selectEditingText(editing.textbox, 'all');
+
+				return;
+			}
+
+			if (result === 'changed') {
+				event.preventDefault();
+				textarea.dispatchEvent(new InputEvent('input', { bubbles: true }));
+			}
+
 			return;
 		}
 
-		const canvas = fabricCanvas.value;
-
-		if (isEditingText(canvas?.getActiveObject() ?? null)) {
+		if (editing || isUiKeyboardTarget(event.target)) {
 			return;
 		}
 
@@ -628,30 +783,42 @@ export const usePanelSelection = ({
 		}
 	};
 
+	const onDblClick = (event: FabricTextPointerEvent) => {
+		onMultiClick(event, 'word');
+	};
+
+	const onTripleClick = (event: FabricTextPointerEvent) => {
+		onMultiClick(event, 'all');
+	};
+
 	const bindSelectionEvents = (canvas: Canvas) => {
 		canvas.on('mouse:down', onMouseDown);
+		canvas.on('mouse:up', onMouseUp);
 		canvas.on('mouse:move', onMouseMove);
 		canvas.on('mouse:dblclick', onDblClick);
+		canvas.on('mouse:tripleclick', onTripleClick);
 		canvas.on('object:modified', onObjectModified);
 		canvas.on('text:changed', onTextChanged);
 		canvas.on('text:editing:entered', onEditingEntered);
 		canvas.on('text:editing:exited', onEditingExited);
-		canvas.on('selection:created', syncFocusedFromCanvas);
-		canvas.on('selection:updated', syncFocusedFromCanvas);
-		canvas.on('selection:cleared', syncFocusedFromCanvas);
+		canvas.on('selection:created', onSelectionChanged);
+		canvas.on('selection:updated', onSelectionChanged);
+		canvas.on('selection:cleared', onSelectionChanged);
 	};
 
 	const unbindSelectionEvents = (canvas: Canvas) => {
 		canvas.off('mouse:down', onMouseDown);
+		canvas.off('mouse:up', onMouseUp);
 		canvas.off('mouse:move', onMouseMove);
 		canvas.off('mouse:dblclick', onDblClick);
+		canvas.off('mouse:tripleclick', onTripleClick);
 		canvas.off('object:modified', onObjectModified);
 		canvas.off('text:changed', onTextChanged);
 		canvas.off('text:editing:entered', onEditingEntered);
 		canvas.off('text:editing:exited', onEditingExited);
-		canvas.off('selection:created', syncFocusedFromCanvas);
-		canvas.off('selection:updated', syncFocusedFromCanvas);
-		canvas.off('selection:cleared', syncFocusedFromCanvas);
+		canvas.off('selection:created', onSelectionChanged);
+		canvas.off('selection:updated', onSelectionChanged);
+		canvas.off('selection:cleared', onSelectionChanged);
 	};
 
 	registerCanvasAction({

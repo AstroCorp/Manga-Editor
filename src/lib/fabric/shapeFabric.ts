@@ -8,7 +8,10 @@ import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { stackPageContent } from '@/lib/fabric/isGuide';
 import { shapeImageToFabric } from '@/lib/fabric/panelImageFabric';
 import { textBlockToFabric } from '@/lib/fabric/textFabric';
-import { ensureFontFamilyLoaded } from '@/lib/fonts/loadGoogleFont';
+import {
+	collectFontFamiliesFromText,
+	ensureFontFamilyLoaded,
+} from '@/lib/fonts/loadGoogleFont';
 import type { Page } from '@/models/Page';
 import type { Shape } from '@/models/Shape';
 import type { PanelPolygon } from '@/types/fabric';
@@ -77,21 +80,7 @@ export const hydrateCanvasFromPage = async (
 		...new Set(
 			page.layers.flatMap((layer) => {
 				return layer.texts.flatMap((text) => {
-					const families = [text.fontFamily];
-
-					if (!text.styles) {
-						return families;
-					}
-
-					for (const line of Object.values(text.styles)) {
-						for (const style of Object.values(line)) {
-							if (style.fontFamily) {
-								families.push(style.fontFamily);
-							}
-						}
-					}
-
-					return families;
+					return collectFontFamiliesFromText(text);
 				});
 			}),
 		),

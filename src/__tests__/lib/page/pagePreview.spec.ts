@@ -135,7 +135,7 @@ describe('pagePreview', () => {
 				x: 12,
 				y: 40,
 				fontSize: 16,
-				fontFamily: 'Roboto',
+				fontFamily: 'Noto Sans',
 				lineHeight: 1.16,
 				fill: '#000000',
 				fontWeight: 'normal',
@@ -161,7 +161,7 @@ describe('pagePreview', () => {
 		expect(preview.texts[0]?.box).toEqual({
 			fill: '#ffffff',
 			stroke: '#000000',
-			strokeWidth: 2,
+			strokeWidth: 5,
 			cornerRadius: 8,
 			padding: 12,
 			width: 0,

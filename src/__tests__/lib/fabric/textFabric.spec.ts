@@ -147,7 +147,7 @@ describe('textFabric', () => {
 			top: 16,
 			width: 180,
 			fontSize: 28,
-			fontFamily: 'Roboto',
+			fontFamily: 'Noto Sans',
 			angle: 33,
 			fill: '#112233',
 			fontWeight: 'bold',

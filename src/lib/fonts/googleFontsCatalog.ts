@@ -5,7 +5,7 @@ import type {
 	FontsourceGoogleFont,
 } from '@/types/fonts';
 
-export const DEFAULT_TEXT_FONT_FAMILY = 'Roboto';
+export const DEFAULT_TEXT_FONT_FAMILY = 'Noto Sans';
 
 const FONTSOURCE_GOOGLE_URL = 'https://api.fontsource.org/v1/fonts?type=google';
 
