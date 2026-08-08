@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Group, Rect } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { getTextId, isPageText } from '@/lib/fabric/isGuide';
 import { TextBlock } from '@/models/TextBlock';
 import type { PageTextObject } from '@/types/fabric';
+import type { TextBoxStyle } from '@/types/page';
 
 const { TextboxMock } = vi.hoisted(() => {
 	class TextboxMock {
@@ -51,6 +53,31 @@ const { TextboxMock } = vi.hoisted(() => {
 		fire() {
 			return this;
 		}
+
+		/** Mínimo para que Group/LayoutManager pueda medir el Textbox mock. */
+		getRelativeCenterPoint() {
+			const left = Number(this.left) || 0;
+			const top = Number(this.top) || 0;
+			const width = Number(this.width) || 0;
+			const height = Number(this.height) || 0;
+			const strokeWidth = Number(this.strokeWidth) || 0;
+
+			return {
+				x: left + (width + strokeWidth) / 2,
+				y: top + (height + strokeWidth) / 2,
+				transform() {
+					return this;
+				},
+			};
+		}
+
+		isStrokeAccountedForInDimensions() {
+			return false;
+		}
+
+		calcTransformMatrix() {
+			return [1, 0, 0, 1, 0, 0];
+		}
 	}
 
 	return { TextboxMock };
@@ -67,10 +94,14 @@ vi.mock('fabric', async (importOriginal) => {
 
 const {
 	boxedCornerCursorStyle,
+	boxedRectOrigin,
 	boxedTextTop,
+	getPageTextRect,
+	getPageTextbox,
 	installBoxedTextControls,
 	resolveBoxedOuterHeight,
 	resolveBoxedOuterWidth,
+	syncBoxedTextGeometry,
 	textBlockFromFabric,
 	textBlockToFabric,
 } = await import('@/lib/fabric/textFabric');
@@ -372,6 +403,148 @@ describe('textFabric', () => {
 		expect(boxedTextTop(120, 40, 12, 'top')).toBe(12);
 		expect(boxedTextTop(120, 40, 12, 'middle')).toBe(40);
 		expect(boxedTextTop(120, 40, 12, 'bottom')).toBe(68);
+	});
+
+	it('offsets boxed rect origin by half stroke to keep fill aligned with text', () => {
+		expect(boxedRectOrigin(100, 0)).toBe(-50);
+		expect(boxedRectOrigin(100, 5)).toBe(-52.5);
+		expect(boxedRectOrigin(100, -2)).toBe(-50);
+		expect(boxedRectOrigin(80, 2)).toBe(-41);
+
+		// Con middle: centro del relleno = origin + stroke/2 + H/2 = 0.
+		const outerHeight = 100;
+		const stroke = 5;
+		const textHeight = 24;
+		const textTop = boxedTextTop(outerHeight, textHeight, 12, 'middle');
+		const rectTop = boxedRectOrigin(outerHeight, stroke);
+		const textboxTop = -outerHeight / 2 + textTop;
+		const fillCenterY = rectTop + stroke / 2 + outerHeight / 2;
+		const textCenterY = textboxTop + textHeight / 2;
+
+		expect(fillCenterY).toBeCloseTo(0);
+		expect(textCenterY).toBeCloseTo(0);
+	});
+
+	it('keeps equal padding gaps for top and bottom when stroke is compensated', () => {
+		const outerHeight = 120;
+		const stroke = 5;
+		const textHeight = 40;
+		const padding = 12;
+		const rectTop = boxedRectOrigin(outerHeight, stroke);
+		const fillTop = rectTop + stroke / 2;
+		const fillBottom = fillTop + outerHeight;
+
+		const topTextTop =
+			-outerHeight / 2 +
+			boxedTextTop(outerHeight, textHeight, padding, 'top');
+		const bottomTextTop =
+			-outerHeight / 2 +
+			boxedTextTop(outerHeight, textHeight, padding, 'bottom');
+
+		expect(topTextTop - fillTop).toBeCloseTo(padding);
+		expect(fillBottom - (bottomTextTop + textHeight)).toBeCloseTo(padding);
+	});
+
+	it('syncBoxedTextGeometry centers text fill with strokeWidth > 0', () => {
+		const stroke = 5;
+		const outerWidth = 200;
+		const outerHeight = 100;
+		const padding = 12;
+		const textHeight = 24;
+		const box: TextBoxStyle = {
+			fill: '#ffffff',
+			stroke: '#000000',
+			strokeWidth: stroke,
+			cornerRadius: 8,
+			padding,
+			width: outerWidth,
+			height: outerHeight,
+			verticalAlign: 'middle',
+		};
+		const rect = new Rect({
+			left: 0,
+			top: 0,
+			width: outerWidth,
+			height: outerHeight,
+			strokeWidth: stroke,
+		});
+		const textbox = new TextboxMock('Hi', {
+			width: outerWidth - padding * 2,
+			fontSize: textHeight,
+			height: textHeight,
+			left: 0,
+			top: 0,
+			strokeWidth: 0,
+		});
+		const group = new Group([], { objectCaching: false }) as PageTextObject;
+
+		vi.spyOn(group, 'getObjects').mockReturnValue([rect, textbox as never]);
+
+		syncBoxedTextGeometry(group, box);
+
+		expect(rect.left).toBeCloseTo(boxedRectOrigin(outerWidth, stroke));
+		expect(rect.top).toBeCloseTo(boxedRectOrigin(outerHeight, stroke));
+		expect(getPageTextRect(group)).toBe(rect);
+		expect(getPageTextbox(group)).toBe(textbox);
+
+		const fillCenterY = Number(rect.top) + stroke / 2 + outerHeight / 2;
+		const textCenterY = Number(textbox.top) + textHeight / 2;
+
+		expect(fillCenterY).toBeCloseTo(0);
+		expect(textCenterY).toBeCloseTo(0);
+		expect(Number(textbox.top)).toBeCloseTo(
+			-outerHeight / 2 +
+				boxedTextTop(outerHeight, textHeight, padding, 'middle'),
+		);
+	});
+
+	it('syncBoxedTextGeometry realigns after verticalAlign changes', () => {
+		const stroke = 5;
+		const outerWidth = 200;
+		const outerHeight = 100;
+		const padding = 12;
+		const textHeight = 24;
+		const rect = new Rect({
+			width: outerWidth,
+			height: outerHeight,
+			strokeWidth: stroke,
+		});
+		const textbox = new TextboxMock('Hi', {
+			width: outerWidth - padding * 2,
+			fontSize: textHeight,
+			height: textHeight,
+			strokeWidth: 0,
+		});
+		const group = new Group([], { objectCaching: false }) as PageTextObject;
+
+		vi.spyOn(group, 'getObjects').mockReturnValue([rect, textbox as never]);
+
+		const baseBox: TextBoxStyle = {
+			fill: '#ffffff',
+			stroke: '#000000',
+			strokeWidth: stroke,
+			cornerRadius: 0,
+			padding,
+			width: outerWidth,
+			height: outerHeight,
+			verticalAlign: 'top',
+		};
+
+		syncBoxedTextGeometry(group, baseBox);
+
+		expect(Number(textbox.top)).toBeCloseTo(-outerHeight / 2 + padding);
+		expect(Number(rect.top)).toBeCloseTo(boxedRectOrigin(outerHeight, stroke));
+
+		syncBoxedTextGeometry(group, {
+			...baseBox,
+			verticalAlign: 'bottom',
+		});
+
+		expect(Number(textbox.top)).toBeCloseTo(
+			-outerHeight / 2 +
+				boxedTextTop(outerHeight, textHeight, padding, 'bottom'),
+		);
+		expect(Number(rect.top)).toBeCloseTo(boxedRectOrigin(outerHeight, stroke));
 	});
 
 	it('resolves boxed outer width from explicit box width', () => {

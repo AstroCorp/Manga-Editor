@@ -63,6 +63,18 @@ export const boxedTextTop = (
 	return padding;
 };
 
+/**
+ * Fabric incluye strokeWidth en el bbox del Rect: left/top apuntan a la
+ * esquina exterior del stroke. Desplazar -stroke/2 alinea el relleno con el
+ * Textbox (stroke 0).
+ */
+export const boxedRectOrigin = (
+	outerSize: number,
+	strokeWidth: number,
+): number => {
+	return -outerSize / 2 - Math.max(0, strokeWidth) / 2;
+};
+
 export const resolveBoxedOuterHeight = (
 	boxHeight: number,
 	textHeight: number,
@@ -235,16 +247,18 @@ export const syncBoxedTextGeometry = (
 	const top = object.top ?? 0;
 
 	// Coords relativas al centro del Group (convención Fabric tras el layout).
+	const stroke = Math.max(0, box.strokeWidth || 0);
+
 	rect.set({
-		left: -outerWidth / 2,
-		top: -outerHeight / 2,
+		left: boxedRectOrigin(outerWidth, stroke),
+		top: boxedRectOrigin(outerHeight, stroke),
 		width: outerWidth,
 		height: outerHeight,
 		rx: box.cornerRadius,
 		ry: box.cornerRadius,
 		fill: box.fill,
 		stroke: box.stroke,
-		strokeWidth: box.strokeWidth,
+		strokeWidth: stroke,
 	});
 	textbox.set({
 		left: -outerWidth / 2 + padding,

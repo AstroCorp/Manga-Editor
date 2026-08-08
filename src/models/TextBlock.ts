@@ -25,7 +25,7 @@ export const DEFAULT_TEXT_BOX: TextBoxStyle = {
 	fill: '#ffffff',
 	stroke: '#000000',
 	strokeWidth: 5,
-	cornerRadius: 8,
+	cornerRadius: 0,
 	padding: 12,
 	width: 0,
 	height: 0,
