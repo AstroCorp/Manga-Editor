@@ -61,7 +61,14 @@ export const usePageText = (ctx: FeatureContext) => {
 			Math.max(0, page.height - DEFAULT_TEXT_FONT_SIZE),
 		);
 
-		addTextAtVisibleCenter(factory(left, top));
+		const text = factory(left, top);
+		text.textAlign = 'center';
+
+		if (text.box) {
+			text.box.verticalAlign = 'middle';
+		}
+
+		addTextAtVisibleCenter(text);
 	};
 
 	const addSimpleText = () => {

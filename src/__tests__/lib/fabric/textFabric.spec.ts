@@ -66,6 +66,7 @@ vi.mock('fabric', async (importOriginal) => {
 });
 
 const {
+	boxedCornerCursorStyle,
 	boxedTextTop,
 	installBoxedTextControls,
 	resolveBoxedOuterHeight,
@@ -353,8 +354,16 @@ describe('textFabric', () => {
 		expect(group.controls.mr?.actionName).toBe('resizing');
 		expect(group.controls.mt?.actionName).toBe('resizing');
 		expect(group.controls.mb?.actionName).toBe('resizing');
-		expect(group.controls.tl?.actionName).toBe('resizing');
-		expect(group.controls.br?.actionName).toBe('resizing');
+		expect(group.controls.tl?.actionName).toBe('scale');
+		expect(group.controls.br?.actionName).toBe('scale');
+	});
+
+	it('maps boxed corner controls to diagonal resize cursors', () => {
+		expect(boxedCornerCursorStyle(-0.5, -0.5, 0)).toBe('nw-resize');
+		expect(boxedCornerCursorStyle(0.5, -0.5, 0)).toBe('ne-resize');
+		expect(boxedCornerCursorStyle(-0.5, 0.5, 0)).toBe('sw-resize');
+		expect(boxedCornerCursorStyle(0.5, 0.5, 0)).toBe('se-resize');
+		expect(boxedCornerCursorStyle(0.5, 0.5, 90)).toBe('sw-resize');
 	});
 
 	it('computes vertical text top inside a taller box', () => {

@@ -500,9 +500,58 @@ const onBoxedTextResizeHeight = controlsUtils.wrapWithFireEvent(
 );
 
 const onBoxedTextResizeCorner = controlsUtils.wrapWithFireEvent(
-	'resizing',
+	'scaling',
 	controlsUtils.wrapWithFixedAnchor(resizeBoxedTextCorner),
 );
+
+const CORNER_CURSOR_MAP = [
+	'e',
+	'se',
+	's',
+	'sw',
+	'w',
+	'nw',
+	'n',
+	'ne',
+] as const;
+
+/**
+ * Cursor diagonal según control.x/y + ángulo (no oCoords).
+ * Tras crear el Group, findCornerQuadrant(oCoords) puede devolver e/w
+ * la primera vez y el cursor parece de resize lateral.
+ */
+export const boxedCornerCursorStyle = (
+	controlX: number,
+	controlY: number,
+	angleDeg: number,
+	flipX = false,
+	flipY = false,
+): string => {
+	const vx = controlX * (flipX ? -1 : 1);
+	const vy = controlY * (flipY ? -1 : 1);
+	const radians = (angleDeg * Math.PI) / 180;
+	const x = vx * Math.cos(radians) - vy * Math.sin(radians);
+	const y = vx * Math.sin(radians) + vy * Math.cos(radians);
+	const twoPi = Math.PI * 2;
+	const angle = (Math.atan2(y, x) + twoPi) % twoPi;
+	const index = Math.round(angle / (Math.PI / 4)) % 8;
+
+	return `${CORNER_CURSOR_MAP[index]}-resize`;
+};
+
+const boxedCornerCursorStyleHandler = (
+	_eventData: TPointerEvent,
+	control: Control,
+	fabricObject: Group,
+) => {
+	return boxedCornerCursorStyle(
+		control.x,
+		control.y,
+		fabricObject.getTotalAngle(),
+		Boolean(fabricObject.flipX),
+		Boolean(fabricObject.flipY),
+	);
+};
 
 export const installBoxedTextControls = (group: Group): void => {
 	const rotateControl = group.controls.mtr;
@@ -540,29 +589,29 @@ export const installBoxedTextControls = (group: Group): void => {
 			x: -0.5,
 			y: -0.5,
 			actionHandler: onBoxedTextResizeCorner,
-			cursorStyleHandler: controlsUtils.scaleCursorStyleHandler,
-			actionName: 'resizing',
+			cursorStyleHandler: boxedCornerCursorStyleHandler,
+			actionName: 'scale',
 		}),
 		tr: new Control({
 			x: 0.5,
 			y: -0.5,
 			actionHandler: onBoxedTextResizeCorner,
-			cursorStyleHandler: controlsUtils.scaleCursorStyleHandler,
-			actionName: 'resizing',
+			cursorStyleHandler: boxedCornerCursorStyleHandler,
+			actionName: 'scale',
 		}),
 		bl: new Control({
 			x: -0.5,
 			y: 0.5,
 			actionHandler: onBoxedTextResizeCorner,
-			cursorStyleHandler: controlsUtils.scaleCursorStyleHandler,
-			actionName: 'resizing',
+			cursorStyleHandler: boxedCornerCursorStyleHandler,
+			actionName: 'scale',
 		}),
 		br: new Control({
 			x: 0.5,
 			y: 0.5,
 			actionHandler: onBoxedTextResizeCorner,
-			cursorStyleHandler: controlsUtils.scaleCursorStyleHandler,
-			actionName: 'resizing',
+			cursorStyleHandler: boxedCornerCursorStyleHandler,
+			actionName: 'scale',
 		}),
 		...(rotateControl ? { mtr: rotateControl } : {}),
 	};
