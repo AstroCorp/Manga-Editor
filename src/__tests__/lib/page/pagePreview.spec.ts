@@ -1,13 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { buildPagePreview } from '@/lib/page/pagePreview';
+import { plainPreviewLines } from '@/lib/page/previewTextRuns';
 import { TextBlock } from '@/models/TextBlock';
+import type { PagePreviewTextRun } from '@/types/page';
+
+const baseRun = (
+	text: string,
+	overrides: Partial<PagePreviewTextRun> = {},
+): PagePreviewTextRun => {
+	return {
+		text,
+		fill: '#000000',
+		fontSize: 16,
+		fontFamily: 'Noto Sans',
+		fontWeight: 'normal',
+		fontStyle: 'normal',
+		underline: false,
+		linethrough: false,
+		stroke: null,
+		strokeWidth: 0,
+		...overrides,
+	};
+};
 
 describe('pagePreview', () => {
 	it('returns empty panels for blank shapes', () => {
 		const preview = buildPagePreview(100, 200, []);
 
 		expect(preview.panels).toEqual([]);
-		expect(preview.images).toEqual([]);
 		expect(preview.texts).toEqual([]);
 		expect(preview.height).toBe(200);
 	});
@@ -29,6 +49,7 @@ describe('pagePreview', () => {
 		expect(preview.panels[0]?.points).toBe('0,0 10,0 10,10');
 		expect(preview.panels[0]?.strokeWidth).toBe(2);
 		expect(preview.panels[0]?.whiteFill).toBe(false);
+		expect(preview.panels[0]?.image).toBeNull();
 	});
 
 	it('keeps whiteFill per panel in the preview model', () => {
@@ -46,6 +67,32 @@ describe('pagePreview', () => {
 		]);
 
 		expect(preview.panels[0]?.whiteFill).toBe(true);
+	});
+
+	it('clears whiteFill when the panel has an image', () => {
+		const preview = buildPagePreview(200, 200, [
+			{
+				points: [
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				strokeWidth: 2,
+				whiteFill: true,
+				image: {
+					src: 'https://example.com/cover.png',
+					left: 0,
+					top: 0,
+					scaleX: 1,
+					scaleY: 1,
+					width: 10,
+					height: 10,
+				},
+			},
+		]);
+
+		expect(preview.panels[0]?.whiteFill).toBe(false);
+		expect(preview.panels[0]?.image).not.toBeNull();
 	});
 
 	it('places images with center origin', () => {
@@ -71,8 +118,7 @@ describe('pagePreview', () => {
 			},
 		]);
 
-		expect(preview.images).toHaveLength(1);
-		expect(preview.images[0]).toEqual({
+		expect(preview.panels[0]?.image).toEqual({
 			href: 'https://example.com/cover.png',
 			x: 50,
 			y: 40,
@@ -81,12 +127,11 @@ describe('pagePreview', () => {
 			angle: 0,
 			originX: 100,
 			originY: 80,
-			clipPoints: '0,0 10,0 10,10',
 			grayscale: false,
 		});
 	});
 
-	it('includes image angle and clip points for the panel mask', () => {
+	it('includes image angle for the panel mask', () => {
 		const preview = buildPagePreview(200, 200, [
 			{
 				points: [
@@ -110,10 +155,10 @@ describe('pagePreview', () => {
 			},
 		]);
 
-		expect(preview.images[0]?.angle).toBe(30);
-		expect(preview.images[0]?.clipPoints).toBe('0,0 20,0 20,20');
-		expect(preview.images[0]?.originX).toBe(10);
-		expect(preview.images[0]?.originY).toBe(10);
+		expect(preview.panels[0]?.image?.angle).toBe(30);
+		expect(preview.panels[0]?.points).toBe('0,0 20,0 20,20');
+		expect(preview.panels[0]?.image?.originX).toBe(10);
+		expect(preview.panels[0]?.image?.originY).toBe(10);
 	});
 
 	it('builds preview texts with rotation origin at the text top-left', () => {
@@ -131,7 +176,7 @@ describe('pagePreview', () => {
 
 		expect(preview.texts).toEqual([
 			{
-				lines: ['Hello', 'there'],
+				lines: [[baseRun('Hello')], [baseRun('there')]],
 				x: 12,
 				y: 40,
 				fontSize: 16,
@@ -151,6 +196,32 @@ describe('pagePreview', () => {
 				originY: 24,
 				box: null,
 			},
+		]);
+	});
+
+	it('applies character styles as runs in preview lines', () => {
+		const text = new TextBlock({
+			id: 't-styled',
+			content: 'Hi',
+			left: 0,
+			top: 0,
+			width: 100,
+			fontSize: 16,
+			fill: '#000000',
+			styles: {
+				'0': {
+					'0': { fontWeight: 'bold', fill: '#ff0000' },
+					'1': { fontStyle: 'italic' },
+				},
+			},
+		});
+		const preview = buildPagePreview(200, 200, [], [text]);
+
+		expect(preview.texts[0]?.lines).toEqual([
+			[
+				baseRun('H', { fontWeight: 'bold', fill: '#ff0000' }),
+				baseRun('i', { fontStyle: 'italic' }),
+			],
 		]);
 	});
 
@@ -185,9 +256,11 @@ describe('pagePreview', () => {
 		});
 		const preview = buildPagePreview(200, 200, [], [text]);
 
-		expect(preview.texts[0]?.lines.length).toBeGreaterThan(1);
-		expect(preview.texts[0]?.lines.join(' ')).toContain('one');
-		expect(preview.texts[0]?.lines.join(' ')).toContain('six');
+		const plain = plainPreviewLines(preview.texts[0]?.lines ?? []);
+
+		expect(plain.length).toBeGreaterThan(1);
+		expect(plain.join(' ')).toContain('one');
+		expect(plain.join(' ')).toContain('six');
 	});
 
 	it('keeps text that fits the box on a single preview line', () => {
@@ -202,7 +275,9 @@ describe('pagePreview', () => {
 		});
 		const preview = buildPagePreview(200, 200, [], [text]);
 
-		expect(preview.texts[0]?.lines).toEqual(['Short line']);
+		expect(plainPreviewLines(preview.texts[0]?.lines ?? [])).toEqual([
+			'Short line',
+		]);
 	});
 
 	it('includes text stroke in preview when width is positive', () => {
@@ -219,7 +294,13 @@ describe('pagePreview', () => {
 		expect(preview.texts[0]).toMatchObject({
 			stroke: '#ff0000',
 			strokeWidth: 2,
-			lines: ['Outlined'],
+		});
+		expect(plainPreviewLines(preview.texts[0]?.lines ?? [])).toEqual([
+			'Outlined',
+		]);
+		expect(preview.texts[0]?.lines[0]?.[0]).toMatchObject({
+			stroke: '#ff0000',
+			strokeWidth: 2,
 		});
 	});
 
@@ -247,6 +328,6 @@ describe('pagePreview', () => {
 			},
 		]);
 
-		expect(preview.images[0]?.grayscale).toBe(true);
+		expect(preview.panels[0]?.image?.grayscale).toBe(true);
 	});
 });

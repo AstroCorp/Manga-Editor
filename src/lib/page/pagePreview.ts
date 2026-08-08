@@ -3,6 +3,7 @@ import {
 	DEFAULT_TEXT_LINE_HEIGHT,
 	type TextBlock,
 } from '@/models/TextBlock';
+import { buildStyledPreviewLines } from '@/lib/page/previewTextRuns';
 import type {
 	PagePoint,
 	PagePreviewImage,
@@ -22,11 +23,8 @@ const toSvgPoints = (points: PagePoint[]): string => {
 		.join(' ');
 };
 
-const imagePlacement = (
-	image: ShapeImageJSON,
-	clipPoints: string,
-): PagePreviewImage | null => {
-	if (!image.src || !clipPoints) {
+const imagePlacement = (image: ShapeImageJSON): PagePreviewImage | null => {
+	if (!image.src) {
 		return null;
 	}
 
@@ -44,7 +42,6 @@ const imagePlacement = (
 		angle: image.angle ?? 0,
 		originX: image.originX === 'center' ? image.left : x,
 		originY: image.originY === 'center' ? image.top : y,
-		clipPoints,
 		grayscale: Boolean(image.grayscale),
 	};
 };
@@ -110,11 +107,22 @@ const fallbackPreviewTextWidth = (value: string, fontSize: number): number => {
 	return width;
 };
 
+const quoteFontFamily = (family: string): string => {
+	const trimmed = family.trim() || PREVIEW_FONT_FAMILY;
+
+	if (/[,\s]/.test(trimmed) && !trimmed.includes('"')) {
+		return `"${trimmed}", ${PREVIEW_FONT_FAMILY}`;
+	}
+
+	return `${trimmed}, ${PREVIEW_FONT_FAMILY}`;
+};
+
 const toCssFont = (style: PreviewTextMeasureStyle): string => {
 	const fontStyle = style.fontStyle === 'italic' ? 'italic' : 'normal';
 	const fontWeight = style.fontWeight === 'bold' ? 'bold' : 'normal';
+	const family = quoteFontFamily(style.fontFamily ?? PREVIEW_FONT_FAMILY);
 
-	return `${fontStyle} ${fontWeight} ${style.fontSize}px ${PREVIEW_FONT_FAMILY}`;
+	return `${fontStyle} ${fontWeight} ${style.fontSize}px ${family}`;
 };
 
 /** Ancho de cadena: canvas measureText (mismo font que Fabric/preview). */
@@ -271,11 +279,28 @@ const toPreviewTexts = (
 	return (texts ?? []).map((text) => {
 		const box = text.box;
 		const padding = box?.padding ?? 0;
-		const lines = buildPreviewTextLines(text.content, text.width, {
+		const measureStyle = {
 			fontSize: text.fontSize,
+			fontFamily: text.fontFamily,
 			fontWeight: text.fontWeight,
 			fontStyle: text.fontStyle,
-		});
+		};
+		const plainLines = buildPreviewTextLines(
+			text.content,
+			text.width,
+			measureStyle,
+		);
+		const lines = buildStyledPreviewLines(plainLines, {
+			fill: text.fill,
+			fontSize: text.fontSize,
+			fontFamily: text.fontFamily,
+			fontWeight: text.fontWeight,
+			fontStyle: text.fontStyle,
+			underline: text.underline,
+			linethrough: text.linethrough,
+			stroke: text.stroke,
+			strokeWidth: text.strokeWidth,
+		}, text.styles);
 		const lineHeight =
 			typeof text.lineHeight === 'number' && text.lineHeight > 0
 				? text.lineHeight
@@ -324,7 +349,7 @@ const toPreviewTexts = (
 	});
 };
 
-/** Modelo de preview ligero (paneles + imágenes + textos) desde shapes de dominio. */
+/** Modelo de preview ligero (paneles + textos) desde shapes de dominio. */
 export const buildPagePreview = (
 	width: number,
 	height: number,
@@ -334,36 +359,31 @@ export const buildPagePreview = (
 	const safeWidth = Math.max(1, width);
 	const safeHeight = Math.max(1, height);
 	const panels: PagePreviewPanel[] = [];
-	const images: PagePreviewImage[] = [];
 
 	for (const shape of shapes ?? []) {
-		const clipPoints =
+		const points =
 			shape.points.length >= 3 ? toSvgPoints(shape.points) : '';
 
-		if (clipPoints) {
-			panels.push({
-				points: clipPoints,
-				strokeWidth: Math.max(0, shape.strokeWidth),
-				whiteFill: Boolean(shape.whiteFill),
-			});
+		if (!points) {
+			continue;
 		}
 
 		const imageJson = toImageJson(shape.image);
+		const image = imageJson ? imagePlacement(imageJson) : null;
 
-		if (imageJson && clipPoints) {
-			const placed = imagePlacement(imageJson, clipPoints);
-
-			if (placed) {
-				images.push(placed);
-			}
-		}
+		panels.push({
+			points,
+			strokeWidth: Math.max(0, shape.strokeWidth),
+			// Con imagen el panel va encima solo como borde (fill transparente).
+			whiteFill: Boolean(shape.whiteFill) && !image,
+			image,
+		});
 	}
 
 	return {
 		width: safeWidth,
 		height: safeHeight,
 		panels,
-		images,
 		texts: toPreviewTexts(texts),
 	};
 };

@@ -11,6 +11,7 @@ import {
 	coverCenterForPanel,
 	coverScaleForPanel,
 } from '@/lib/fabric/panelImageFabric';
+import { panelFillColor } from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { ShapeImage } from '@/models/ShapeImage';
 import { useMangaStore } from '@/stores/manga';
@@ -145,6 +146,7 @@ export const placeImageFileInPanel = async ({
 
 	livePanel.evented = false;
 	livePanel.selectable = false;
+	livePanel.set({ fill: panelFillColor(false, { hasImage: true }) });
 
 	if (selectAfterPlace) {
 		canvas.setActiveObject(image);

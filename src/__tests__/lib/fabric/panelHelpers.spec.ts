@@ -202,7 +202,7 @@ describe('panel fabric helpers', () => {
 		expect([...collectPanelIdsWithImage(canvas)].sort()).toEqual(['a', 'b']);
 	});
 
-	it('stackPageContent orders guides, other, panels, then images', () => {
+	it('stackPageContent orders guides, other, images, then panels', () => {
 		const guide = createObject({ isGuide: true });
 		const other = createObject({});
 		const image = createObject({
@@ -227,15 +227,15 @@ describe('panel fabric helpers', () => {
 		expect(moveObjectTo.mock.calls.map((call) => call[0])).toEqual([
 			guide,
 			other,
-			panel,
 			image,
+			panel,
 		]);
 		expect(moveObjectTo.mock.calls.map((call) => call[1])).toEqual([
 			0, 1, 2, 3,
 		]);
 	});
 
-	it('stackPageContent places texts after images per layer', () => {
+	it('stackPageContent places texts after panels per layer', () => {
 		const panel = createObject({
 			objectType: FABRIC_OBJECT_TYPE.Panel,
 			panelId: 'p1',
@@ -262,13 +262,13 @@ describe('panel fabric helpers', () => {
 		stackPageContent(canvas, ['layer']);
 
 		expect(moveObjectTo.mock.calls.map((call) => call[0])).toEqual([
-			panel,
 			image,
+			panel,
 			text,
 		]);
 	});
 
-	it('stackPageContent orders by layerOrder with panel then image per layer', () => {
+	it('stackPageContent orders by layerOrder with image then panel per layer', () => {
 		const bottomPanel = createObject({
 			objectType: FABRIC_OBJECT_TYPE.Panel,
 			panelId: 'b',
@@ -304,10 +304,10 @@ describe('panel fabric helpers', () => {
 		stackPageContent(canvas, ['bottom', 'top']);
 
 		expect(moveObjectTo.mock.calls.map((call) => call[0])).toEqual([
-			bottomPanel,
 			bottomImage,
-			topPanel,
+			bottomPanel,
 			topImage,
+			topPanel,
 			orphanPanel,
 		]);
 	});

@@ -448,6 +448,122 @@ describe('usePanelSelection text editing lifecycle', () => {
 		expect(unregister).toHaveBeenCalledWith(nestedTextbox);
 	});
 
+	it('repaints hosted text selection after mouseup clears contextTop', () => {
+		vi.useFakeTimers({ toFake: ['requestAnimationFrame'] });
+
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const nestedTextbox = {
+			isEditing: true,
+			selectionStart: 1,
+			selectionEnd: 4,
+			setCursorByClick: vi.fn(),
+			abortCursorAnimation: vi.fn(),
+			renderCursorOrSelection: vi.fn(),
+			hiddenTextarea: { focus: vi.fn() },
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue(
+			nestedTextbox as never,
+		);
+
+		const { canvas, handlers } = createCanvas(group);
+		Object.assign(canvas, {
+			endCurrentTransform: vi.fn(),
+			textEditingManager: { register: vi.fn(), unregister: vi.fn() },
+		});
+
+		mountSelection(selectionDeps(canvas));
+		handlers['mouse:up']?.();
+
+		expect(nestedTextbox.renderCursorOrSelection).not.toHaveBeenCalled();
+
+		vi.runAllTimers();
+
+		expect(nestedTextbox.renderCursorOrSelection).toHaveBeenCalledOnce();
+		expect(nestedTextbox.selectionStart).toBe(1);
+		expect(nestedTextbox.selectionEnd).toBe(4);
+
+		vi.useRealTimers();
+	});
+
+	it('does not schedule selection repaint when the active object is the textbox', () => {
+		vi.useFakeTimers({ toFake: ['requestAnimationFrame'] });
+
+		const text = TextBlock.create(10, 20);
+		const textObject = createTextMock(text, true);
+		const textbox = {
+			isEditing: true,
+			selectionStart: 0,
+			selectionEnd: 2,
+			renderCursorOrSelection: vi.fn(),
+			hiddenTextarea: { focus: vi.fn() },
+		};
+		const unregister = vi.fn();
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue(textbox as never);
+
+		const { canvas, handlers, state } = createCanvas(textObject);
+
+		// Active === editing textbox ⇒ no hosted (Group) path.
+		state.active = textbox as unknown as ObjectMock;
+		Object.assign(canvas, {
+			textEditingManager: { register: vi.fn(), unregister },
+		});
+
+		mountSelection(selectionDeps(canvas));
+		handlers['mouse:up']?.();
+		vi.runAllTimers();
+
+		expect(unregister).not.toHaveBeenCalled();
+		expect(textbox.renderCursorOrSelection).not.toHaveBeenCalled();
+		expect(textbox.hiddenTextarea.focus).toHaveBeenCalled();
+
+		vi.useRealTimers();
+	});
+
+	it('ignores keys from a focused listbox while editing', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const exitEditing = vi.fn();
+		const textarea = {
+			value: 'Hello',
+			selectionStart: 0,
+			selectionEnd: 5,
+			focus: vi.fn(),
+			setSelectionRange: vi.fn(),
+			dispatchEvent: vi.fn(),
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue({
+			isEditing: true,
+			hiddenTextarea: textarea,
+			exitEditing,
+		} as never);
+
+		const { canvas } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+
+		const listbox = document.createElement('div');
+
+		listbox.setAttribute('role', 'listbox');
+		document.body.appendChild(listbox);
+
+		listbox.dispatchEvent(
+			new KeyboardEvent('keydown', {
+				key: 'a',
+				bubbles: true,
+			}),
+		);
+
+		expect(textarea.focus).not.toHaveBeenCalled();
+		expect(textarea.value).toBe('Hello');
+		expect(exitEditing).not.toHaveBeenCalled();
+
+		listbox.remove();
+	});
+
 	it('selects the word on double click and all text on triple click', () => {
 		const text = TextBlock.createBoxed(10, 20);
 		const group = createTextMock(text);
@@ -515,6 +631,88 @@ describe('usePanelSelection text editing lifecycle', () => {
 
 		expect(exitEditing).toHaveBeenCalled();
 		expect(preventDefault).toHaveBeenCalled();
+	});
+
+	it('keeps editing and ignores keys while a toolbar input is focused', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const exitEditing = vi.fn();
+		const textarea = {
+			value: 'Hello',
+			selectionStart: 0,
+			selectionEnd: 5,
+			focus: vi.fn(),
+			setSelectionRange: vi.fn(),
+			dispatchEvent: vi.fn(),
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue({
+			isEditing: true,
+			hiddenTextarea: textarea,
+			exitEditing,
+		} as never);
+
+		const { canvas } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+
+		const input = document.createElement('input');
+
+		document.body.appendChild(input);
+
+		const event = new KeyboardEvent('keydown', {
+			key: 'a',
+			bubbles: true,
+		});
+		const preventDefault = vi.spyOn(event, 'preventDefault');
+
+		input.dispatchEvent(event);
+
+		expect(textarea.focus).not.toHaveBeenCalled();
+		expect(textarea.setSelectionRange).not.toHaveBeenCalled();
+		expect(textarea.value).toBe('Hello');
+		expect(exitEditing).not.toHaveBeenCalled();
+		expect(preventDefault).not.toHaveBeenCalled();
+
+		input.remove();
+	});
+
+	it('does not exit editing with Escape from a focused toolbar input', () => {
+		const text = TextBlock.createBoxed(10, 20);
+		const group = createTextMock(text);
+		const exitEditing = vi.fn();
+		const textarea = {
+			selectionStart: 0,
+			selectionEnd: 0,
+			focus: vi.fn(),
+			setSelectionRange: vi.fn(),
+		};
+
+		vi.spyOn(textFabric, 'getPageTextbox').mockReturnValue({
+			isEditing: true,
+			hiddenTextarea: textarea,
+			exitEditing,
+		} as never);
+
+		const { canvas } = createCanvas(group);
+
+		mountSelection(selectionDeps(canvas));
+
+		const input = document.createElement('input');
+
+		document.body.appendChild(input);
+
+		input.dispatchEvent(
+			new KeyboardEvent('keydown', {
+				key: 'Escape',
+				bubbles: true,
+			}),
+		);
+
+		expect(exitEditing).not.toHaveBeenCalled();
+		expect(textarea.focus).not.toHaveBeenCalled();
+
+		input.remove();
 	});
 
 	it('enters editing and selects a word on first double click', () => {
@@ -633,6 +831,72 @@ describe('usePanelSelection Escape and layer element actions', () => {
 		});
 
 		expect(canvas.setActiveObject).toHaveBeenCalledWith(panel);
+	});
+
+	it('focusLayerElement selects the panel image when the panel is filled', () => {
+		const mangaStore = useMangaStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		mangaStore.addShape(shape);
+
+		const panel = {
+			selectable: false,
+			get: (key: string) => {
+				if (key === 'objectType') {
+					return FABRIC_OBJECT_TYPE.Panel;
+				}
+
+				if (key === 'panelId') {
+					return shape.id;
+				}
+
+				return undefined;
+			},
+		};
+		const panelImage = {
+			selectable: true,
+			get: (key: string) => {
+				if (key === 'objectType') {
+					return FABRIC_OBJECT_TYPE.PanelImage;
+				}
+
+				if (key === 'panelId') {
+					return shape.id;
+				}
+
+				return undefined;
+			},
+		};
+		const registered: Record<string, (payload: unknown) => void> = {};
+		const { canvas } = createCanvas(null);
+
+		(canvas as { getObjects?: () => unknown[] }).getObjects = () => {
+			return [panel, panelImage];
+		};
+		(canvas as { setActiveObject: ReturnType<typeof vi.fn> }).setActiveObject =
+			vi.fn();
+
+		usePanelSelection({
+			...selectionDeps(canvas),
+			registerCanvasAction: (actions) => {
+				Object.assign(registered, actions);
+			},
+		});
+
+		registered.focusLayerElement?.({
+			layerId: mangaStore.activeLayer.id,
+			kind: 'shape',
+			id: shape.id,
+		});
+
+		expect(canvas.setActiveObject).toHaveBeenCalledWith(panelImage);
 	});
 
 	it('deleteLayerElement removes text from store and canvas', () => {

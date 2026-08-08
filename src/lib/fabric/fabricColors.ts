@@ -1,3 +1,5 @@
+import type { PanelFillOptions } from '@/types/fabric';
+
 /**
  * Tokens de color del editor Fabric (guías, draft, paneles).
  */
@@ -13,6 +15,13 @@ export const PANEL_STROKE_COLOR = '#111111';
 const PANEL_FILL_NONE = 'rgba(255,255,255,0.01)';
 const PANEL_FILL_WHITE = '#ffffff';
 
-export const panelFillColor = (whiteFill: boolean): string => {
+export const panelFillColor = (
+	whiteFill: boolean,
+	options: PanelFillOptions = {},
+): string => {
+	if (options.hasImage) {
+		return PANEL_FILL_NONE;
+	}
+
 	return whiteFill ? PANEL_FILL_WHITE : PANEL_FILL_NONE;
 };

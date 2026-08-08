@@ -7,8 +7,9 @@ import {
 	type Textbox,
 	type TPointerEvent,
 } from 'fabric';
+import { isUiKeyboardTarget } from '@/lib/dom/isUiKeyboardTarget';
 import {
-	findPanelById,
+	findShapeFocusTarget,
 	findTextById,
 	getLayerId,
 	getPanelId,
@@ -55,8 +56,8 @@ import {
 } from '@/models/TextBlock';
 import { useMangaStore } from '@/stores/manga';
 import { useSelectionStore } from '@/stores/selection';
-import type { PageTextObject } from '@/types/fabric';
 import type { LayerElementFocusPayload } from '@/types/editor';
+import type { PageTextObject } from '@/types/fabric';
 import type { PagePoint, TextBlockJSON } from '@/types/page';
 import type { SelectionDeps } from '@/types/panel';
 import type {
@@ -64,28 +65,6 @@ import type {
 	FabricTextPointerEvent,
 	FabricTextTargetEvent,
 } from '@/types/text';
-
-const isUiKeyboardTarget = (target: EventTarget | null): boolean => {
-	if (!(target instanceof HTMLElement)) {
-		return false;
-	}
-
-	if (
-		target instanceof HTMLInputElement ||
-		target instanceof HTMLTextAreaElement ||
-		target instanceof HTMLSelectElement
-	) {
-		return true;
-	}
-
-	if (target.isContentEditable) {
-		return true;
-	}
-
-	return Boolean(
-		target.closest('[role="listbox"], [role="dialog"], [role="menu"]'),
-	);
-};
 
 const isModKey = (event: KeyboardEvent): boolean => {
 	return event.ctrlKey || event.metaKey;
@@ -185,13 +164,13 @@ export const usePanelSelection = ({
 
 	const selectShapeOnCanvas = (shapeId: string): boolean => {
 		const canvas = fabricCanvas.value;
-		const panel = canvas ? findPanelById(canvas, shapeId) : null;
+		const target = canvas ? findShapeFocusTarget(canvas, shapeId) : null;
 
-		if (!canvas || !panel || !panel.selectable) {
+		if (!canvas || !target?.selectable) {
 			return false;
 		}
 
-		canvas.setActiveObject(panel);
+		canvas.setActiveObject(target);
 		syncInteractionMode();
 		canvas.requestRenderAll();
 		syncFocusedFromCanvas();
@@ -537,11 +516,29 @@ export const usePanelSelection = ({
 			return;
 		}
 
-		if (isHostedTextEditing(canvas.getActiveObject(), editing)) {
+		const hosted = isHostedTextEditing(canvas.getActiveObject(), editing);
+
+		if (hosted) {
 			canvas.textEditingManager.unregister(editing.textbox as never);
 		}
 
 		focusEditingTextarea(editing.textbox);
+
+		if (!hosted) {
+			return;
+		}
+
+		// Con Group activo Fabric hace renderTop() tras este handler y borra
+		// el highlight de contextTop; el rango (selectionStart/End) sigue vivo.
+		const { textbox } = editing;
+
+		requestAnimationFrame(() => {
+			if (!textbox.isEditing) {
+				return;
+			}
+
+			textbox.renderCursorOrSelection();
+		});
 	};
 
 	const onMouseMove = (event: { e?: Event }) => {
@@ -706,6 +703,11 @@ export const usePanelSelection = ({
 	};
 
 	const onKeyDown = (event: KeyboardEvent) => {
+		// Toolbar / selects: no robar foco ni reenviar teclas al texto en edición.
+		if (isUiKeyboardTarget(event.target)) {
+			return;
+		}
+
 		const editing = findEditingPageText(fabricCanvas.value);
 		const textarea = editing?.textbox.hiddenTextarea;
 
@@ -741,7 +743,7 @@ export const usePanelSelection = ({
 			return;
 		}
 
-		if (editing || isUiKeyboardTarget(event.target)) {
+		if (editing) {
 			return;
 		}
 

@@ -26,6 +26,12 @@ export type GuidedPolyline = Polyline & GuideMarkedObject;
 
 export type FabricObjectType = 'panel' | 'panelImage' | 'text';
 
+/** Opciones de fill del polígono de panel en canvas. */
+export type PanelFillOptions = {
+	/** Con imagen el panel va encima (solo borde): fill transparente. */
+	hasImage?: boolean;
+};
+
 export type PanelPolygon = Polygon & {
 	objectType?: FabricObjectType;
 	panelId?: string;

@@ -35,7 +35,7 @@ export const shapeToPolygon = (
 			return { x: point.x, y: point.y };
 		}),
 		{
-			fill: panelFillColor(shape.whiteFill),
+			fill: panelFillColor(shape.whiteFill, { hasImage }),
 			stroke: PANEL_STROKE_COLOR,
 			strokeWidth: shape.strokeWidth,
 			selectable: interactive,

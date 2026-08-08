@@ -169,7 +169,12 @@ const isFocused = (kind: LayerElementKind, id: string) => {
 				@click="$emit('select')"
 			>
 				<span class="block h-10 w-8 overflow-hidden" aria-hidden="true">
-					<PagePreview :width="width" :height="height" :shapes="shapes" />
+					<PagePreview
+						:width="width"
+						:height="height"
+						:shapes="shapes"
+						:texts="texts"
+					/>
 				</span>
 			</button>
 

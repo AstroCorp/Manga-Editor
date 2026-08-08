@@ -3,6 +3,7 @@ import { FabricImage, type Canvas, type FabricObject } from 'fabric';
 import { panelFillColor } from '@/lib/fabric/fabricColors';
 import {
 	findPanelById,
+	findPanelImageById,
 	getPanelId,
 	isGuide,
 	isPanel,
@@ -61,9 +62,7 @@ export const useShapeActionMenu = ({
 	};
 
 	const findPanelImage = (canvas: Canvas, id: string): FabricImage | null => {
-		const match = canvas.getObjects().find((object) => {
-			return isPanelImage(object) && getPanelId(object) === id;
-		});
+		const match = findPanelImageById(canvas, id);
 
 		return match instanceof FabricImage ? match : null;
 	};
@@ -128,10 +127,14 @@ export const useShapeActionMenu = ({
 			});
 
 		const panel = findPanelById(canvas, id);
+		const shape = mangaStore.shapes.find((item) => {
+			return item.id === id;
+		});
 
 		if (panel) {
 			panel.evented = true;
 			panel.selectable = true;
+			panel.set({ fill: panelFillColor(Boolean(shape?.whiteFill)) });
 			canvas.setActiveObject(panel);
 		} else {
 			canvas.discardActiveObject();
@@ -205,7 +208,9 @@ export const useShapeActionMenu = ({
 		const panel = findPanelById(canvas, id);
 
 		if (panel) {
-			panel.set({ fill: panelFillColor(next) });
+			panel.set({
+				fill: panelFillColor(next, { hasImage: hasImage.value }),
+			});
 		}
 
 		onChanged?.();

@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
+import { ensureTextFontsLoaded } from '@/lib/fonts/loadGoogleFont';
 import { buildPagePreview } from '@/lib/page/pagePreview';
 import type { Shape } from '@/models/Shape';
 import type { TextBlock } from '@/models/TextBlock';
-import type { PagePreviewText, ShapeJSON } from '@/types/page';
+import type {
+	PagePreviewText,
+	PagePreviewTextRun,
+	ShapeJSON,
+} from '@/types/page';
 
 const props = withDefaults(
 	defineProps<{
@@ -20,15 +25,26 @@ const props = withDefaults(
 );
 
 const previewId = useId();
+const fontEpoch = ref(0);
+
+watch(
+	() => props.texts,
+	(texts) => {
+		void Promise.all(
+			(texts ?? []).map((text) => {
+				return ensureTextFontsLoaded(text);
+			}),
+		).then(() => {
+			fontEpoch.value += 1;
+		});
+	},
+	{ immediate: true, deep: true },
+);
 
 const model = computed(() => {
-	return buildPagePreview(props.width, props.height, props.shapes, props.texts);
-});
+	void fontEpoch.value;
 
-const filledPanels = computed(() => {
-	return model.value.panels.filter((panel) => {
-		return panel.whiteFill;
-	});
+	return buildPagePreview(props.width, props.height, props.shapes, props.texts);
 });
 
 const rotateTransform = (angle: number, originX: number, originY: number) => {
@@ -76,8 +92,19 @@ const lineDy = (text: PagePreviewText, lineIndex: number) => {
 };
 
 /** Línea vacía: NBSP para que el dy del tspan se aplique en SVG. */
-const lineContent = (line: string) => {
-	return line.length > 0 ? line : '\u00A0';
+const runContent = (run: PagePreviewTextRun) => {
+	return run.text.length > 0 ? run.text : '\u00A0';
+};
+
+const runDecoration = (run: PagePreviewTextRun) => {
+	return (
+		[
+			run.underline ? 'underline' : '',
+			run.linethrough ? 'line-through' : '',
+		]
+			.filter(Boolean)
+			.join(' ') || undefined
+	);
 };
 </script>
 
@@ -90,48 +117,58 @@ const lineContent = (line: string) => {
 		aria-hidden="true"
 	>
 		<defs>
-			<clipPath
-				v-for="(image, index) in model.images"
-				:id="clipPathId(index)"
+			<template
+				v-for="(panel, index) in model.panels"
 				:key="`clip-${index}`"
 			>
-				<polygon :points="image.clipPoints" />
-			</clipPath>
+				<clipPath v-if="panel.image" :id="clipPathId(index)">
+					<polygon :points="panel.points" />
+				</clipPath>
+			</template>
 		</defs>
 		<rect :width="model.width" :height="model.height" fill="#ffffff" />
-		<!-- fill → image (clip forma) → stroke -->
-		<polygon
-			v-for="(panel, index) in filledPanels"
-			:key="`fill-${index}`"
-			:points="panel.points"
-			fill="#ffffff"
-			stroke="none"
-		/>
-		<g
-			v-for="(image, index) in model.images"
-			:key="`img-${index}`"
-			:clip-path="`url(#${clipPathId(index)})`"
-		>
-			<image
-				:href="image.href"
-				:x="image.x"
-				:y="image.y"
-				:width="image.width"
-				:height="image.height"
-				:transform="rotateTransform(image.angle, image.originX, image.originY)"
-				:style="image.grayscale ? { filter: 'grayscale(1)' } : undefined"
-				preserveAspectRatio="xMidYMid slice"
-			/>
-		</g>
-		<polygon
+		<!-- Por panel (como el canvas): fill → imagen → borde; textos encima. -->
+		<template
 			v-for="(panel, index) in model.panels"
-			:key="`stroke-${index}`"
-			:points="panel.points"
-			fill="none"
-			:stroke="PANEL_STROKE_COLOR"
-			:stroke-width="panel.strokeWidth"
-			stroke-linejoin="miter"
-		/>
+			:key="`panel-${index}`"
+		>
+			<polygon
+				v-if="panel.whiteFill"
+				:points="panel.points"
+				fill="#ffffff"
+				stroke="none"
+			/>
+			<g
+				v-if="panel.image"
+				:clip-path="`url(#${clipPathId(index)})`"
+			>
+				<image
+					:href="panel.image.href"
+					:x="panel.image.x"
+					:y="panel.image.y"
+					:width="panel.image.width"
+					:height="panel.image.height"
+					:transform="
+						rotateTransform(
+							panel.image.angle,
+							panel.image.originX,
+							panel.image.originY,
+						)
+					"
+					:style="
+						panel.image.grayscale ? { filter: 'grayscale(1)' } : undefined
+					"
+					preserveAspectRatio="xMidYMid slice"
+				/>
+			</g>
+			<polygon
+				:points="panel.points"
+				fill="none"
+				:stroke="PANEL_STROKE_COLOR"
+				:stroke-width="panel.strokeWidth"
+				stroke-linejoin="miter"
+			/>
+		</template>
 		<template v-for="(text, index) in model.texts" :key="`text-${index}`">
 			<rect
 				v-if="text.box"
@@ -153,33 +190,34 @@ const lineContent = (line: string) => {
 			<text
 				:x="textAnchorX(text)"
 				:y="text.y"
-				:font-size="text.fontSize"
-				:fill="text.fill"
-				:stroke="text.strokeWidth > 0 ? text.stroke ?? undefined : undefined"
-				:stroke-width="text.strokeWidth > 0 ? text.strokeWidth : undefined"
-				stroke-linejoin="round"
-				stroke-linecap="round"
-				paint-order="stroke fill"
-				:font-weight="text.fontWeight"
-				:font-style="text.fontStyle"
 				:text-anchor="textAnchor(text)"
-				:text-decoration="
-					[text.underline ? 'underline' : '', text.linethrough ? 'line-through' : '']
-						.filter(Boolean)
-						.join(' ') || undefined
-				"
 				:transform="rotateTransform(text.angle, text.originX, text.originY)"
-				:font-family="text.fontFamily"
 				xml:space="preserve"
 			>
-				<tspan
-					v-for="(line, lineIndex) in text.lines"
+				<template
+					v-for="(lineRuns, lineIndex) in text.lines"
 					:key="`line-${lineIndex}`"
-					:x="textAnchorX(text)"
-					:dy="lineDy(text, lineIndex)"
 				>
-					{{ lineContent(line) }}
-				</tspan>
+					<tspan
+						v-for="(run, runIndex) in lineRuns"
+						:key="`run-${lineIndex}-${runIndex}`"
+						:x="runIndex === 0 ? textAnchorX(text) : undefined"
+						:dy="runIndex === 0 ? lineDy(text, lineIndex) : undefined"
+						:font-size="run.fontSize"
+						:fill="run.fill"
+						:stroke="run.strokeWidth > 0 ? run.stroke ?? undefined : undefined"
+						:stroke-width="run.strokeWidth > 0 ? run.strokeWidth : undefined"
+						stroke-linejoin="round"
+						stroke-linecap="round"
+						paint-order="stroke fill"
+						:font-weight="run.fontWeight"
+						:font-style="run.fontStyle"
+						:text-decoration="runDecoration(run)"
+						:font-family="run.fontFamily"
+					>
+						{{ runContent(run) }}
+					</tspan>
+				</template>
 			</text>
 		</template>
 	</svg>

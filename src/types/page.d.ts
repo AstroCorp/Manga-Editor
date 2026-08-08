@@ -92,8 +92,26 @@ export type TextBlockJSON = {
 
 export type TextBlockPatch = Partial<Omit<TextBlockJSON, 'id'>>;
 
+/** Tramo con estilo homogéneo dentro de una línea de preview. */
+export type PagePreviewTextRun = {
+	text: string;
+	fill: string;
+	fontSize: number;
+	fontFamily: string;
+	fontWeight: TextFontWeight;
+	fontStyle: TextFontStyle;
+	underline: boolean;
+	linethrough: boolean;
+	stroke: string | null;
+	strokeWidth: number;
+};
+
+/** Estilo de bloque usado al fusionar TextStylesJSON en runs de preview. */
+export type PreviewTextBaseStyle = Omit<PagePreviewTextRun, 'text'>;
+
 export type PagePreviewText = {
-	lines: string[];
+	/** Líneas visuales; cada una es una lista de runs con estilo. */
+	lines: PagePreviewTextRun[][];
 	x: number;
 	y: number;
 	fontSize: number;
@@ -118,6 +136,7 @@ export type PagePreviewText = {
 
 export type PreviewTextMeasureStyle = {
 	fontSize: number;
+	fontFamily?: string;
 	fontWeight?: string;
 	fontStyle?: string;
 };
@@ -169,12 +188,6 @@ export type ShapeLike =
 	  })
 	| Shape;
 
-export type PagePreviewPanel = {
-	points: string;
-	strokeWidth: number;
-	whiteFill: boolean;
-};
-
 export type PagePreviewImage = {
 	href: string;
 	x: number;
@@ -184,15 +197,21 @@ export type PagePreviewImage = {
 	angle: number;
 	originX: number;
 	originY: number;
-	clipPoints: string;
 	grayscale: boolean;
+};
+
+export type PagePreviewPanel = {
+	points: string;
+	strokeWidth: number;
+	whiteFill: boolean;
+	/** Imagen del panel; el borde se pinta encima (como en el canvas). */
+	image: PagePreviewImage | null;
 };
 
 export type PagePreviewModel = {
 	width: number;
 	height: number;
 	panels: PagePreviewPanel[];
-	images: PagePreviewImage[];
 	texts: PagePreviewText[];
 };
 

@@ -71,6 +71,25 @@ export const findPanelById = (canvas: Canvas, panelId: string): PanelLikeObject 
 	);
 };
 
+export const findPanelImageById = (
+	canvas: Canvas,
+	panelId: string,
+): FabricObject | null => {
+	return (
+		canvas.getObjects().find((object) => {
+			return isPanelImage(object) && getPanelId(object) === panelId;
+		}) ?? null
+	);
+};
+
+/** Con imagen el foco va al PanelImage; si no, al polígono del panel. */
+export const findShapeFocusTarget = (
+	canvas: Canvas,
+	shapeId: string,
+): FabricObject | null => {
+	return findPanelImageById(canvas, shapeId) ?? findPanelById(canvas, shapeId);
+};
+
 export const findTextById = (canvas: Canvas, textId: string): FabricObject | null => {
 	return (
 		canvas.getObjects().find((object) => {
@@ -110,8 +129,8 @@ export const removeObjectsByPanelId = (canvas: Canvas, panelId: string) => {
 };
 
 /**
- * Guías al fondo; por cada capa (abajo→arriba): paneles, imágenes, textos.
- * Reordena en un solo paso (evita N bringObjectToFront).
+ * Guías al fondo; por cada capa (abajo→arriba): imágenes, paneles, textos.
+ * El panel queda encima de su imagen para que el borde no quede tapado.
  */
 export const stackPageContent = (
 	canvas: Canvas,
@@ -141,13 +160,13 @@ export const stackPageContent = (
 	const placed = new Set<FabricObject>();
 
 	const pushLayerObjects = (layerId: string) => {
-		panels.forEach((object) => {
+		images.forEach((object) => {
 			if (getLayerId(object) === layerId) {
 				ordered.push(object);
 				placed.add(object);
 			}
 		});
-		images.forEach((object) => {
+		panels.forEach((object) => {
 			if (getLayerId(object) === layerId) {
 				ordered.push(object);
 				placed.add(object);
@@ -165,12 +184,12 @@ export const stackPageContent = (
 		layerOrder.forEach(pushLayerObjects);
 	}
 
-	panels.forEach((object) => {
+	images.forEach((object) => {
 		if (!placed.has(object)) {
 			ordered.push(object);
 		}
 	});
-	images.forEach((object) => {
+	panels.forEach((object) => {
 		if (!placed.has(object)) {
 			ordered.push(object);
 		}
