@@ -128,6 +128,7 @@ const onFileChange = (event: Event) => {
 						:min-columns="2"
 						:max-columns="2"
 						:key-mapper="layoutKey"
+						:scroll-container="presetsScrollEl"
 						:aria-busy="presetsLoadingMore || undefined"
 						@redraw="notifyPresetsLayoutReady"
 					>
@@ -216,7 +217,7 @@ const onFileChange = (event: Event) => {
 			</p>
 			<div
 				ref="customScrollEl"
-				class="h-87.5 overflow-y-auto pe-0.5"
+				class="max-h-87.5 overflow-y-auto pe-0.5"
 			>
 				<template v-if="customLayouts.length > 0">
 					<MasonryWall
@@ -226,6 +227,7 @@ const onFileChange = (event: Event) => {
 						:min-columns="2"
 						:max-columns="2"
 						:key-mapper="layoutKey"
+						:scroll-container="customScrollEl"
 						:aria-busy="isLoadingMoreCustom || undefined"
 						@redraw="notifyCustomLayoutReady"
 					>
