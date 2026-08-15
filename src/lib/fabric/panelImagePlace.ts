@@ -6,8 +6,7 @@ import {
 	stackPageContent,
 } from '@/lib/fabric/isGuide';
 import {
-	bindPanelImageHitTest,
-	clonePanelClip,
+	bindPanelImageToPanel,
 	coverCenterForPanel,
 	coverScaleForPanel,
 } from '@/lib/fabric/panelImageFabric';
@@ -90,12 +89,6 @@ export const placeImageFileInPanel = async ({
 		return false;
 	}
 
-	const clip = await clonePanelClip(livePanel);
-
-	if (stale() || !findPanelById(canvas, panelId)) {
-		return false;
-	}
-
 	const imgWidth = image.width || 1;
 	const imgHeight = image.height || 1;
 	const scale = coverScaleForPanel(bounds, imgWidth, imgHeight);
@@ -130,7 +123,7 @@ export const placeImageFileInPanel = async ({
 		hasControls: true,
 		lockMovementX: false,
 		lockMovementY: false,
-		clipPath: clip,
+		objectCaching: false,
 		perPixelTargetFind: true,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId,
@@ -138,7 +131,7 @@ export const placeImageFileInPanel = async ({
 	});
 
 	canvas.add(image);
-	bindPanelImageHitTest(image, livePanel);
+	bindPanelImageToPanel(image, livePanel);
 	stackPageContent(
 		canvas,
 		mangaStore.activePage.visibleLayerIds(),

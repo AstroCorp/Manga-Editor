@@ -7,7 +7,10 @@ import {
 	hasGrayscaleFilter,
 	setGrayscaleFilter,
 } from '@/lib/fabric/panelImageFilters';
-import { panelContainsScenePoint } from '@/lib/fabric/panelHitTest';
+import {
+	getPanelScenePoints,
+	panelContainsScenePoint,
+} from '@/lib/fabric/panelHitTest';
 import { ShapeImage } from '@/models/ShapeImage';
 import type { Shape } from '@/models/Shape';
 import type { PanelBounds, PanelCenter } from '@/types/fabric';
@@ -53,25 +56,35 @@ export const shapeImageFromFabric = (image: FabricImage): ShapeImage => {
 };
 
 /**
- * Crea un clipPath a partir del panel (coords absolutas de página).
+ * Traza el polígono del panel en coords de escena.
+ * @returns false si no hay forma recortable.
  */
-export const clonePanelClip = async (panel: FabricObject): Promise<FabricObject> => {
-	const clip = await panel.clone();
+export const clipContextToPanel = (
+	ctx: CanvasRenderingContext2D,
+	panel: FabricObject,
+): boolean => {
+	const points = getPanelScenePoints(panel);
+	const first = points[0];
 
-	clip.set({
-		absolutePositioned: true,
-		fill: '#000000',
-		strokeWidth: 0,
-		selectable: false,
-		evented: false,
-	});
+	if (points.length < 3 || !first) {
+		return false;
+	}
 
-	return clip;
+	ctx.beginPath();
+	ctx.moveTo(first.x, first.y);
+
+	for (const point of points.slice(1)) {
+		ctx.lineTo(point.x, point.y);
+	}
+
+	ctx.closePath();
+
+	return true;
 };
 
 /**
- * Crea FabricImage con clipPath = clon del panel (recorte a la forma).
- * El hit-test usa el polígono del panel (el bbox de la imagen suele sobresalir del clip).
+ * Crea FabricImage recortada al polígono del panel (sin clipPath de Fabric).
+ * El hit-test usa el polígono: el bbox de la imagen suele sobresalir del recorte.
  */
 export const shapeImageToFabric = async (
 	shape: Shape,
@@ -80,7 +93,6 @@ export const shapeImageToFabric = async (
 	options?: { interactive?: boolean },
 ): Promise<FabricImage> => {
 	const fabricImage = await FabricImage.fromURL(image.src);
-	const clip = await clonePanelClip(panel);
 	const interactive = options?.interactive ?? true;
 	const layerId = panel.get('layerId');
 
@@ -99,14 +111,14 @@ export const shapeImageToFabric = async (
 		hasControls: interactive,
 		lockMovementX: !interactive,
 		lockMovementY: !interactive,
-		clipPath: clip,
+		objectCaching: false,
 		perPixelTargetFind: true,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId: shape.id,
 		...(typeof layerId === 'string' ? { layerId } : {}),
 	});
 
-	bindPanelImageHitTest(fabricImage, panel);
+	bindPanelImageToPanel(fabricImage, panel);
 
 	if (image.grayscale) {
 		setGrayscaleFilter(fabricImage, true);
@@ -116,12 +128,38 @@ export const shapeImageToFabric = async (
 };
 
 /**
- * Hit-test solo dentro del panel: sin esto, clicks fuera de la forma
- * (pero dentro del bbox cover de la imagen) la seleccionan y bloquean el dibujo.
- * Nota: Fabric 7 no usa containsPoint en findTarget; ver installPanelImageTargetFind.
+ * Recorte e hit-test al polígono del panel.
+ * No usamos clipPath de Fabric: con scale grande el cache supera
+ * maxCacheSideLimit (4096) y la imagen desaparece dentro de la forma.
  */
-export const bindPanelImageHitTest = (image: FabricImage, panel: FabricObject): void => {
+export const bindPanelImageToPanel = (
+	image: FabricImage,
+	panel: FabricObject,
+): void => {
+	image.objectCaching = false;
+	image.needsItsOwnCache = () => {
+		return false;
+	};
+	image.shouldCache = () => {
+		return false;
+	};
+	image.isOnScreen = () => {
+		return panel.isOnScreen();
+	};
 	image.containsPoint = (point: Point): boolean => {
 		return panelContainsScenePoint(panel, point);
+	};
+
+	const renderObject = image.render.bind(image);
+
+	image.render = function (ctx: CanvasRenderingContext2D) {
+		ctx.save();
+
+		if (clipContextToPanel(ctx, panel)) {
+			ctx.clip();
+		}
+
+		renderObject(ctx);
+		ctx.restore();
 	};
 };
