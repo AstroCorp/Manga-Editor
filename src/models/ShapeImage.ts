@@ -13,6 +13,8 @@ export class ShapeImage {
 	public height: number;
 	public angle: number;
 	public grayscale: boolean;
+	public flipX: boolean;
+	public flipY: boolean;
 
 	constructor(value: ShapeImageValue) {
 		this.src = value.src;
@@ -26,6 +28,8 @@ export class ShapeImage {
 		this.height = value.height ?? 1;
 		this.angle = value.angle ?? 0;
 		this.grayscale = Boolean(value.grayscale);
+		this.flipX = Boolean(value.flipX);
+		this.flipY = Boolean(value.flipY);
 	}
 
 	toJSON(): ShapeImageJSON {
@@ -41,6 +45,8 @@ export class ShapeImage {
 			height: this.height,
 			angle: this.angle,
 			grayscale: this.grayscale,
+			flipX: this.flipX,
+			flipY: this.flipY,
 		};
 	}
 

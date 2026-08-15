@@ -225,6 +225,46 @@ describe('PagePreview', () => {
 		expect(wrapper.find('text').text()).toContain('Hi');
 	});
 
+	it('applies flip transforms around the image origin', () => {
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			2,
+		);
+
+		shape.setImage(
+			new ShapeImage({
+				src: 'data:image/png;base64,xx',
+				left: 10,
+				top: 10,
+				scaleX: 1,
+				scaleY: 1,
+				width: 10,
+				height: 10,
+				originX: 'center',
+				originY: 'center',
+				angle: 25,
+				flipX: true,
+				flipY: true,
+			}),
+		);
+
+		const wrapper = mount(PagePreview, {
+			props: {
+				width: 100,
+				height: 100,
+				shapes: [shape],
+			},
+		});
+
+		expect(wrapper.find('g image').attributes('transform')).toBe(
+			'rotate(25 10 10) translate(10 10) scale(-1 -1) translate(-10 -10)',
+		);
+	});
+
 	it('renders multiline text with tspans and lineHeight dy', () => {
 		const text = TextBlock.create(5, 5);
 

@@ -55,6 +55,26 @@ const rotateTransform = (angle: number, originX: number, originY: number) => {
 	return `rotate(${angle} ${originX} ${originY})`;
 };
 
+const imageTransform = (
+	angle: number,
+	originX: number,
+	originY: number,
+	flipX: boolean,
+	flipY: boolean,
+) => {
+	const rotate = rotateTransform(angle, originX, originY);
+
+	if (!flipX && !flipY) {
+		return rotate;
+	}
+
+	const scaleX = flipX ? -1 : 1;
+	const scaleY = flipY ? -1 : 1;
+	const flip = `translate(${originX} ${originY}) scale(${scaleX} ${scaleY}) translate(${-originX} ${-originY})`;
+
+	return rotate ? `${rotate} ${flip}` : flip;
+};
+
 const clipPathId = (index: number) => {
 	return `${previewId}-img-clip-${index}`;
 };
@@ -149,10 +169,12 @@ const runDecoration = (run: PagePreviewTextRun) => {
 					:width="panel.image.width"
 					:height="panel.image.height"
 					:transform="
-						rotateTransform(
+						imageTransform(
 							panel.image.angle,
 							panel.image.originX,
 							panel.image.originY,
+							panel.image.flipX,
+							panel.image.flipY,
 						)
 					"
 					:style="

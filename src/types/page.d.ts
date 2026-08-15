@@ -173,6 +173,8 @@ export type ShapeImageJSON = {
 	height: number;
 	angle?: number;
 	grayscale?: boolean;
+	flipX?: boolean;
+	flipY?: boolean;
 };
 
 export type ShapeJSON = {
@@ -198,6 +200,8 @@ export type PagePreviewImage = {
 	originX: number;
 	originY: number;
 	grayscale: boolean;
+	flipX: boolean;
+	flipY: boolean;
 };
 
 export type PagePreviewPanel = {
@@ -243,6 +247,8 @@ export type ShapeImageValue = {
 	height?: number;
 	angle?: number;
 	grayscale?: boolean;
+	flipX?: boolean;
+	flipY?: boolean;
 };
 
 export type ShapeValue = {

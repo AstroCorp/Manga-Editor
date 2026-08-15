@@ -47,6 +47,8 @@ export const shapeImageFromFabric = (image: FabricImage): ShapeImage => {
 		height: Math.max(1, image.height ?? 1),
 		angle: image.angle ?? 0,
 		grayscale: hasGrayscaleFilter(image),
+		flipX: Boolean(image.flipX),
+		flipY: Boolean(image.flipY),
 	});
 };
 
@@ -90,6 +92,8 @@ export const shapeImageToFabric = async (
 		scaleX: image.scaleX,
 		scaleY: image.scaleY,
 		angle: image.angle,
+		flipX: image.flipX,
+		flipY: image.flipY,
 		selectable: interactive,
 		evented: interactive,
 		hasControls: interactive,

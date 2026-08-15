@@ -43,6 +43,8 @@ const imagePlacement = (image: ShapeImageJSON): PagePreviewImage | null => {
 		originX: image.originX === 'center' ? image.left : x,
 		originY: image.originY === 'center' ? image.top : y,
 		grayscale: Boolean(image.grayscale),
+		flipX: Boolean(image.flipX),
+		flipY: Boolean(image.flipY),
 	};
 };
 

@@ -53,6 +53,8 @@ describe('panelImageFabric', () => {
 		expect(shapeImage.height).toBe(40);
 		expect(shapeImage.angle).toBe(0);
 		expect(shapeImage.grayscale).toBe(false);
+		expect(shapeImage.flipX).toBe(false);
+		expect(shapeImage.flipY).toBe(false);
 	});
 
 	it('shapeImageFromFabric maps angle', () => {
@@ -97,5 +99,31 @@ describe('panelImageFabric', () => {
 		} as unknown as FabricImage;
 
 		expect(shapeImageFromFabric(fabricImage).grayscale).toBe(true);
+	});
+
+	it('shapeImageFromFabric reads flipX and flipY', () => {
+		const fabricImage = {
+			getSrc: () => {
+				return 'data:image/png;base64,xx';
+			},
+			left: 10,
+			top: 20,
+			scaleX: 1,
+			scaleY: 1,
+			originX: 'center',
+			originY: 'center',
+			width: 40,
+			height: 40,
+			flipX: true,
+			flipY: true,
+			get: (key: string) => {
+				return key === 'src' ? 'data:image/png;base64,xx' : undefined;
+			},
+		} as unknown as FabricImage;
+
+		const shapeImage = shapeImageFromFabric(fabricImage);
+
+		expect(shapeImage.flipX).toBe(true);
+		expect(shapeImage.flipY).toBe(true);
 	});
 });

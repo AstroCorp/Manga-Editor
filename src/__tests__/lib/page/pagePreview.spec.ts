@@ -128,6 +128,8 @@ describe('pagePreview', () => {
 			originX: 100,
 			originY: 80,
 			grayscale: false,
+			flipX: false,
+			flipY: false,
 		});
 	});
 
@@ -329,5 +331,34 @@ describe('pagePreview', () => {
 		]);
 
 		expect(preview.panels[0]?.image?.grayscale).toBe(true);
+	});
+
+	it('marks flipped images for preview transforms', () => {
+		const preview = buildPagePreview(200, 200, [
+			{
+				points: [
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				strokeWidth: 2,
+				image: {
+					src: 'https://example.com/cover.png',
+					left: 10,
+					top: 10,
+					scaleX: 1,
+					scaleY: 1,
+					originX: 'left',
+					originY: 'top',
+					width: 20,
+					height: 20,
+					flipX: true,
+					flipY: true,
+				},
+			},
+		]);
+
+		expect(preview.panels[0]?.image?.flipX).toBe(true);
+		expect(preview.panels[0]?.image?.flipY).toBe(true);
 	});
 });

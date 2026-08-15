@@ -38,6 +38,81 @@ const createPanelMock = (shapeId: string, fill = panelFillColor(false)) => {
 	return { panel, panelState };
 };
 
+const createShapeWithImage = () => {
+	const shape = Shape.create(
+		[
+			{ x: 0, y: 0 },
+			{ x: 20, y: 0 },
+			{ x: 20, y: 20 },
+		],
+		2,
+	);
+
+	shape.setImage(
+		new ShapeImage({
+			src: 'data:image/png;base64,xx',
+			left: 10,
+			top: 10,
+			scaleX: 1,
+			scaleY: 1,
+			width: 10,
+			height: 10,
+		}),
+	);
+
+	return shape;
+};
+
+const createFabricImageMock = (shapeId: string) => {
+	const image = {
+		flipX: false,
+		flipY: false,
+		left: 10,
+		top: 10,
+		scaleX: 1,
+		scaleY: 1,
+		originX: 'center',
+		originY: 'center',
+		width: 10,
+		height: 10,
+		angle: 0,
+		filters: [] as Array<{ type?: string }>,
+		getSrc: () => {
+			return 'data:image/png;base64,xx';
+		},
+		getBoundingRect: () => {
+			return { left: 0, top: 0, width: 20, height: 20 };
+		},
+		get: (key: string) => {
+			if (key === 'objectType') {
+				return FABRIC_OBJECT_TYPE.PanelImage;
+			}
+
+			if (key === 'panelId') {
+				return shapeId;
+			}
+
+			if (key === 'src') {
+				return 'data:image/png;base64,xx';
+			}
+
+			return undefined;
+		},
+		set: vi.fn((props: { flipX?: boolean; flipY?: boolean }) => {
+			if (props.flipX !== undefined) {
+				image.flipX = props.flipX;
+			}
+
+			if (props.flipY !== undefined) {
+				image.flipY = props.flipY;
+			}
+		}),
+		setCoords: vi.fn(),
+	};
+
+	return image;
+};
+
 describe('useShapeActionMenu', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
@@ -245,12 +320,64 @@ describe('useShapeActionMenu', () => {
 		expect(onChanged).toHaveBeenCalled();
 	});
 
-	it('toggleWhiteFill is a no-op without selection', () => {
-		const fabricCanvas = shallowRef<Canvas | null>(null);
-		const api = useShapeActionMenu({ fabricCanvas });
+	it('toggles are no-ops without selection', () => {
+		const api = useShapeActionMenu({
+			fabricCanvas: shallowRef<Canvas | null>(null),
+		});
 
 		expect(() => {
 			api.toggleWhiteFill();
+			api.toggleFlipX();
+			api.toggleFlipY();
 		}).not.toThrow();
+	});
+
+	it('toggleFlipX and toggleFlipY persist on the domain image', () => {
+		const mangaStore = useMangaStore();
+		const shape = createShapeWithImage();
+
+		mangaStore.addShape(shape);
+
+		const { panel } = createPanelMock(shape.id);
+		const fabricImage = createFabricImageMock(shape.id);
+		const handlers: Record<string, () => void> = {};
+		const canvas = {
+			on: (event: string, handler: () => void) => {
+				handlers[event] = handler;
+			},
+			off: vi.fn(),
+			getActiveObject: () => {
+				return fabricImage as unknown as FabricObject;
+			},
+			getObjects: () => {
+				return [panel as unknown as FabricObject, fabricImage as unknown as FabricObject];
+			},
+			requestRenderAll: vi.fn(),
+		} as unknown as Canvas;
+
+		const onChanged = vi.fn();
+		const api = useShapeActionMenu({
+			fabricCanvas: shallowRef(canvas),
+			onChanged,
+		});
+
+		handlers['selection:created']?.();
+
+		expect(api.isFlipX.value).toBe(false);
+		expect(api.isFlipY.value).toBe(false);
+
+		api.toggleFlipX();
+
+		expect(fabricImage.set).toHaveBeenCalledWith({ flipX: true });
+		expect(fabricImage.setCoords).toHaveBeenCalled();
+		expect(shape.image?.flipX).toBe(true);
+		expect(api.isFlipX.value).toBe(true);
+		expect(onChanged).toHaveBeenCalled();
+
+		api.toggleFlipY();
+
+		expect(fabricImage.set).toHaveBeenCalledWith({ flipY: true });
+		expect(shape.image?.flipY).toBe(true);
+		expect(api.isFlipY.value).toBe(true);
 	});
 });

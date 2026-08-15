@@ -60,6 +60,8 @@ export type GridPointLabelProps = {
 export type ShapeActionMenuProps = {
 	hasImage: boolean;
 	isGrayscale: boolean;
+	isFlipX: boolean;
+	isFlipY: boolean;
 	whiteFill: boolean;
 	left: number | null;
 	top: number | null;
@@ -71,6 +73,8 @@ export type ShapeActionMenuEmits = {
 	clearImage: [];
 	placeImage: [file: File];
 	toggleGrayscale: [];
+	toggleFlipX: [];
+	toggleFlipY: [];
 	toggleWhiteFill: [];
 };
 

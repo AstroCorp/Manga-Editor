@@ -24,6 +24,8 @@ export const shapeMenuFeature: CanvasFeature = {
 				return {
 					hasImage: api.hasImage.value,
 					isGrayscale: api.isGrayscale.value,
+					isFlipX: api.isFlipX.value,
+					isFlipY: api.isFlipY.value,
 					whiteFill: api.whiteFill.value,
 					left: stage.left,
 					top: stage.top,
@@ -37,6 +39,8 @@ export const shapeMenuFeature: CanvasFeature = {
 					void api.placeImage(file);
 				}) as (...args: never[]) => unknown,
 				toggleGrayscale: api.toggleGrayscale,
+				toggleFlipX: api.toggleFlipX,
+				toggleFlipY: api.toggleFlipY,
 				toggleWhiteFill: api.toggleWhiteFill,
 			},
 		});

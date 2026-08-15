@@ -96,7 +96,7 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(Shape.fromJSON(shape.toJSON()).whiteFill).toBe(false);
 	});
 
-	it('ShapeImage persists grayscale through JSON round-trip', () => {
+	it('ShapeImage persists grayscale and flips through JSON round-trip', () => {
 		const image = new ShapeImage({
 			src: 'data:image/png;base64,xx',
 			left: 1,
@@ -104,10 +104,14 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 			scaleX: 1.5,
 			scaleY: 1.5,
 			grayscale: true,
+			flipX: true,
+			flipY: true,
 		});
 		const restored = ShapeImage.fromJSON(image.toJSON());
 
 		expect(restored.grayscale).toBe(true);
+		expect(restored.flipX).toBe(true);
+		expect(restored.flipY).toBe(true);
 		expect(
 			Shape.fromJSON({
 				id: 's1',
@@ -118,8 +122,8 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 				],
 				strokeWidth: 2,
 				image: image.toJSON(),
-			}).image?.grayscale,
-		).toBe(true);
+			}).image,
+		).toMatchObject({ grayscale: true, flipX: true, flipY: true });
 	});
 
 	it('setStrokeWidth applies to layer shapes and setShapeImage refreshes refs', () => {

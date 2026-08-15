@@ -9,6 +9,12 @@ const emit = defineEmits<ShapeActionMenuEmits>();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
+const togglePressedClass = (pressed: boolean) => {
+	return pressed
+		? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+		: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400';
+};
+
 const style = computed(() => {
 	if (props.left === null || props.top === null) {
 		return null;
@@ -74,11 +80,7 @@ const onFileChange = (event: Event) => {
 			type="button"
 			role="menuitem"
 			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
-			:class="
-				whiteFill
-					? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-					: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
-			"
+			:class="togglePressedClass(whiteFill)"
 			:aria-label="whiteFill ? 'Remove white fill' : 'White fill'"
 			:aria-pressed="whiteFill"
 			:title="whiteFill ? 'Remove white fill' : 'White fill'"
@@ -91,17 +93,39 @@ const onFileChange = (event: Event) => {
 			type="button"
 			role="menuitem"
 			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
-			:class="
-				isGrayscale
-					? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-					: 'text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
-			"
+			:class="togglePressedClass(isGrayscale)"
 			:aria-label="isGrayscale ? 'Remove black and white' : 'Black and white'"
 			:aria-pressed="isGrayscale"
 			:title="isGrayscale ? 'Remove black and white' : 'Black and white'"
 			@click="emit('toggleGrayscale')"
 		>
 			<Icon icon="fluent:color-background-24-regular" class="size-5" />
+		</button>
+		<button
+			v-if="hasImage"
+			type="button"
+			role="menuitem"
+			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
+			:class="togglePressedClass(isFlipX)"
+			:aria-label="isFlipX ? 'Remove horizontal flip' : 'Flip horizontal'"
+			:aria-pressed="isFlipX"
+			:title="isFlipX ? 'Remove horizontal flip' : 'Flip horizontal'"
+			@click="emit('toggleFlipX')"
+		>
+			<Icon icon="fluent:flip-horizontal-24-regular" class="size-5" />
+		</button>
+		<button
+			v-if="hasImage"
+			type="button"
+			role="menuitem"
+			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
+			:class="togglePressedClass(isFlipY)"
+			:aria-label="isFlipY ? 'Remove vertical flip' : 'Flip vertical'"
+			:aria-pressed="isFlipY"
+			:title="isFlipY ? 'Remove vertical flip' : 'Flip vertical'"
+			@click="emit('toggleFlipY')"
+		>
+			<Icon icon="fluent:flip-vertical-24-regular" class="size-5" />
 		</button>
 		<button
 			v-if="hasImage"

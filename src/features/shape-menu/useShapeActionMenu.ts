@@ -1,5 +1,5 @@
 import { shallowRef, watch } from 'vue';
-import { FabricImage, type Canvas, type FabricObject } from 'fabric';
+import type { Canvas, FabricImage, FabricObject } from 'fabric';
 import { panelFillColor } from '@/lib/fabric/fabricColors';
 import {
 	findPanelById,
@@ -36,6 +36,8 @@ export const useShapeActionMenu = ({
 	const panelId = shallowRef<string | null>(null);
 	const hasImage = shallowRef(false);
 	const isGrayscale = shallowRef(false);
+	const isFlipX = shallowRef(false);
+	const isFlipY = shallowRef(false);
 	const whiteFill = shallowRef(false);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
@@ -44,6 +46,8 @@ export const useShapeActionMenu = ({
 		panelId.value = null;
 		hasImage.value = false;
 		isGrayscale.value = false;
+		isFlipX.value = false;
+		isFlipY.value = false;
 		whiteFill.value = false;
 		position.value = null;
 		placement.value = 'above';
@@ -62,9 +66,7 @@ export const useShapeActionMenu = ({
 	};
 
 	const findPanelImage = (canvas: Canvas, id: string): FabricImage | null => {
-		const match = findPanelImageById(canvas, id);
-
-		return match instanceof FabricImage ? match : null;
+		return findPanelImageById(canvas, id) as FabricImage | null;
 	};
 
 	const refreshMenu = () => {
@@ -86,6 +88,8 @@ export const useShapeActionMenu = ({
 		panelId.value = nextPanelId;
 		hasImage.value = Boolean(shape?.image);
 		isGrayscale.value = Boolean(shape?.image?.grayscale);
+		isFlipX.value = Boolean(shape?.image?.flipX);
+		isFlipY.value = Boolean(shape?.image?.flipY);
 		whiteFill.value = Boolean(shape?.whiteFill);
 		position.value = { left: anchor.left, top: anchor.top };
 		placement.value = anchor.placement;
@@ -193,6 +197,28 @@ export const useShapeActionMenu = ({
 		refreshMenu();
 	};
 
+	const toggleFlip = (axis: 'flipX' | 'flipY') => {
+		const canvas = fabricCanvas.value;
+		const id = panelId.value;
+
+		if (!canvas || !id || !hasImage.value) {
+			return;
+		}
+
+		const fabricImage = findPanelImage(canvas, id);
+
+		if (!fabricImage) {
+			return;
+		}
+
+		fabricImage.set({ [axis]: !fabricImage[axis] });
+		fabricImage.setCoords();
+		mangaStore.setShapeImage(id, shapeImageFromFabric(fabricImage));
+		onChanged?.();
+		canvas.requestRenderAll();
+		refreshMenu();
+	};
+
 	const toggleWhiteFill = () => {
 		const canvas = fabricCanvas.value;
 		const id = panelId.value;
@@ -258,6 +284,8 @@ export const useShapeActionMenu = ({
 	return {
 		hasImage,
 		isGrayscale,
+		isFlipX,
+		isFlipY,
 		whiteFill,
 		position,
 		placement,
@@ -265,6 +293,8 @@ export const useShapeActionMenu = ({
 		clearImage,
 		placeImage,
 		toggleGrayscale,
+		toggleFlipX: () => toggleFlip('flipX'),
+		toggleFlipY: () => toggleFlip('flipY'),
 		toggleWhiteFill,
 		clearMenu,
 	};
