@@ -17,6 +17,7 @@ import type { FeatureContext, FeatureOverlay } from '@/features/types';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import { useSelectionStore } from '@/stores/selection';
+import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
 import type { CanvasActions } from '@/types/editor';
 
 /**
@@ -144,9 +145,18 @@ export const useEditorCanvas = (
 		void applyActivePage();
 	});
 
+	const rootStyle = computed(() => {
+		const padding = CONTROL_PASTEBOARD * zoomFactor.value;
+
+		return {
+			padding: `${padding}px`,
+		};
+	});
+
 	return {
 		stageStyle,
 		scaleStyle,
+		rootStyle,
 		overlayViews,
 		cancelStroke: () => {
 			ctx.actions.cancelStroke();

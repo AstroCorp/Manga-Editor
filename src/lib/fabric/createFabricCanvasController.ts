@@ -2,6 +2,10 @@ import { shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
 import { isGuide, isPanel } from '@/lib/fabric/isGuide';
+import {
+	applyPageCanvasLayout,
+	pageExportCrop,
+} from '@/lib/fabric/pageCanvasLayout';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
@@ -31,12 +35,8 @@ export const createFabricCanvasController = (
 		fabricCanvas.value = new Canvas(element, {
 			width,
 			height,
-			backgroundColor: '#ffffff',
-			selection: true,
 		});
-
-		// Fabric 7 aplica options en el constructor pero no pinta hasta el primer render.
-		fabricCanvas.value.requestRenderAll();
+		applyPageCanvasLayout(fabricCanvas.value, width, height);
 	};
 
 	const hydratePage = async (page: Page): Promise<void> => {
@@ -74,13 +74,18 @@ export const createFabricCanvasController = (
 			panel.set({ fill: 'transparent' });
 		});
 
+		const previousBackground = canvas.backgroundColor;
+		canvas.backgroundColor = '#ffffff';
+
 		try {
 			return canvas.toDataURL({
 				format,
 				quality: 1,
 				multiplier: 1,
+				...pageExportCrop(canvas),
 			});
 		} finally {
+			canvas.backgroundColor = previousBackground;
 			panels.forEach((panel, index) => {
 				panel.set({ fill: previousFills[index] });
 			});

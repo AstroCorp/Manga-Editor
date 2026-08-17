@@ -6,6 +6,7 @@ import {
 } from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import { stackPageContent } from '@/lib/fabric/isGuide';
+import { applyPageCanvasLayout } from '@/lib/fabric/pageCanvasLayout';
 import { shapeImageToFabric } from '@/lib/fabric/panelImageFabric';
 import { textBlockToFabric } from '@/lib/fabric/textFabric';
 import {
@@ -65,7 +66,7 @@ export const hydrateCanvasFromPage = async (
 	canvas: Canvas,
 	page: Page,
 ): Promise<void> => {
-	canvas.setDimensions({ width: page.width, height: page.height });
+	applyPageCanvasLayout(canvas, page.width, page.height);
 
 	canvas
 		.getObjects()
@@ -73,8 +74,6 @@ export const hydrateCanvasFromPage = async (
 		.forEach((object) => {
 			canvas.remove(object);
 		});
-
-	canvas.backgroundColor = '#ffffff';
 
 	const fontFamilies = [
 		...new Set(

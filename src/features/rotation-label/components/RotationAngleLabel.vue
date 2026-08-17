@@ -23,7 +23,7 @@ const style = computed(() => {
 
 <template>
 	<div
-		v-if="label && style"
+		v-if="style"
 		class="pointer-events-none absolute z-20 -translate-y-full rounded bg-slate-900/85 px-2 py-1 font-mono text-sm leading-none text-white shadow-sm dark:bg-zinc-100/90 dark:text-zinc-900"
 		:style="style"
 		aria-hidden="true"

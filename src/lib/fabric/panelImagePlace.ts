@@ -57,7 +57,6 @@ export const placeImageFileInPanel = async ({
 	panelId,
 	file,
 	isStale,
-	selectAfterPlace = true,
 }: PlaceImageInPanelOptions): Promise<boolean> => {
 	const mangaStore = useMangaStore();
 	const stale = () => {
@@ -118,11 +117,6 @@ export const placeImageFileInPanel = async ({
 		originY: 'center',
 		scaleX: scale,
 		scaleY: scale,
-		selectable: true,
-		evented: true,
-		hasControls: true,
-		lockMovementX: false,
-		lockMovementY: false,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId,
 		layerId: livePanel.get('layerId'),
@@ -139,10 +133,7 @@ export const placeImageFileInPanel = async ({
 	livePanel.selectable = false;
 	livePanel.set({ fill: panelFillColor(false, { hasImage: true }) });
 
-	if (selectAfterPlace) {
-		canvas.setActiveObject(image);
-	}
-
+	canvas.setActiveObject(image);
 	canvas.requestRenderAll();
 
 	return true;

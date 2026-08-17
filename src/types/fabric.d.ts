@@ -75,7 +75,6 @@ export type PlaceImageInPanelOptions = {
 	panelId: string;
 	file: File;
 	isStale?: () => boolean;
-	selectAfterPlace?: boolean;
 };
 
 export type NudgeDelta = {

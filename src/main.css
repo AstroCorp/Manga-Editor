@@ -118,3 +118,14 @@ textarea[data-fabric='textarea'] {
 	right: auto !important;
 	bottom: auto !important;
 }
+
+/*
+ * El bitmap de Fabric es página + pasteboard. Lo desplazamos para que la
+ * página quede alineada y las asas puedan pintarse fuera del borde.
+ */
+.editor-page-scale .canvas-container {
+	position: absolute !important;
+	top: calc(-1 * var(--control-pasteboard));
+	left: calc(-1 * var(--control-pasteboard));
+	background: transparent !important;
+}

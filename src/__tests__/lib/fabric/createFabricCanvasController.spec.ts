@@ -2,11 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { EXPORT_IMAGE_FORMAT } from '@/lib/editor/editorEnums';
 import { createFabricCanvasController } from '@/lib/fabric/createFabricCanvasController';
+import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import type { Canvas, FabricObject } from 'fabric';
 
-vi.mock('@/lib/fabric/fabricSetup', () => {
+vi.mock('@/lib/fabric/fabricSetup', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('@/lib/fabric/fabricSetup')>();
+
 	return {
+		...actual,
 		setupFabricCustomProperties: vi.fn(),
 	};
 });
@@ -57,6 +61,7 @@ describe('createFabricCanvasController', () => {
 		const toDataURL = vi.fn(() => {
 			expect(panelState.fill).toBe('transparent');
 			expect(guide.visible).toBe(false);
+			expect(canvasMock.backgroundColor).toBe('#ffffff');
 
 			return 'data:image/png;base64,abc';
 		});
@@ -64,14 +69,22 @@ describe('createFabricCanvasController', () => {
 		const controller = createFabricCanvasController(
 			ref(document.createElement('canvas')),
 		);
-
-		controller.fabricCanvas.value = {
+		const canvasMock = {
+			backgroundColor: '',
+			getWidth: () => {
+				return 800 + CONTROL_PASTEBOARD * 2;
+			},
+			getHeight: () => {
+				return 1200 + CONTROL_PASTEBOARD * 2;
+			},
 			getObjects: () => {
 				return [guide, panel] as unknown as FabricObject[];
 			},
 			toDataURL,
 			requestRenderAll,
-		} as unknown as Canvas;
+		};
+
+		controller.fabricCanvas.value = canvasMock as unknown as Canvas;
 
 		const result = controller.exportDataUrl(EXPORT_IMAGE_FORMAT.Png);
 
@@ -80,10 +93,15 @@ describe('createFabricCanvasController', () => {
 			format: EXPORT_IMAGE_FORMAT.Png,
 			quality: 1,
 			multiplier: 1,
+			left: CONTROL_PASTEBOARD,
+			top: CONTROL_PASTEBOARD,
+			width: 800,
+			height: 1200,
 		});
 		expect(panel.set).toHaveBeenCalledWith({ fill: 'transparent' });
 		expect(panelState.fill).toBe('#ffffff');
 		expect(guide.visible).toBe(true);
+		expect(controller.fabricCanvas.value.backgroundColor).toBe('');
 		expect(requestRenderAll).toHaveBeenCalled();
 	});
 });

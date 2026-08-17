@@ -13,6 +13,8 @@ import { rotationWithShiftSnap } from '@/lib/fabric/rotationSnap';
 
 export const ROTATE_ICON_SIZE = 30;
 export const ROTATE_OFFSET_Y = 44;
+/** Margen extra del canvas para que las asas no se recorten fuera de la página. */
+export const CONTROL_PASTEBOARD = ROTATE_OFFSET_Y + ROTATE_ICON_SIZE / 2 + 8;
 
 const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: ControlRenderingStyleOverride, fabricObject: FabricObject) => {
 	const size = ROTATE_ICON_SIZE;
