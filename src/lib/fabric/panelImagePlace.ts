@@ -123,8 +123,6 @@ export const placeImageFileInPanel = async ({
 		hasControls: true,
 		lockMovementX: false,
 		lockMovementY: false,
-		objectCaching: false,
-		perPixelTargetFind: true,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId,
 		layerId: livePanel.get('layerId'),

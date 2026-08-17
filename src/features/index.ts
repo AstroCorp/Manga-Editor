@@ -3,6 +3,7 @@ import { contentResetFeature } from '@/features/content-reset';
 import { gridHoverFeature } from '@/features/grid-hover';
 import { guidesFeature } from '@/features/guides';
 import { imageDropFeature } from '@/features/image-drop';
+import { rotationLabelFeature } from '@/features/rotation-label';
 import { selectionFeature } from '@/features/selection';
 import { shapeMenuFeature } from '@/features/shape-menu';
 import { strokeFeature } from '@/features/stroke';
@@ -22,6 +23,7 @@ export const canvasFeatures: CanvasFeature[] = [
 	textColorFeature,
 	imageDropFeature,
 	gridHoverFeature,
+	rotationLabelFeature,
 	shapeMenuFeature,
 	contentResetFeature,
 ];

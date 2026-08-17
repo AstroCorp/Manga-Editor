@@ -1,16 +1,13 @@
 /**
  * Puente ShapeImage ↔ FabricImage (clip del panel, cover scale, sync).
  */
-import { FabricImage, type FabricObject, type Point } from 'fabric';
+import { FabricImage, type FabricObject } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import {
 	hasGrayscaleFilter,
 	setGrayscaleFilter,
 } from '@/lib/fabric/panelImageFilters';
-import {
-	getPanelScenePoints,
-	panelContainsScenePoint,
-} from '@/lib/fabric/panelHitTest';
+import { getPanelScenePoints } from '@/lib/fabric/panelHitTest';
 import { ShapeImage } from '@/models/ShapeImage';
 import type { Shape } from '@/models/Shape';
 import type { PanelBounds, PanelCenter } from '@/types/fabric';
@@ -59,7 +56,7 @@ export const shapeImageFromFabric = (image: FabricImage): ShapeImage => {
  * Traza el polígono del panel en coords de escena.
  * @returns false si no hay forma recortable.
  */
-export const clipContextToPanel = (
+const clipContextToPanel = (
 	ctx: CanvasRenderingContext2D,
 	panel: FabricObject,
 ): boolean => {
@@ -82,10 +79,7 @@ export const clipContextToPanel = (
 	return true;
 };
 
-/**
- * Crea FabricImage recortada al polígono del panel (sin clipPath de Fabric).
- * El hit-test usa el polígono: el bbox de la imagen suele sobresalir del recorte.
- */
+/** Crea FabricImage recortada al polígono del panel (sin clipPath de Fabric). */
 export const shapeImageToFabric = async (
 	shape: Shape,
 	image: ShapeImage,
@@ -111,8 +105,6 @@ export const shapeImageToFabric = async (
 		hasControls: interactive,
 		lockMovementX: !interactive,
 		lockMovementY: !interactive,
-		objectCaching: false,
-		perPixelTargetFind: true,
 		objectType: FABRIC_OBJECT_TYPE.PanelImage,
 		panelId: shape.id,
 		...(typeof layerId === 'string' ? { layerId } : {}),
@@ -128,7 +120,7 @@ export const shapeImageToFabric = async (
 };
 
 /**
- * Recorte e hit-test al polígono del panel.
+ * Recorte al polígono del panel en el canvas principal.
  * No usamos clipPath de Fabric: con scale grande el cache supera
  * maxCacheSideLimit (4096) y la imagen desaparece dentro de la forma.
  */
@@ -136,18 +128,8 @@ export const bindPanelImageToPanel = (
 	image: FabricImage,
 	panel: FabricObject,
 ): void => {
-	image.objectCaching = false;
-	image.needsItsOwnCache = () => {
-		return false;
-	};
-	image.shouldCache = () => {
-		return false;
-	};
 	image.isOnScreen = () => {
 		return panel.isOnScreen();
-	};
-	image.containsPoint = (point: Point): boolean => {
-		return panelContainsScenePoint(panel, point);
 	};
 
 	const renderObject = image.render.bind(image);

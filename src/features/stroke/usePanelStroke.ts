@@ -438,7 +438,7 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 		clearFocusOnly = false;
 
 		// Click sobre un panel/imagen/texto existente → dejar selección (no empezar trazo).
-		// Con perPixelTargetFind, fuera de la forma el target ya no es la imagen.
+		// Fuera de la forma el target ya no es el panel/imagen.
 		if (
 			target &&
 			(isPanel(target) || isPanelImage(target) || isPageText(target))

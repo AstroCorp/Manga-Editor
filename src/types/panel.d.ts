@@ -30,6 +30,10 @@ export type GridPointHoverDeps = {
 	strokePath: ShallowRef<GridPoint[]>;
 };
 
+export type RotationAngleLabelDeps = {
+	fabricCanvas: ShallowRef<Canvas | null>;
+};
+
 export type ShapeActionMenuDeps = {
 	fabricCanvas: ShallowRef<Canvas | null>;
 	onChanged?: () => void;
@@ -53,6 +57,12 @@ export type GridLineDelta = {
 
 export type GridPointLabelProps = {
 	delta: GridLineDelta | null;
+	left: number | null;
+	top: number | null;
+};
+
+export type RotationAngleLabelProps = {
+	angle: number | null;
 	left: number | null;
 	top: number | null;
 };

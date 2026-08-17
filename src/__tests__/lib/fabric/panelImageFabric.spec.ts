@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
 	bindPanelImageToPanel,
-	clipContextToPanel,
 	coverCenterForPanel,
 	coverScaleForPanel,
 	shapeImageFromFabric,
@@ -146,51 +145,6 @@ describe('bindPanelImageToPanel', () => {
 		return shapeToPolygon(shape);
 	};
 
-	it('traces the panel polygon for canvas clipping', () => {
-		const panel = createTrianglePanel();
-		const ctx = {
-			beginPath: vi.fn(),
-			moveTo: vi.fn(),
-			lineTo: vi.fn(),
-			closePath: vi.fn(),
-		} as unknown as CanvasRenderingContext2D;
-
-		expect(clipContextToPanel(ctx, panel)).toBe(true);
-		expect(ctx.beginPath).toHaveBeenCalledOnce();
-		expect(ctx.moveTo).toHaveBeenCalledOnce();
-		expect(ctx.lineTo).toHaveBeenCalledTimes(2);
-		expect(ctx.closePath).toHaveBeenCalledOnce();
-	});
-
-	it('does not clip when the panel has no polygon', () => {
-		const panel = {
-			points: [],
-			getCoords: () => {
-				return [];
-			},
-		} as unknown as FabricObject;
-		const ctx = {
-			beginPath: vi.fn(),
-		} as unknown as CanvasRenderingContext2D;
-
-		expect(clipContextToPanel(ctx, panel)).toBe(false);
-		expect(ctx.beginPath).not.toHaveBeenCalled();
-	});
-
-	it('disables fabric caching so large scales keep clipping on the main canvas', () => {
-		const panel = createTrianglePanel();
-		const image = {
-			render: vi.fn(),
-			containsPoint: vi.fn(),
-		} as unknown as FabricImage;
-
-		bindPanelImageToPanel(image, panel);
-
-		expect(image.objectCaching).toBe(false);
-		expect(image.needsItsOwnCache()).toBe(false);
-		expect(image.shouldCache()).toBe(false);
-	});
-
 	it('clips to the panel before drawing the image', () => {
 		const panel = createTrianglePanel();
 		const render = vi.fn();
@@ -211,8 +165,51 @@ describe('bindPanelImageToPanel', () => {
 		image.render(ctx);
 
 		expect(ctx.clip).toHaveBeenCalledOnce();
+		expect(ctx.beginPath).toHaveBeenCalledOnce();
+		expect(ctx.moveTo).toHaveBeenCalledOnce();
+		expect(ctx.lineTo).toHaveBeenCalledTimes(2);
 		expect(render).toHaveBeenCalledWith(ctx);
 		expect(ctx.save).toHaveBeenCalled();
 		expect(ctx.restore).toHaveBeenCalled();
+	});
+
+	it('does not clip when the panel has no polygon', () => {
+		const panel = {
+			points: [],
+			getCoords: () => {
+				return [];
+			},
+			isOnScreen: () => {
+				return true;
+			},
+		} as unknown as FabricObject;
+		const render = vi.fn();
+		const image = { render } as unknown as FabricImage;
+
+		bindPanelImageToPanel(image, panel);
+
+		const ctx = {
+			save: vi.fn(),
+			restore: vi.fn(),
+			beginPath: vi.fn(),
+			clip: vi.fn(),
+		} as unknown as CanvasRenderingContext2D;
+
+		image.render(ctx);
+
+		expect(ctx.clip).not.toHaveBeenCalled();
+		expect(ctx.beginPath).not.toHaveBeenCalled();
+		expect(render).toHaveBeenCalledWith(ctx);
+	});
+
+	it('uses the panel to decide if the image is on screen', () => {
+		const panel = createTrianglePanel();
+		const isOnScreen = vi.spyOn(panel, 'isOnScreen').mockReturnValue(true);
+		const image = { render: vi.fn() } as unknown as FabricImage;
+
+		bindPanelImageToPanel(image, panel);
+
+		expect(image.isOnScreen()).toBe(true);
+		expect(isOnScreen).toHaveBeenCalled();
 	});
 });

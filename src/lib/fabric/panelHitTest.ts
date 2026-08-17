@@ -38,10 +38,7 @@ export const panelContainsScenePoint = (panel: FabricObject, point: Point): bool
 	return Intersection.isPointInPolygon(point, getPanelScenePoints(panel));
 };
 
-/**
- * Hace que las panelImage solo reciban hits dentro del polígono del panel.
- * (perPixelTargetFind + clip absoluto no basta de forma fiable en Fabric 7.)
- */
+/** Hace que las panelImage solo reciban hits dentro del polígono del panel. */
 export const installPanelImageTargetFind = (canvas: Canvas): void => {
 	const targetCanvas = canvas as unknown as CanvasTargetFind;
 	const originalCheckTarget = targetCanvas._checkTarget.bind(canvas);

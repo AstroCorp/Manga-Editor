@@ -65,10 +65,6 @@ export const useShapeActionMenu = ({
 		return null;
 	};
 
-	const findPanelImage = (canvas: Canvas, id: string): FabricImage | null => {
-		return findPanelImageById(canvas, id) as FabricImage | null;
-	};
-
 	const refreshMenu = () => {
 		const canvas = fabricCanvas.value;
 		const active = canvas?.getActiveObject() as FabricObject | null;
@@ -182,7 +178,7 @@ export const useShapeActionMenu = ({
 			return;
 		}
 
-		const fabricImage = findPanelImage(canvas, id);
+		const fabricImage = findPanelImageById(canvas, id) as FabricImage | null;
 
 		if (!fabricImage) {
 			return;
@@ -205,7 +201,7 @@ export const useShapeActionMenu = ({
 			return;
 		}
 
-		const fabricImage = findPanelImage(canvas, id);
+		const fabricImage = findPanelImageById(canvas, id) as FabricImage | null;
 
 		if (!fabricImage) {
 			return;

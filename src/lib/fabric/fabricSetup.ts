@@ -9,6 +9,7 @@ import {
 import { ACCENT_COLOR } from '@/lib/fabric/fabricColors';
 import { setupFabricHiddenTextarea } from '@/lib/fabric/hiddenTextarea';
 import { setupPerCharLineHeight } from '@/lib/fabric/lineHeightLayout';
+import { rotationWithShiftSnap } from '@/lib/fabric/rotationSnap';
 
 export const ROTATE_ICON_SIZE = 30;
 export const ROTATE_OFFSET_Y = 44;
@@ -54,7 +55,7 @@ const createBottomRotateControl = (): Control => {
 		y: 0.5,
 		offsetY: ROTATE_OFFSET_Y,
 		cursorStyleHandler: controlsUtils.rotationStyleHandler,
-		actionHandler: controlsUtils.rotationWithSnapping,
+		actionHandler: rotationWithShiftSnap,
 		actionName: 'rotate',
 		withConnection: true,
 		sizeX: ROTATE_ICON_SIZE,
