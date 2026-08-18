@@ -1,4 +1,4 @@
-import type { Canvas, FabricObject } from 'fabric';
+import type { Canvas, FabricObject, StaticCanvas } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import type { GuideMarkedObject, PanelLikeObject } from '@/types/fabric';
 
@@ -133,7 +133,7 @@ export const removeObjectsByPanelId = (canvas: Canvas, panelId: string) => {
  * El panel queda encima de su imagen para que el borde no quede tapado.
  */
 export const stackPageContent = (
-	canvas: Canvas,
+	canvas: StaticCanvas,
 	layerOrder: string[] = [],
 ) => {
 	const objects = canvas.getObjects().slice();

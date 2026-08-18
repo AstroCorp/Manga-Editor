@@ -2,11 +2,57 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { DEFAULT_ZOOM_PERCENT } from '@/lib/zoom';
 import { EXPORT_IMAGE_FORMAT } from '@/lib/editor/editorEnums';
+import { zipDataUrls } from '@/lib/export/zipDataUrls';
+import { exportPageToDataUrl } from '@/lib/fabric/exportPageToDataUrl';
 import { useEditorStore } from '@/stores/editor';
+import { useMangaStore } from '@/stores/manga';
+import * as download from '@/lib/download';
+
+vi.mock('@/lib/fabric/exportPageToDataUrl', () => {
+	return {
+		exportPageToDataUrl: vi.fn(async () => 'data:image/png;base64,abc'),
+	};
+});
+
+vi.mock('@/lib/export/zipDataUrls', () => {
+	return {
+		zipDataUrls: vi.fn(async () => new Blob(['zip'])),
+	};
+});
+
+vi.mock('vue3-toastify', () => {
+	return {
+		toast: {
+			warn: vi.fn(),
+			error: vi.fn(),
+		},
+	};
+});
+
+const registerExportCanvas = (
+	store: ReturnType<typeof useEditorStore>,
+	exportDataUrl = vi.fn(() => 'data:image/png;base64,abc'),
+) => {
+	const cancelStroke = vi.fn();
+
+	store.registerCanvas({
+		cancelStroke,
+		exportDataUrl,
+		resetZoomView: vi.fn(),
+		addSimpleText: vi.fn(),
+		addBoxedText: vi.fn(),
+		addRoundedBoxedText: vi.fn(),
+		focusLayerElement: vi.fn(),
+		deleteLayerElement: vi.fn(),
+	});
+
+	return { cancelStroke, exportDataUrl };
+};
 
 describe('useEditorStore selection and zoom bridge', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
+		vi.clearAllMocks();
 	});
 
 	it('starts at default zoom', () => {
@@ -143,6 +189,89 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Jpeg);
 		expect(link.download).toBe('untitled-page-1.jpg');
+	});
+
+	it('exportPagesZip zips every page and downloads the archive', async () => {
+		const store = useEditorStore();
+		const mangaStore = useMangaStore();
+		const { cancelStroke } = registerExportCanvas(store);
+		const downloadBlob = vi
+			.spyOn(download, 'downloadBlob')
+			.mockImplementation(() => undefined);
+
+		mangaStore.addPage();
+
+		await store.exportPagesZip(EXPORT_IMAGE_FORMAT.Jpeg);
+
+		expect(cancelStroke).toHaveBeenCalledOnce();
+		expect(exportPageToDataUrl).toHaveBeenCalledTimes(2);
+		expect(exportPageToDataUrl).toHaveBeenNthCalledWith(
+			1,
+			mangaStore.pages[0],
+			EXPORT_IMAGE_FORMAT.Jpeg,
+		);
+		expect(exportPageToDataUrl).toHaveBeenNthCalledWith(
+			2,
+			mangaStore.pages[1],
+			EXPORT_IMAGE_FORMAT.Jpeg,
+		);
+		expect(zipDataUrls).toHaveBeenCalledExactlyOnceWith([
+			{
+				filename: 'untitled-page-1.jpg',
+				dataUrl: 'data:image/png;base64,abc',
+			},
+			{
+				filename: 'untitled-page-2.jpg',
+				dataUrl: 'data:image/png;base64,abc',
+			},
+		]);
+		expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
+			expect.any(Blob),
+			'untitled-jpg.zip',
+		);
+	});
+
+	it('exportPagesZip warns if any page has hidden layers', async () => {
+		const { toast } = await import('vue3-toastify');
+		const store = useEditorStore();
+		const mangaStore = useMangaStore();
+		const firstPageId = mangaStore.activePage.id;
+
+		registerExportCanvas(store);
+		vi.spyOn(download, 'downloadBlob').mockImplementation(() => undefined);
+
+		mangaStore.addPage();
+		mangaStore.addLayer();
+		mangaStore.setLayerVisible(mangaStore.layers[1]!.id, false);
+		mangaStore.selectPage(firstPageId);
+
+		await store.exportPagesZip(EXPORT_IMAGE_FORMAT.Png);
+
+		expect(toast.warn).toHaveBeenCalledExactlyOnceWith(
+			'Hidden layers are not included in the export.',
+			{ autoClose: 4000 },
+		);
+	});
+
+	it('exportPagesZip toasts when a page cannot be exported', async () => {
+		const { toast } = await import('vue3-toastify');
+		const store = useEditorStore();
+
+		registerExportCanvas(store);
+		const downloadBlob = vi
+			.spyOn(download, 'downloadBlob')
+			.mockImplementation(() => undefined);
+
+		vi.mocked(exportPageToDataUrl).mockRejectedValueOnce(
+			new Error('hydrate failed'),
+		);
+
+		await store.exportPagesZip(EXPORT_IMAGE_FORMAT.Png);
+
+		expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+			'Could not export the pages.',
+		);
+		expect(downloadBlob).not.toHaveBeenCalled();
 	});
 
 	it('clamps zoom percent and steps in/out', () => {

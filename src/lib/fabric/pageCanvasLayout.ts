@@ -1,4 +1,4 @@
-import { Rect, type Canvas } from 'fabric';
+import { Rect, type StaticCanvas } from 'fabric';
 import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
 
 const pageClipRect = (pageWidth: number, pageHeight: number): Rect => {
@@ -15,7 +15,7 @@ const pageClipRect = (pageWidth: number, pageHeight: number): Rect => {
 
 /** Canvas = página + margen para asas; las coords de página siguen en (0, 0). */
 export const applyPageCanvasLayout = (
-	canvas: Canvas,
+	canvas: StaticCanvas,
 	pageWidth: number,
 	pageHeight: number,
 ): void => {
@@ -38,7 +38,7 @@ export const applyPageCanvasLayout = (
 
 
 /** Recorte de exportación a la página (sin el margen de asas). */
-export const pageExportCrop = (canvas: Canvas) => {
+export const pageExportCrop = (canvas: StaticCanvas) => {
 	return {
 		left: CONTROL_PASTEBOARD,
 		top: CONTROL_PASTEBOARD,

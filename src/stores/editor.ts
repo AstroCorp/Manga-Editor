@@ -2,11 +2,15 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { toast } from 'vue3-toastify';
 import {
+	downloadBlob,
 	downloadDataUrl,
 	downloadText,
 	exportFileBaseName,
+	exportImageFilename,
+	exportZipFilename,
 } from '@/lib/download';
-import { exportImageExtension } from '@/lib/editor/editorEnums';
+import { zipDataUrls, type ZipDataUrlEntry } from '@/lib/export/zipDataUrls';
+import { exportPageToDataUrl } from '@/lib/fabric/exportPageToDataUrl';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
 import {
 	DEFAULT_ZOOM_PERCENT,
@@ -17,11 +21,14 @@ import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { CanvasActions, ExportImageFormat, LayerElementFocusPayload } from '@/types/editor';
 import type { LayoutJSON } from '@/types/layouts';
+import type { Page } from '@/models/Page';
 
-const warnHiddenLayersIfNeeded = () => {
-	const mangaStore = useMangaStore();
-
-	if (!mangaStore.activePage.hasHiddenLayers()) {
+const warnHiddenLayersIfNeeded = (pages: readonly Page[]) => {
+	if (
+		!pages.some((page) => {
+			return page.hasHiddenLayers();
+		})
+	) {
 		return;
 	}
 
@@ -83,7 +90,10 @@ export const useEditorStore = defineStore('editor', () => {
 	const exportPage = (format: ExportImageFormat) => {
 		// Como Escape: no exportar un trazo a medias ni el rubber.
 		canvasActions.cancelStroke();
-		warnHiddenLayersIfNeeded();
+
+		const mangaStore = useMangaStore();
+
+		warnHiddenLayersIfNeeded([mangaStore.activePage]);
 
 		const dataUrl = canvasActions.exportDataUrl(format);
 
@@ -91,13 +101,45 @@ export const useEditorStore = defineStore('editor', () => {
 			return;
 		}
 
-		const mangaStore = useMangaStore();
-		const baseName = exportFileBaseName(
-			mangaStore.title,
-			mangaStore.activePage.name,
+		downloadDataUrl(
+			dataUrl,
+			exportImageFilename(
+				mangaStore.title,
+				mangaStore.activePage.name,
+				format,
+			),
 		);
+	};
 
-		downloadDataUrl(dataUrl, `${baseName}.${exportImageExtension(format)}`);
+	const exportPagesZip = async (format: ExportImageFormat) => {
+		canvasActions.cancelStroke();
+
+		const mangaStore = useMangaStore();
+
+		warnHiddenLayersIfNeeded(mangaStore.pages);
+
+		try {
+			const entries: ZipDataUrlEntry[] = [];
+
+			for (const page of mangaStore.pages) {
+				const dataUrl = await exportPageToDataUrl(page, format);
+
+				entries.push({
+					filename: exportImageFilename(
+						mangaStore.title,
+						page.name,
+						format,
+					),
+					dataUrl,
+				});
+			}
+
+			const blob = await zipDataUrls(entries);
+
+			downloadBlob(blob, exportZipFilename(mangaStore.title, format));
+		} catch {
+			toast.error('Could not export the pages.');
+		}
 	};
 
 	const exportPageJson = () => {
@@ -163,6 +205,7 @@ export const useEditorStore = defineStore('editor', () => {
 			return canvasActions.deleteLayerElement(payload);
 		},
 		exportPage,
+		exportPagesZip,
 		exportPageJson,
 		importPageJson,
 		applyPageLayout,

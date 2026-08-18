@@ -9,6 +9,7 @@ import type { ExportImageFormat } from '@/types/editor';
 const editorStore = useEditorStore();
 
 const downloadOpen = ref(false);
+const isExporting = ref(false);
 const downloadRoot = ref<HTMLElement | null>(null);
 
 const closeDownload = () => {
@@ -16,6 +17,10 @@ const closeDownload = () => {
 };
 
 const toggleDownload = () => {
+	if (isExporting.value) {
+		return;
+	}
+
 	downloadOpen.value = !downloadOpen.value;
 };
 
@@ -24,7 +29,26 @@ const onExportImage = (format: ExportImageFormat) => {
 	editorStore.exportPage(format);
 };
 
+const onExportZip = async (format: ExportImageFormat) => {
+	closeDownload();
+
+	if (isExporting.value) {
+		return;
+	}
+
+	isExporting.value = true;
+
+	try {
+		await editorStore.exportPagesZip(format);
+	} finally {
+		isExporting.value = false;
+	}
+};
+
 onClickOutside(downloadRoot, closeDownload);
+
+const menuItemClass =
+	'w-full whitespace-nowrap border-0 border-b border-slate-200 bg-transparent px-3.5 py-2.5 text-left text-sm text-slate-900 transition last:border-b-0 hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:border-zinc-800 dark:text-slate-100 dark:hover:bg-blue-950 dark:hover:text-blue-400';
 </script>
 
 <template>
@@ -36,31 +60,49 @@ onClickOutside(downloadRoot, closeDownload);
 			title="Download"
 			aria-haspopup="menu"
 			:aria-expanded="downloadOpen"
+			:aria-busy="isExporting"
+			:disabled="isExporting"
 			@click.stop="toggleDownload"
 		>
 			<Icon icon="fluent:arrow-download-24-regular" class="size-5" />
 		</button>
 		<div
 			v-if="downloadOpen"
-			class="absolute top-[calc(100%+0.35rem)] right-0 z-50 flex min-w-28 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-0 shadow-lg shadow-blue-600/10 dark:border-zinc-800 dark:bg-zinc-950"
+			class="absolute top-[calc(100%+0.35rem)] right-0 z-50 flex min-w-56 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-0 shadow-lg shadow-blue-600/10 dark:border-zinc-800 dark:bg-zinc-950"
 			role="menu"
 			aria-label="Download formats"
 		>
 			<button
 				type="button"
 				role="menuitem"
-				class="w-full border-0 border-b border-slate-200 bg-transparent px-3.5 py-2.5 text-left text-sm text-slate-900 transition last:border-b-0 hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:border-zinc-800 dark:text-slate-100 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+				:class="menuItemClass"
 				@click="onExportImage(EXPORT_IMAGE_FORMAT.Png)"
 			>
-				PNG
+				PNG (current page)
 			</button>
 			<button
 				type="button"
 				role="menuitem"
-				class="w-full border-0 border-b border-slate-200 bg-transparent px-3.5 py-2.5 text-left text-sm text-slate-900 transition last:border-b-0 hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:border-zinc-800 dark:text-slate-100 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+				:class="menuItemClass"
 				@click="onExportImage(EXPORT_IMAGE_FORMAT.Jpeg)"
 			>
-				JPG
+				JPG (current page)
+			</button>
+			<button
+				type="button"
+				role="menuitem"
+				:class="menuItemClass"
+				@click="onExportZip(EXPORT_IMAGE_FORMAT.Png)"
+			>
+				ZIP with PNGs (all pages)
+			</button>
+			<button
+				type="button"
+				role="menuitem"
+				:class="menuItemClass"
+				@click="onExportZip(EXPORT_IMAGE_FORMAT.Jpeg)"
+			>
+				ZIP with JPGs (all pages)
 			</button>
 		</div>
 	</div>

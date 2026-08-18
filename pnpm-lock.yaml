@@ -17,6 +17,9 @@ importers:
       '@yeger/vue-masonry-wall':
         specifier: 6.1.4
         version: 6.1.4(vue@3.5.40(typescript@6.0.3))
+      '@zip.js/zip.js':
+        specifier: ^2.8.52
+        version: 2.8.52
       fabric:
         specifier: ^7.4.0
         version: 7.4.0
@@ -730,6 +733,10 @@ packages:
     resolution: {integrity: sha512-ApJO9NRuYOT8GvjNfz3RHiJ28E1gNPycn5e8liDPhtv8JM8q74UPDWCZ8CVBNvXju6SYELAMAG/svbK7mpV24A==}
     peerDependencies:
       vue: ^3.5.19
+
+  '@zip.js/zip.js@2.8.52':
+    resolution: {integrity: sha512-ZVXpmXRROrjz/0Glm9homDpSUAiavgpdnR+0tGlTtvtIsqs/d7f7qqbkOxrRKfUaNML68YXb4reIA3vZjul3uQ==}
+    engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=18.0.0'}
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -2566,6 +2573,8 @@ snapshots:
     dependencies:
       '@yeger/debounce': 2.0.20
       vue: 3.5.40(typescript@6.0.3)
+
+  '@zip.js/zip.js@2.8.52': {}
 
   abbrev@2.0.0: {}
 

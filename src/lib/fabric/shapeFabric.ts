@@ -1,4 +1,4 @@
-import type { Canvas } from 'fabric';
+import type { StaticCanvas } from 'fabric';
 import { Polygon } from 'fabric';
 import {
 	PANEL_STROKE_COLOR,
@@ -63,7 +63,7 @@ export const shapeToPolygon = (
 };
 
 export const hydrateCanvasFromPage = async (
-	canvas: Canvas,
+	canvas: StaticCanvas,
 	page: Page,
 ): Promise<void> => {
 	applyPageCanvasLayout(canvas, page.width, page.height);

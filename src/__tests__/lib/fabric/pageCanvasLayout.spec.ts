@@ -4,14 +4,14 @@ import {
 	applyPageCanvasLayout,
 	pageExportCrop,
 } from '@/lib/fabric/pageCanvasLayout';
-import type { Canvas } from 'fabric';
+import type { StaticCanvas } from 'fabric';
 
 describe('pageCanvasLayout', () => {
 	it('sizes the canvas with pasteboard and keeps page origin at 0,0', () => {
 		const canvas = {
 			setDimensions: vi.fn(),
 			setViewportTransform: vi.fn(),
-		} as unknown as Canvas;
+		} as unknown as StaticCanvas;
 
 		applyPageCanvasLayout(canvas, 800, 1200);
 
@@ -47,7 +47,7 @@ describe('pageCanvasLayout', () => {
 			getHeight: () => {
 				return 1200 + CONTROL_PASTEBOARD * 2;
 			},
-		} as unknown as Canvas;
+		} as unknown as StaticCanvas;
 
 		expect(pageExportCrop(canvas)).toEqual({
 			left: CONTROL_PASTEBOARD,

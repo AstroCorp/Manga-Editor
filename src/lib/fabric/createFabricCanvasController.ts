@@ -1,11 +1,8 @@
 import { shallowRef, type Ref } from 'vue';
 import { Canvas } from 'fabric';
+import { exportCanvasDataUrl } from '@/lib/fabric/exportCanvasDataUrl';
 import { setupFabricCustomProperties } from '@/lib/fabric/fabricSetup';
-import { isGuide, isPanel } from '@/lib/fabric/isGuide';
-import {
-	applyPageCanvasLayout,
-	pageExportCrop,
-} from '@/lib/fabric/pageCanvasLayout';
+import { applyPageCanvasLayout } from '@/lib/fabric/pageCanvasLayout';
 import { hydrateCanvasFromPage } from '@/lib/fabric/shapeFabric';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
@@ -56,44 +53,7 @@ export const createFabricCanvasController = (
 			return null;
 		}
 
-		const guides = canvas.getObjects().filter((object) => {
-			return isGuide(object);
-		});
-		const panels = canvas.getObjects().filter((object) => {
-			return isPanel(object);
-		});
-		const previousFills = panels.map((panel) => {
-			return panel.fill;
-		});
-
-		guides.forEach((guide) => {
-			guide.visible = false;
-		});
-		/* whiteFill es solo vista en editor; la descarga siempre sin relleno. */
-		panels.forEach((panel) => {
-			panel.set({ fill: 'transparent' });
-		});
-
-		const previousBackground = canvas.backgroundColor;
-		canvas.backgroundColor = '#ffffff';
-
-		try {
-			return canvas.toDataURL({
-				format,
-				quality: 1,
-				multiplier: 1,
-				...pageExportCrop(canvas),
-			});
-		} finally {
-			canvas.backgroundColor = previousBackground;
-			panels.forEach((panel, index) => {
-				panel.set({ fill: previousFills[index] });
-			});
-			guides.forEach((guide) => {
-				guide.visible = true;
-			});
-			canvas.requestRenderAll();
-		}
+		return exportCanvasDataUrl(canvas, format);
 	};
 
 	return {

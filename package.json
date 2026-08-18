@@ -15,6 +15,7 @@
     "@iconify/vue": "^5.0.1",
     "@vueuse/core": "^14.3.0",
     "@yeger/vue-masonry-wall": "6.1.4",
+    "@zip.js/zip.js": "^2.8.52",
     "fabric": "^7.4.0",
     "pinia": "^4.0.2",
     "uuid": "^14.0.1",
