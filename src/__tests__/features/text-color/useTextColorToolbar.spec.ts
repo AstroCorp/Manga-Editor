@@ -3,7 +3,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, ref, shallowRef } from 'vue';
 import { useTextColorToolbar } from '@/features/text-color/useTextColorToolbar';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
 import { DEFAULT_TEXT_FONT_SIZE, TextBlock } from '@/models/TextBlock';
+import { useHistoryStore } from '@/stores/history';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
 import type { TextTextAlign } from '@/types/page';
@@ -177,6 +179,39 @@ describe('useTextColorToolbar', () => {
 		expect(mangaStore.texts[0]?.fontSize).toBe(36);
 		expect(api.fontSize.value).toBe(36);
 		expect(canvas.requestRenderAll).toHaveBeenCalled();
+	});
+
+	it('does not record history for format changes while editing', () => {
+		const mangaStore = useMangaStore();
+		const historyStore = useHistoryStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextObject(text);
+		const { canvas, handlers } = createCanvas(textObject);
+		const api = createToolbar(canvas);
+
+		handlers['selection:created']?.();
+
+		const afterAdd = historyStore.entries.length;
+
+		textObject.isEditing = true;
+		api.setFontSize(36);
+
+		expect(mangaStore.texts[0]?.fontSize).toBe(36);
+		expect(historyStore.entries).toHaveLength(afterAdd);
+
+		textObject.isEditing = false;
+		api.setFontSize(40);
+
+		expect(historyStore.entries.at(-1)?.label).toBe(
+			historyLabelForPage(
+				HISTORY_LABEL.FormatText,
+				mangaStore.activePage.name,
+			),
+		);
+		expect(mangaStore.texts[0]?.fontSize).toBe(40);
 	});
 
 	it('setFontSize ignores invalid sizes', () => {

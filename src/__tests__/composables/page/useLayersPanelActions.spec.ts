@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
 import { useLayersPanelActions } from '@/composables/page/useLayersPanelActions';
+import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
 import { useEditorStore } from '@/stores/editor';
+import { useHistoryStore } from '@/stores/history';
 import { useMangaStore } from '@/stores/manga';
 
 vi.mock('vue3-toastify', () => {
@@ -97,7 +99,38 @@ describe('useLayersPanelActions', () => {
 		renameLayer(id, 'tone');
 
 		expect(toast.warn).not.toHaveBeenCalled();
-		expect(mangaStore.activeLayer.name).toBe('Tone');
+		expect(mangaStore.layers[0]?.name).toBe('Tone');
+	});
+
+	it('hides the active layer after selecting a fallback so history restores both', () => {
+		const mangaStore = useMangaStore();
+		const historyStore = useHistoryStore();
+		const { toggleVisible } = useLayersPanelActions();
+		const bottomId = mangaStore.activeLayer.id;
+
+		mangaStore.addLayer();
+		const topId = mangaStore.activeLayer.id;
+
+		toggleVisible(topId);
+
+		expect(mangaStore.activeLayer.id).toBe(bottomId);
+		expect(
+			mangaStore.layers.find((layer) => {
+				return layer.id === topId;
+			})?.visible,
+		).toBe(false);
+		expect(historyStore.entries.at(-1)?.label).toBe(
+			historyLabelForPage(HISTORY_LABEL.HideLayer, 'Page 1'),
+		);
+
+		mangaStore.undoHistory();
+
+		expect(mangaStore.activeLayer.id).toBe(topId);
+		expect(
+			mangaStore.layers.find((layer) => {
+				return layer.id === topId;
+			})?.visible,
+		).toBe(true);
 	});
 
 	it('toggles layer expansion and expands the active layer', async () => {

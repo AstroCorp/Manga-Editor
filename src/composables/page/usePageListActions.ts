@@ -33,7 +33,7 @@ export const usePageListActions = () => {
 				return page.id === id;
 			})?.name ?? 'this page';
 
-		return `Delete '${name}'? This cannot be undone.`;
+		return `Delete '${name}'?`;
 	});
 
 	const togglePagesVisible = () => {

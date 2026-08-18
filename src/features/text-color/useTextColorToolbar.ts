@@ -40,6 +40,7 @@ import {
 	DEFAULT_TEXT_STROKE,
 	DEFAULT_TEXT_STROKE_WIDTH,
 } from '@/models/TextBlock';
+import { HISTORY_LABEL } from '@/lib/history/historyEnums';
 import { useMangaStore } from '@/stores/manga';
 import type { PageTextObject } from '@/types/fabric';
 import type {
@@ -167,6 +168,12 @@ export const useTextColorToolbar = ({
 
 		syncBoxedTextGeometry(object);
 		mangaStore.updateText(id, textBlockFromFabric(object));
+
+		const textbox = getPageTextbox(object);
+
+		if (!textbox?.isEditing) {
+			mangaStore.recordHistory(HISTORY_LABEL.FormatText);
+		}
 	};
 
 	const applyFlags = (flags: TextFormatFlags) => {

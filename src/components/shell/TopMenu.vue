@@ -2,6 +2,7 @@
 import ThemeToggle from '@/components/shell/ThemeToggle.vue';
 import ExportActions from '@/components/toolbar/ExportActions.vue';
 import GuideToggle from '@/components/toolbar/GuideToggle.vue';
+import HistoryControls from '@/components/toolbar/HistoryControls.vue';
 import PageActions from '@/components/toolbar/PageActions.vue';
 </script>
 
@@ -18,6 +19,7 @@ import PageActions from '@/components/toolbar/PageActions.vue';
 			<ThemeToggle />
 		</div>
 		<div class="flex items-center gap-2">
+			<HistoryControls />
 			<GuideToggle />
 			<PageActions />
 			<ExportActions />

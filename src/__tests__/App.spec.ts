@@ -42,6 +42,15 @@ describe('App', () => {
 		expect(wrapper.text()).toContain('Config');
 		expect(wrapper.text()).toContain('Layouts');
 		expect(
+			wrapper.find('button[aria-label="Undo"]').exists(),
+		).toBe(true);
+		expect(
+			wrapper.find('button[aria-label="History"]').exists(),
+		).toBe(true);
+		expect(
+			wrapper.find('button[aria-label="Redo"]').exists(),
+		).toBe(true);
+		expect(
 			wrapper.find('button[aria-label="Hide guides"]').exists(),
 		).toBe(true);
 		expect(

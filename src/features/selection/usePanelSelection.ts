@@ -54,6 +54,11 @@ import {
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_FONT_SIZE,
 } from '@/models/TextBlock';
+import { HISTORY_LABEL } from '@/lib/history/historyEnums';
+import {
+	describeTransform,
+	transformHistoryLabel,
+} from '@/lib/history/describeTransform';
 import { useMangaStore } from '@/stores/manga';
 import { useSelectionStore } from '@/stores/selection';
 import type { LayerElementFocusPayload } from '@/types/editor';
@@ -391,7 +396,41 @@ export const usePanelSelection = ({
 		}
 
 		if (isPageText(active)) {
+			const textId = getTextId(active);
+			const stored = textId
+				? mangaStore.texts.find((text) => {
+						return text.id === textId;
+					})
+				: undefined;
+			const before = stored
+				? {
+						left: stored.left,
+						top: stored.top,
+						angle: stored.angle,
+						width: stored.width,
+					}
+				: null;
+
 			persistTextObject(active);
+
+			if (!isEditingText(active)) {
+				const next = textId
+					? mangaStore.texts.find((text) => {
+							return text.id === textId;
+						})
+					: undefined;
+				const kind =
+					before && next
+						? describeTransform(before, {
+								left: next.left,
+								top: next.top,
+								angle: next.angle,
+								width: next.width,
+							})
+						: 'move';
+
+				mangaStore.recordHistory(transformHistoryLabel(kind, 'text'));
+			}
 
 			return;
 		}
@@ -571,6 +610,7 @@ export const usePanelSelection = ({
 		try {
 			if (event.target) {
 				persistTextObject(event.target);
+				mangaStore.recordHistory(HISTORY_LABEL.EditText);
 			}
 		} finally {
 			syncInteractionMode();
@@ -744,6 +784,25 @@ export const usePanelSelection = ({
 		}
 
 		if (editing) {
+			return;
+		}
+
+		if (isModKey(event) && event.key.toLowerCase() === 'z') {
+			event.preventDefault();
+
+			if (event.shiftKey) {
+				mangaStore.redoHistory();
+			} else {
+				mangaStore.undoHistory();
+			}
+
+			return;
+		}
+
+		if (isModKey(event) && event.key.toLowerCase() === 'y') {
+			event.preventDefault();
+			mangaStore.redoHistory();
+
 			return;
 		}
 

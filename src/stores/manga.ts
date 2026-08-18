@@ -1,7 +1,22 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
+import {
+	describeTransform,
+	transformHistoryLabel,
+} from '@/lib/history/describeTransform';
+import {
+	captureDocument,
+	pagesFromDocument,
+} from '@/lib/history/documentSnapshot';
+import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
+import {
+	loadPersistedProject,
+	persistProject,
+} from '@/lib/history/projectStorage';
 import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
 import { Page } from '@/models/Page';
+import { useHistoryStore } from '@/stores/history';
+import type { HistoryDocumentJSON } from '@/types/history';
 import type { Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
@@ -15,6 +30,7 @@ export const useMangaStore = defineStore('manga', () => {
 	const firstPage = Page.createBlank(1);
 	const pages = ref<Page[]>([firstPage]);
 	const activePageId = ref(firstPage.id);
+	let isRestoringHistory = false;
 
 	/**
 	 * Sube cuando hay que rehidratar el canvas
@@ -40,6 +56,86 @@ export const useMangaStore = defineStore('manga', () => {
 
 	const bumpContent = () => {
 		contentResetEpoch.value += 1;
+	};
+
+	const captureSnapshot = (): HistoryDocumentJSON => {
+		return captureDocument({
+			title: title.value,
+			activePageId: activePageId.value,
+			pages: pages.value,
+		});
+	};
+
+	const persistCurrentProject = () => {
+		if (isRestoringHistory) {
+			return;
+		}
+
+		persistProject({
+			version: 1,
+			document: captureSnapshot(),
+			history: useHistoryStore().getStack(),
+		});
+	};
+
+	const recordHistory = (action: string, pageName?: string | null) => {
+		if (isRestoringHistory) {
+			return;
+		}
+
+		const label =
+			pageName === null
+				? action
+				: historyLabelForPage(action, pageName ?? getActivePage().name);
+
+		useHistoryStore().push(label, captureSnapshot());
+		persistCurrentProject();
+	};
+
+	const applyHistorySnapshot = (snapshot: HistoryDocumentJSON) => {
+		const prevPageId = activePageId.value;
+
+		isRestoringHistory = true;
+		title.value = snapshot.title;
+		pages.value = pagesFromDocument(snapshot);
+		activePageId.value = snapshot.activePageId;
+		isRestoringHistory = false;
+
+		if (activePageId.value === prevPageId) {
+			bumpContent();
+		}
+
+		persistCurrentProject();
+	};
+
+	const undoHistory = () => {
+		const snapshot = useHistoryStore().stepBack();
+
+		if (!snapshot) {
+			return;
+		}
+
+		applyHistorySnapshot(snapshot);
+	};
+
+	const redoHistory = () => {
+		const snapshot = useHistoryStore().stepForward();
+
+		if (!snapshot) {
+			return;
+		}
+
+		applyHistorySnapshot(snapshot);
+	};
+
+	const jumpToHistory = (entryId: string) => {
+		const snapshot = useHistoryStore().jumpTo(entryId);
+
+		if (!snapshot) {
+			return;
+		}
+
+		applyHistorySnapshot(snapshot);
 	};
 
 	const activePage = computed((): Page => {
@@ -89,6 +185,7 @@ export const useMangaStore = defineStore('manga', () => {
 	const clearActivePage = () => {
 		getActivePage().resetToDefaultLayer();
 		bumpContent();
+		recordHistory(HISTORY_LABEL.ClearPage);
 	};
 
 	const addPage = () => {
@@ -105,6 +202,7 @@ export const useMangaStore = defineStore('manga', () => {
 		page.name = findUniqueName(page.name, taken);
 		pages.value.push(page);
 		activePageId.value = page.id;
+		recordHistory(HISTORY_LABEL.AddPage);
 	};
 
 	const removePage = (pageId: string) => {
@@ -120,6 +218,8 @@ export const useMangaStore = defineStore('manga', () => {
 			return;
 		}
 
+		const removedName = pages.value[index]?.name ?? '';
+
 		pages.value.splice(index, 1);
 
 		if (activePageId.value === pageId) {
@@ -132,6 +232,8 @@ export const useMangaStore = defineStore('manga', () => {
 
 			activePageId.value = nextPage.id;
 		}
+
+		recordHistory(HISTORY_LABEL.DeletePage, removedName);
 	};
 
 	const selectPage = (pageId: string) => {
@@ -143,7 +245,12 @@ export const useMangaStore = defineStore('manga', () => {
 			return;
 		}
 
+		if (activePageId.value === pageId) {
+			return;
+		}
+
 		activePageId.value = pageId;
+		persistCurrentProject();
 	};
 
 	const reorderPages = (fromIndex: number, toIndex: number) => {
@@ -164,6 +271,7 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		pages.value.splice(toIndex, 0, page);
+		recordHistory(HISTORY_LABEL.ReorderPages, null);
 	};
 
 	const renamePage = (pageId: string, name: string): boolean => {
@@ -183,6 +291,7 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		page.name = trimmed;
+		recordHistory(HISTORY_LABEL.RenamePage);
 
 		return true;
 	};
@@ -194,22 +303,33 @@ export const useMangaStore = defineStore('manga', () => {
 	const applyActivePageLayout = (layoutJson: LayoutJSON) => {
 		getActivePage().applyLayout(layoutJson);
 		bumpContent();
+		recordHistory(HISTORY_LABEL.ApplyLayout);
 	};
 
 	const addShape = (shape: Shape) => {
 		getActivePage().addShape(shape);
+		recordHistory(HISTORY_LABEL.AddPanel);
 	};
 
 	const removeShape = (shapeId: string) => {
-		getActivePage().removeShape(shapeId);
+		if (!getActivePage().removeShape(shapeId)) {
+			return;
+		}
+
+		recordHistory(HISTORY_LABEL.DeletePanel);
 	};
 
 	const addText = (text: TextBlock) => {
 		getActivePage().addText(text);
+		recordHistory(HISTORY_LABEL.AddText);
 	};
 
 	const removeText = (textId: string) => {
-		getActivePage().removeText(textId);
+		if (!getActivePage().removeText(textId)) {
+			return;
+		}
+
+		recordHistory(HISTORY_LABEL.DeleteText);
 	};
 
 	const updateText = (textId: string, patch: TextBlockPatch) => {
@@ -217,35 +337,100 @@ export const useMangaStore = defineStore('manga', () => {
 	};
 
 	const setShapeImage = (shapeId: string, image: ShapeImage | null) => {
-		getActivePage().setShapeImage(shapeId, image);
+		const previous = getActivePage()
+			.getActiveLayer()
+			.shapes.find((shape) => {
+				return shape.id === shapeId;
+			})?.image;
+		const previousPose = previous
+			? {
+					left: previous.left,
+					top: previous.top,
+					angle: previous.angle,
+					scaleX: previous.scaleX,
+					scaleY: previous.scaleY,
+					flipX: previous.flipX,
+					flipY: previous.flipY,
+					grayscale: previous.grayscale,
+				}
+			: null;
+
+		if (!getActivePage().setShapeImage(shapeId, image)) {
+			return;
+		}
+
+		if (!image) {
+			recordHistory(HISTORY_LABEL.RemoveImage);
+
+			return;
+		}
+
+		if (!previousPose) {
+			recordHistory(HISTORY_LABEL.PlaceImage);
+
+			return;
+		}
+
+		if (
+			previousPose.flipX !== image.flipX ||
+			previousPose.flipY !== image.flipY
+		) {
+			recordHistory(HISTORY_LABEL.FlipImage);
+
+			return;
+		}
+
+		if (Boolean(previousPose.grayscale) !== Boolean(image.grayscale)) {
+			recordHistory(HISTORY_LABEL.GrayscaleImage);
+
+			return;
+		}
+
+		recordHistory(
+			transformHistoryLabel(
+				describeTransform(previousPose, image),
+				'image',
+			),
+		);
 	};
 
 	const setShapeWhiteFill = (shapeId: string, whiteFill: boolean) => {
-		getActivePage().setShapeWhiteFill(shapeId, whiteFill);
+		if (!getActivePage().setShapeWhiteFill(shapeId, whiteFill)) {
+			return;
+		}
+
+		recordHistory(
+			whiteFill ? HISTORY_LABEL.FillPanel : HISTORY_LABEL.ClearPanelFill,
+		);
 	};
 
 	const setActivePageSize = (width: number, height: number) => {
 		getActivePage().setSize(width, height);
 		bumpContent();
+		recordHistory(HISTORY_LABEL.ChangePageSize);
 	};
 
 	const setActiveLayerGrid = (cols: number, rows: number) => {
 		getActivePage().setActiveLayerGrid(cols, rows);
 		bumpContent();
+		recordHistory(HISTORY_LABEL.ChangeGrid);
 	};
 
 	const setActiveLayerMargins = (margins: PageMargins) => {
 		getActivePage().setActiveLayerMargins(margins);
 		bumpContent();
+		recordHistory(HISTORY_LABEL.ChangeMargins);
 	};
 
 	const rotateActivePage = (direction: PageRotateDirection) => {
 		getActivePage().rotateOrientation(direction);
 		bumpContent();
+		recordHistory(HISTORY_LABEL.RotatePage);
 	};
 
 	const setActiveLayerStrokeWidth = (width: number) => {
 		getActivePage().setActiveLayerStrokeWidth(width);
+		recordHistory(HISTORY_LABEL.ChangeStroke);
 	};
 
 	const selectLayer = (layerId: string) => {
@@ -259,6 +444,7 @@ export const useMangaStore = defineStore('manga', () => {
 	const addLayer = () => {
 		getActivePage().addLayer();
 		bumpContent();
+		recordHistory(HISTORY_LABEL.AddLayer);
 	};
 
 	const removeLayer = (layerId: string) => {
@@ -267,15 +453,23 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		bumpContent();
+		recordHistory(HISTORY_LABEL.DeleteLayer);
 	};
 
 	const reorderLayers = (fromIndex: number, toIndex: number) => {
 		getActivePage().reorderLayers(fromIndex, toIndex);
 		bumpContent();
+		recordHistory(HISTORY_LABEL.ReorderLayers);
 	};
 
 	const renameLayer = (layerId: string, name: string): boolean => {
-		return getActivePage().renameLayer(layerId, name);
+		if (!getActivePage().renameLayer(layerId, name)) {
+			return false;
+		}
+
+		recordHistory(HISTORY_LABEL.RenameLayer);
+
+		return true;
 	};
 
 	const setLayerVisible = (layerId: string, visible: boolean) => {
@@ -284,7 +478,42 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		bumpContent();
+		recordHistory(
+			visible ? HISTORY_LABEL.ShowLayer : HISTORY_LABEL.HideLayer,
+		);
 	};
+
+	const hydrateFromStorage = () => {
+		const persisted = loadPersistedProject();
+
+		if (!persisted) {
+			useHistoryStore().resetWith(captureSnapshot());
+			persistCurrentProject();
+
+			return;
+		}
+
+		try {
+			const restoredPages = pagesFromDocument(persisted.document);
+			const activeExists = restoredPages.some((page) => {
+				return page.id === persisted.document.activePageId;
+			});
+
+			isRestoringHistory = true;
+			title.value = persisted.document.title;
+			pages.value = restoredPages;
+			activePageId.value = activeExists
+				? persisted.document.activePageId
+				: restoredPages[0]!.id;
+			isRestoringHistory = false;
+			useHistoryStore().hydrate(persisted.history);
+		} catch {
+			useHistoryStore().resetWith(captureSnapshot());
+			persistCurrentProject();
+		}
+	};
+
+	hydrateFromStorage();
 
 	return {
 		title,
@@ -324,5 +553,9 @@ export const useMangaStore = defineStore('manga', () => {
 		reorderLayers,
 		renameLayer,
 		setLayerVisible,
+		recordHistory,
+		undoHistory,
+		redoHistory,
+		jumpToHistory,
 	};
 });

@@ -5,6 +5,7 @@ import { usePanelSelection } from '@/features/selection/usePanelSelection';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import * as textFabric from '@/lib/fabric/textFabric';
 import * as loadGoogleFont from '@/lib/fonts/loadGoogleFont';
+import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
 import {
 	clearClipboard,
 } from '@/lib/clipboard/editorClipboard';
@@ -13,6 +14,7 @@ import {
 } from '@/lib/text/textClipboard';
 import { Shape } from '@/models/Shape';
 import { TextBlock } from '@/models/TextBlock';
+import { useHistoryStore } from '@/stores/history';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
 
@@ -357,6 +359,113 @@ describe('usePanelSelection text editing lifecycle', () => {
 		}).toThrow('persist failed');
 
 		expect(syncInteractionMode).toHaveBeenCalledOnce();
+	});
+
+	it('does not record history while typing and records once on edit exit', () => {
+		const mangaStore = useMangaStore();
+		const historyStore = useHistoryStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text);
+		const { canvas, handlers } = createCanvas(textObject);
+
+		mountSelection(selectionDeps(canvas));
+
+		const afterAdd = historyStore.entries.length;
+
+		vi.spyOn(textFabric, 'textBlockFromFabric').mockReturnValue({
+			content: 'Draft',
+		});
+		handlers['text:changed']?.({ target: textObject });
+
+		expect(mangaStore.texts[0]?.content).toBe('Draft');
+		expect(historyStore.entries).toHaveLength(afterAdd);
+
+		vi.mocked(textFabric.textBlockFromFabric).mockReturnValue({
+			content: 'Final',
+		});
+		handlers['text:editing:exited']?.({ target: textObject });
+
+		expect(mangaStore.texts[0]?.content).toBe('Final');
+		expect(historyStore.entries.at(-1)?.label).toBe(
+			historyLabelForPage(HISTORY_LABEL.EditText, mangaStore.activePage.name),
+		);
+	});
+
+	it('records rotate and scale text from object:modified', () => {
+		const mangaStore = useMangaStore();
+		const historyStore = useHistoryStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text);
+		const { canvas, handlers } = createCanvas(textObject);
+
+		mountSelection(selectionDeps(canvas));
+
+		vi.spyOn(textFabric, 'textBlockFromFabric').mockReturnValue({
+			left: text.left,
+			top: text.top,
+			angle: 40,
+			width: text.width,
+		});
+		handlers['object:modified']?.({ target: textObject });
+
+		expect(historyStore.entries.at(-1)?.label).toBe(
+			historyLabelForPage(HISTORY_LABEL.RotateText, 'Page 1'),
+		);
+
+		vi.mocked(textFabric.textBlockFromFabric).mockReturnValue({
+			left: text.left,
+			top: text.top,
+			angle: 40,
+			width: 320,
+		});
+		handlers['object:modified']?.({ target: textObject });
+
+		expect(historyStore.entries.at(-1)?.label).toBe(
+			historyLabelForPage(HISTORY_LABEL.ScaleText, 'Page 1'),
+		);
+	});
+
+	it('undoes the last movement with Ctrl+Z when not editing', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+
+		const textObject = createTextMock(text);
+		const { canvas } = createCanvas(textObject);
+
+		mountSelection(selectionDeps(canvas));
+
+		window.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }),
+		);
+
+		expect(mangaStore.texts).toHaveLength(0);
+	});
+
+	it('redoes the last movement with Ctrl+Y when not editing', () => {
+		const mangaStore = useMangaStore();
+		const text = TextBlock.create(10, 20);
+
+		mangaStore.addText(text);
+		mangaStore.undoHistory();
+
+		const textObject = createTextMock(text);
+		const { canvas } = createCanvas(textObject);
+
+		mountSelection(selectionDeps(canvas));
+
+		window.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'y', ctrlKey: true }),
+		);
+
+		expect(mangaStore.texts).toHaveLength(1);
 	});
 
 	it('exits orphan boxed text editing when the group is deselected', () => {

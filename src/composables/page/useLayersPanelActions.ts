@@ -139,8 +139,8 @@ export const useLayersPanelActions = () => {
 			}
 
 			editorStore.cancelStroke();
-			mangaStore.setLayerVisible(layerId, false);
 			mangaStore.selectLayer(fallback.id);
+			mangaStore.setLayerVisible(layerId, false);
 
 			return;
 		}
