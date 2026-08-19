@@ -1,15 +1,9 @@
 import { HISTORY_LABEL } from '@/lib/history/historyEnums';
-
-type TransformKind = 'rotate' | 'scale' | 'move';
-
-type TransformPose = {
-	left: number;
-	top: number;
-	angle?: number;
-	scaleX?: number;
-	scaleY?: number;
-	width?: number;
-};
+import type {
+	TransformHistoryTarget,
+	TransformKind,
+	TransformPose,
+} from '@/types/history';
 
 const ANGLE_EPS = 0.5;
 const SCALE_EPS = 0.001;
@@ -65,7 +59,7 @@ export const describeTransform = (
 
 export const transformHistoryLabel = (
 	kind: TransformKind,
-	target: 'text' | 'image',
+	target: TransformHistoryTarget,
 ): string => {
 	if (kind === 'rotate') {
 		return target === 'text'

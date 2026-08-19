@@ -1,9 +1,5 @@
 import { Uint8ArrayReader, Uint8ArrayWriter, ZipWriter } from '@zip.js/zip.js';
-
-export type ZipDataUrlEntry = {
-	filename: string;
-	dataUrl: string;
-};
+import type { ZipDataUrlEntry } from '@/types/editor';
 
 const dataUrlToBytes = (dataUrl: string): Uint8Array => {
 	const comma = dataUrl.indexOf(',');

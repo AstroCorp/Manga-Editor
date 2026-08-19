@@ -1,25 +1,52 @@
-import { computed, ref } from 'vue';
+import { computed, shallowRef } from 'vue';
 import { defineStore } from 'pinia';
 import {
 	canRedoHistory,
 	canUndoHistory,
 	createHistoryState,
+	fromPersistedHistory,
 	jumpHistoryIndex,
 	listHistoryItems,
 	pushMovement,
 	stepHistoryIndex,
+	toPersistedHistory,
 } from '@/lib/history/historyStack';
-import type { HistoryDocumentJSON, HistoryStackState } from '@/types/history';
+import {
+	collectAssetIdsFromHistory,
+	createImageAssetStore,
+} from '@/lib/history/imageAssets';
+import type {
+	HistoryDocumentJSON,
+	HistoryStackState,
+	InternImageSrc,
+	PersistedHistoryStack,
+	ResolveImageAsset,
+} from '@/types/history';
 
 const emptyState = (): HistoryStackState => {
 	return {
+		baseline: {
+			title: '',
+			activePageId: '',
+			pages: [],
+		},
+		current: {
+			title: '',
+			activePageId: '',
+			pages: [],
+		},
 		entries: [],
 		index: -1,
 	};
 };
 
 export const useHistoryStore = defineStore('history', () => {
-	const stack = ref<HistoryStackState>(emptyState());
+	const stack = shallowRef<HistoryStackState>(emptyState());
+	const assets = createImageAssetStore();
+
+	const retainUsedImages = () => {
+		assets.retain(collectAssetIdsFromHistory(stack.value));
+	};
 
 	const entries = computed(() => {
 		return stack.value.entries;
@@ -41,12 +68,30 @@ export const useHistoryStore = defineStore('history', () => {
 		return listHistoryItems(stack.value.entries, stack.value.index);
 	});
 
+	const internImage: InternImageSrc = (src) => {
+		return assets.intern(src);
+	};
+
+	const resolveImage: ResolveImageAsset = (assetId) => {
+		return assets.resolve(assetId);
+	};
+
+	const importImages = (images: Record<string, string>) => {
+		assets.hydrate(images);
+	};
+
+	const exportImages = (): Record<string, string> => {
+		return assets.exportAll();
+	};
+
 	const resetWith = (snapshot: HistoryDocumentJSON) => {
 		stack.value = createHistoryState(snapshot);
+		retainUsedImages();
 	};
 
 	const push = (label: string, snapshot: HistoryDocumentJSON) => {
 		stack.value = pushMovement(stack.value, label, snapshot);
+		retainUsedImages();
 	};
 
 	const stepBack = (): HistoryDocumentJSON | null => {
@@ -85,15 +130,13 @@ export const useHistoryStore = defineStore('history', () => {
 		return next.snapshot;
 	};
 
-	const hydrate = (next: HistoryStackState) => {
-		stack.value = {
-			entries: next.entries,
-			index: next.index,
-		};
+	const hydrate = (next: PersistedHistoryStack) => {
+		stack.value = fromPersistedHistory(next);
+		retainUsedImages();
 	};
 
-	const getStack = (): HistoryStackState => {
-		return stack.value;
+	const getStack = (): PersistedHistoryStack => {
+		return toPersistedHistory(stack.value);
 	};
 
 	return {
@@ -102,6 +145,10 @@ export const useHistoryStore = defineStore('history', () => {
 		canUndo,
 		canRedo,
 		items,
+		internImage,
+		resolveImage,
+		importImages,
+		exportImages,
 		resetWith,
 		push,
 		stepBack,

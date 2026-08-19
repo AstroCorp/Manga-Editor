@@ -63,6 +63,9 @@ export const useMangaStore = defineStore('manga', () => {
 			title: title.value,
 			activePageId: activePageId.value,
 			pages: pages.value,
+			intern: (src) => {
+				return useHistoryStore().internImage(src);
+			},
 		});
 	};
 
@@ -71,10 +74,13 @@ export const useMangaStore = defineStore('manga', () => {
 			return;
 		}
 
+		const historyStore = useHistoryStore();
+
 		persistProject({
-			version: 1,
+			version: 2,
 			document: captureSnapshot(),
-			history: useHistoryStore().getStack(),
+			images: historyStore.exportImages(),
+			history: historyStore.getStack(),
 		});
 	};
 
@@ -97,7 +103,9 @@ export const useMangaStore = defineStore('manga', () => {
 
 		isRestoringHistory = true;
 		title.value = snapshot.title;
-		pages.value = pagesFromDocument(snapshot);
+		pages.value = pagesFromDocument(snapshot, (assetId) => {
+			return useHistoryStore().resolveImage(assetId);
+		});
 		activePageId.value = snapshot.activePageId;
 		isRestoringHistory = false;
 
@@ -494,7 +502,14 @@ export const useMangaStore = defineStore('manga', () => {
 		}
 
 		try {
-			const restoredPages = pagesFromDocument(persisted.document);
+			useHistoryStore().importImages(persisted.images);
+
+			const restoredPages = pagesFromDocument(
+				persisted.document,
+				(assetId) => {
+					return useHistoryStore().resolveImage(assetId);
+				},
+			);
 			const activeExists = restoredPages.some((page) => {
 				return page.id === persisted.document.activePageId;
 			});

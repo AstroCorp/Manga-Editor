@@ -1,8 +1,16 @@
-import type { ShapeJSON, TextBlockJSON } from '@/types/page';
+import type { Patch } from 'immer';
+import type { Page } from '@/models/Page';
+import type { ShapeImageJSON, ShapeJSON, TextBlockJSON } from '@/types/page';
+
+/** Imagen en historial: el blob vive en el almacén compartido. */
+export type HistoryShapeImageJSON = Omit<ShapeImageJSON, 'src'> & {
+	assetId: string;
+};
 
 /** Panel en un snapshot de historial (incluye relleno blanco de vista). */
-export type HistoryShapeJSON = ShapeJSON & {
+export type HistoryShapeJSON = Omit<ShapeJSON, 'image'> & {
 	whiteFill?: boolean;
+	image: HistoryShapeImageJSON | null;
 };
 
 /** Capa completa: geometría, textos e imágenes. */
@@ -30,7 +38,7 @@ export type HistoryPageJSON = {
 	layers: HistoryLayerJSON[];
 };
 
-/** Documento entero en un punto del historial. */
+/** Documento entero en un punto del historial (sin blobs de imagen). */
 export type HistoryDocumentJSON = {
 	title: string;
 	activePageId: string;
@@ -40,18 +48,30 @@ export type HistoryDocumentJSON = {
 export type HistoryEntry = {
 	id: string;
 	label: string;
-	snapshot: HistoryDocumentJSON;
+	patches: Patch[];
+	inversePatches: Patch[];
 };
 
+/** Estado en memoria: `current` se reconstruye al hidratar. */
 export type HistoryStackState = {
+	baseline: HistoryDocumentJSON;
+	current: HistoryDocumentJSON;
+	entries: HistoryEntry[];
+	index: number;
+};
+
+/** Historial persistido: sin `current` (se aplica desde baseline + parches). */
+export type PersistedHistoryStack = {
+	baseline: HistoryDocumentJSON;
 	entries: HistoryEntry[];
 	index: number;
 };
 
 export type PersistedProject = {
-	version: 1;
+	version: 2;
 	document: HistoryDocumentJSON;
-	history: HistoryStackState;
+	images: Record<string, string>;
+	history: PersistedHistoryStack;
 };
 
 export type HistoryListItem = {
@@ -59,4 +79,42 @@ export type HistoryListItem = {
 	label: string;
 	isCurrent: boolean;
 	isFuture: boolean;
+};
+
+export type InternImageSrc = (src: string) => string;
+
+export type ResolveImageAsset = (assetId: string) => string;
+
+export type ImageAssetStore = {
+	intern: InternImageSrc;
+	resolve: ResolveImageAsset;
+	exportAll: () => Record<string, string>;
+	hydrate: (images: Record<string, string>) => void;
+	retain: (usedIds: Iterable<string>) => void;
+};
+
+export type CaptureDocumentInput = {
+	title: string;
+	activePageId: string;
+	pages: Page[];
+	intern: InternImageSrc;
+};
+
+export type HistoryAssetScanInput = {
+	baseline: HistoryDocumentJSON;
+	current?: HistoryDocumentJSON;
+	entries: ReadonlyArray<HistoryEntry>;
+};
+
+export type TransformKind = 'rotate' | 'scale' | 'move';
+
+export type TransformHistoryTarget = 'text' | 'image';
+
+export type TransformPose = {
+	left: number;
+	top: number;
+	angle?: number;
+	scaleX?: number;
+	scaleY?: number;
+	width?: number;
 };

@@ -18,3 +18,8 @@ export type CanvasActions = {
 };
 
 export type ThemePreference = 'auto' | 'light' | 'dark';
+
+export type ZipDataUrlEntry = {
+	filename: string;
+	dataUrl: string;
+};

@@ -4,6 +4,7 @@ import {
 	HISTORY_LABEL,
 	MAX_HISTORY_MOVEMENTS,
 } from '@/lib/history/historyEnums';
+import { createImageAssetStore } from '@/lib/history/imageAssets';
 import {
 	canRedoHistory,
 	canUndoHistory,
@@ -12,9 +13,16 @@ import {
 	listHistoryItems,
 	pushMovement,
 	stepHistoryIndex,
+	dropOldestMovement,
+	fromPersistedHistory,
+	toPersistedHistory,
 } from '@/lib/history/historyStack';
 import { Page } from '@/models/Page';
+import { Shape } from '@/models/Shape';
+import { ShapeImage } from '@/models/ShapeImage';
 import type { HistoryDocumentJSON } from '@/types/history';
+
+const assets = createImageAssetStore();
 
 const snapshotOf = (name: string): HistoryDocumentJSON => {
 	const page = Page.createBlank(1);
@@ -25,6 +33,7 @@ const snapshotOf = (name: string): HistoryDocumentJSON => {
 		title: 'Untitled',
 		activePageId: page.id,
 		pages: [page],
+		intern: assets.intern,
 	});
 };
 
@@ -34,6 +43,7 @@ describe('historyStack', () => {
 
 		expect(state.entries).toHaveLength(1);
 		expect(state.entries[0]?.label).toBe(HISTORY_LABEL.Start);
+		expect(state.entries[0]?.patches).toEqual([]);
 		expect(canUndoHistory(state)).toBe(false);
 		expect(canRedoHistory(state)).toBe(false);
 	});
@@ -105,6 +115,7 @@ describe('historyStack', () => {
 
 		expect(state.entries).toHaveLength(MAX_HISTORY_MOVEMENTS + 1);
 		expect(state.entries[0]?.label).toBe(HISTORY_LABEL.AddPanel);
+		expect(state.entries[0]?.patches).toEqual([]);
 		expect(state.index).toBe(MAX_HISTORY_MOVEMENTS);
 	});
 
@@ -115,5 +126,87 @@ describe('historyStack', () => {
 		expect(stepHistoryIndex(state, 1)).toBeNull();
 		expect(jumpHistoryIndex(state, 'missing')).toBeNull();
 		expect(jumpHistoryIndex(state, state.entries[0]!.id)).toBeNull();
+	});
+
+	it('stores image refs in patches instead of data URLs', () => {
+		const intern = createImageAssetStore();
+		const page = Page.createBlank(1);
+		const start = captureDocument({
+			title: 'Untitled',
+			activePageId: page.id,
+			pages: [page],
+			intern: intern.intern,
+		});
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 8, y: 0 },
+				{ x: 8, y: 8 },
+			],
+			2,
+		);
+
+		shape.setImage(
+			new ShapeImage({
+				src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+				left: 1,
+				top: 2,
+				scaleX: 1,
+				scaleY: 1,
+			}),
+		);
+		page.addShape(shape);
+
+		const next = captureDocument({
+			title: 'Untitled',
+			activePageId: page.id,
+			pages: [page],
+			intern: intern.intern,
+		});
+		const state = pushMovement(
+			createHistoryState(start),
+			HISTORY_LABEL.PlaceImage,
+			next,
+		);
+		const serialized = JSON.stringify(state.entries);
+
+		expect(serialized).not.toContain('data:image');
+		expect(serialized).toContain('assetId');
+		expect(Object.keys(intern.exportAll())).toHaveLength(1);
+	});
+
+	it('bakes the oldest movement into the baseline when dropping it', () => {
+		let state = createHistoryState(snapshotOf('A'));
+
+		state = pushMovement(state, HISTORY_LABEL.AddPanel, snapshotOf('B'));
+		state = pushMovement(state, HISTORY_LABEL.AddText, snapshotOf('C'));
+
+		const dropped = dropOldestMovement(state);
+
+		expect(dropped).not.toBeNull();
+		expect(dropped!.entries[0]?.label).toBe(HISTORY_LABEL.AddPanel);
+		expect(dropped!.entries[0]?.patches).toEqual([]);
+		expect(dropped!.current).toEqual(state.current);
+
+		const restored = fromPersistedHistory(toPersistedHistory(dropped!));
+
+		expect(restored.current).toEqual(dropped!.current);
+		expect(dropOldestMovement(createHistoryState(snapshotOf('A')))).toBeNull();
+	});
+
+	it('steps back and forward with inverse patches', () => {
+		let state = createHistoryState(snapshotOf('A'));
+
+		state = pushMovement(state, HISTORY_LABEL.AddPanel, snapshotOf('B'));
+
+		const back = stepHistoryIndex(state, -1);
+
+		expect(back?.state.index).toBe(0);
+		expect(back?.snapshot).toEqual(state.baseline);
+
+		const forward = stepHistoryIndex(back!.state, 1);
+
+		expect(forward?.state.index).toBe(1);
+		expect(forward?.snapshot).toEqual(state.current);
 	});
 });

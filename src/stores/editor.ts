@@ -9,7 +9,7 @@ import {
 	exportImageFilename,
 	exportZipFilename,
 } from '@/lib/download';
-import { zipDataUrls, type ZipDataUrlEntry } from '@/lib/export/zipDataUrls';
+import { zipDataUrls } from '@/lib/export/zipDataUrls';
 import { exportPageToDataUrl } from '@/lib/fabric/exportPageToDataUrl';
 import { isLayoutJSON } from '@/lib/page/presetLayouts';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@/lib/zoom';
 import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
-import type { CanvasActions, ExportImageFormat, LayerElementFocusPayload } from '@/types/editor';
+import type { CanvasActions, ExportImageFormat, LayerElementFocusPayload, ZipDataUrlEntry } from '@/types/editor';
 import type { LayoutJSON } from '@/types/layouts';
 import type { Page } from '@/models/Page';
 

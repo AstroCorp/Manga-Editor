@@ -198,6 +198,63 @@ describe('manga history', () => {
 			historyLabelForPage(HISTORY_LABEL.RotateImage, 'Page 1'),
 			historyLabelForPage(HISTORY_LABEL.ScaleImage, 'Page 1'),
 		]);
+
+		const persisted = JSON.parse(localStorage.getItem(PROJECT_STORAGE_KEY)!) as {
+			images: Record<string, string>;
+			history: { entries: unknown[] };
+		};
+
+		expect(Object.values(persisted.images)).toEqual(['data:image/png;base64,xx']);
+		expect(JSON.stringify(persisted.history.entries)).not.toContain(
+			'data:image/png;base64,xx',
+		);
+	});
+
+	it('undoes and redoes a placed image without losing the source', () => {
+		const mangaStore = useMangaStore();
+		const src = 'data:image/png;base64,xx';
+		const shape = panel();
+
+		mangaStore.addShape(shape);
+		mangaStore.setShapeImage(
+			shape.id,
+			new ShapeImage({
+				src,
+				left: 10,
+				top: 10,
+				scaleX: 1,
+				scaleY: 1,
+			}),
+		);
+
+		mangaStore.undoHistory();
+
+		expect(mangaStore.shapes[0]?.image).toBeNull();
+
+		mangaStore.redoHistory();
+
+		expect(mangaStore.shapes[0]?.image?.src).toBe(src);
+	});
+
+	it('reloads an undone document and can still redo', () => {
+		const mangaStore = useMangaStore();
+		const shape = panel();
+
+		mangaStore.addShape(shape);
+		mangaStore.undoHistory();
+
+		setActivePinia(createPinia());
+
+		const restoredManga = useMangaStore();
+		const restoredHistory = useHistoryStore();
+
+		expect(restoredManga.shapes).toHaveLength(0);
+		expect(restoredHistory.canRedo).toBe(true);
+
+		restoredManga.redoHistory();
+
+		expect(restoredManga.shapes).toHaveLength(1);
+		expect(restoredManga.shapes[0]?.id).toBe(shape.id);
 	});
 
 	it('records move, flip and grayscale image as distinct movements', () => {
