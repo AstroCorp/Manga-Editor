@@ -92,31 +92,39 @@ const diffDocuments = (
 	});
 };
 
-export const dropOldestMovement = (
+/** Hornea en el baseline los `count` movimientos más viejos. */
+export const dropOldestMovements = (
 	state: HistoryStackState,
+	count: number,
 ): HistoryStackState | null => {
-	if (state.entries.length <= 1) {
+	const dropped = Math.min(count, state.entries.length - 1);
+
+	if (dropped <= 0) {
 		return null;
 	}
 
-	const nextHead = state.entries[1]!;
-	const baseline =
-		nextHead.patches.length > 0
-			? applyPatches(state.baseline, nextHead.patches)
-			: state.baseline;
+	let baseline = state.baseline;
+
+	for (let index = 1; index <= dropped; index += 1) {
+		const { patches } = state.entries[index]!;
+
+		if (patches.length > 0) {
+			baseline = applyPatches(baseline, patches);
+		}
+	}
 
 	return {
 		baseline,
 		current: state.current,
 		entries: [
 			{
-				...nextHead,
+				...state.entries[dropped]!,
 				patches: [],
 				inversePatches: [],
 			},
-			...state.entries.slice(2),
+			...state.entries.slice(dropped + 1),
 		],
-		index: Math.max(0, state.index - 1),
+		index: Math.max(0, state.index - dropped),
 	};
 };
 
@@ -143,24 +151,23 @@ export const pushMovement = (
 		inversePatches,
 	});
 
-	let nextState: HistoryStackState = {
+	const nextState: HistoryStackState = {
 		baseline: state.baseline,
 		current: next,
 		entries: kept,
 		index: kept.length - 1,
 	};
 
-	while (nextState.entries.length > MAX_HISTORY_ENTRIES) {
-		const trimmed = dropOldestMovement(nextState);
-
-		if (!trimmed) {
-			break;
-		}
-
-		nextState = trimmed;
+	if (nextState.entries.length <= MAX_HISTORY_ENTRIES) {
+		return nextState;
 	}
 
-	return nextState;
+	return (
+		dropOldestMovements(
+			nextState,
+			nextState.entries.length - MAX_HISTORY_ENTRIES,
+		) ?? nextState
+	);
 };
 
 export const canUndoHistory = (state: HistoryStackState): boolean => {

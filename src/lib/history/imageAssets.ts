@@ -113,7 +113,7 @@ const visitPatchAssetIds = (patch: Patch, into: Set<string>) => {
 	visitAssetIds(patch.value, into);
 };
 
-export const collectAssetIdsFromDocument = (
+const collectAssetIdsFromDocument = (
 	document: HistoryDocumentJSON,
 ): Set<string> => {
 	const ids = new Set<string>();
@@ -142,24 +142,6 @@ export const collectAssetIdsFromHistory = (
 	});
 
 	return ids;
-};
-
-export const pickImageAssets = (
-	images: Record<string, string>,
-	usedIds: Iterable<string>,
-): Record<string, string> => {
-	const keep = new Set(usedIds);
-	const next: Record<string, string> = {};
-
-	keep.forEach((assetId) => {
-		const src = images[assetId];
-
-		if (src) {
-			next[assetId] = src;
-		}
-	});
-
-	return next;
 };
 
 export const collectAssetIdsFromPersistedHistory = (

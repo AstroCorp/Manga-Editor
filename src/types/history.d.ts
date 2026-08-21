@@ -68,10 +68,19 @@ export type PersistedHistoryStack = {
 };
 
 export type PersistedProject = {
-	version: 2;
+	version: 3;
 	document: HistoryDocumentJSON;
-	images: Record<string, string>;
 	history: PersistedHistoryStack;
+};
+
+export type ImageAssetMap = Record<string, string>;
+
+export type ProjectPersistenceInput = PersistedProject & {
+	images: ImageAssetMap;
+};
+
+export type HydratedProject = PersistedProject & {
+	images: ImageAssetMap;
 };
 
 export type HistoryListItem = {
@@ -88,8 +97,8 @@ export type ResolveImageAsset = (assetId: string) => string;
 export type ImageAssetStore = {
 	intern: InternImageSrc;
 	resolve: ResolveImageAsset;
-	exportAll: () => Record<string, string>;
-	hydrate: (images: Record<string, string>) => void;
+	exportAll: () => ImageAssetMap;
+	hydrate: (images: ImageAssetMap) => void;
 	retain: (usedIds: Iterable<string>) => void;
 };
 

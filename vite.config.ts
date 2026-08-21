@@ -14,8 +14,11 @@ export default defineConfig({
 			'@': fileURLToPath(new URL('./src', import.meta.url)),
 		},
 	},
+	optimizeDeps: {
+		exclude: ['@jsquash/webp'],
+	},
 	server: {
-		port: 5400,
+		port: 8452,
 		strictPort: true,
 	},
 })

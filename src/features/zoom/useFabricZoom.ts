@@ -153,5 +153,6 @@ export const useFabricZoom = ({
 		scaleStyle,
 		zoomFactor,
 		resetZoomView,
+		syncCanvasOffset,
 	};
 };

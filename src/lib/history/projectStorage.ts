@@ -1,22 +1,24 @@
-import { HISTORY_LABEL } from '@/lib/history/historyEnums';
-import { internDocumentImages } from '@/lib/history/documentSnapshot';
 import {
 	createHistoryState,
-	dropOldestMovement,
+	dropOldestMovements,
 	fromPersistedHistory,
-	pushMovement,
 	toPersistedHistory,
 } from '@/lib/history/historyStack';
 import {
+	deleteImageAssetsExcept,
+	loadImageAssets,
+	saveImageAssets,
+} from '@/lib/history/imageAssetDb';
+import {
 	collectAssetIdsFromPersistedHistory,
-	createImageAssetStore,
-	pickImageAssets,
 } from '@/lib/history/imageAssets';
 import type {
 	HistoryDocumentJSON,
 	HistoryEntry,
+	HydratedProject,
 	PersistedHistoryStack,
 	PersistedProject,
+	ProjectPersistenceInput,
 } from '@/types/history';
 
 export const PROJECT_STORAGE_KEY = 'manga-editor-project';
@@ -97,16 +99,6 @@ const isPersistedHistoryStack = (
 	return true;
 };
 
-const isImageMap = (value: unknown): value is Record<string, string> => {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		return false;
-	}
-
-	return Object.values(value).every((src) => {
-		return typeof src === 'string';
-	});
-};
-
 const isPersistedProject = (value: unknown): value is PersistedProject => {
 	if (!value || typeof value !== 'object') {
 		return false;
@@ -115,97 +107,13 @@ const isPersistedProject = (value: unknown): value is PersistedProject => {
 	const data = value as Record<string, unknown>;
 
 	return (
-		data.version === 2 &&
+		data.version === 3 &&
 		isHistoryDocumentJSON(data.document) &&
-		isImageMap(data.images) &&
 		isPersistedHistoryStack(data.history)
 	);
 };
 
-const isLegacyHistoryEntry = (
-	value: unknown,
-): value is { id: string; label: string; snapshot: HistoryDocumentJSON } => {
-	if (!value || typeof value !== 'object') {
-		return false;
-	}
-
-	const data = value as Record<string, unknown>;
-
-	return (
-		typeof data.id === 'string' &&
-		typeof data.label === 'string' &&
-		isHistoryDocumentJSON(data.snapshot)
-	);
-};
-
-const migrateLegacyProject = (value: unknown): PersistedProject | null => {
-	if (!value || typeof value !== 'object') {
-		return null;
-	}
-
-	const data = value as Record<string, unknown>;
-
-	if (data.version !== 1 || !isHistoryDocumentJSON(data.document)) {
-		return null;
-	}
-
-	const history = data.history;
-
-	if (!history || typeof history !== 'object') {
-		return null;
-	}
-
-	const historyData = history as Record<string, unknown>;
-
-	if (
-		!Array.isArray(historyData.entries) ||
-		typeof historyData.index !== 'number' ||
-		!Number.isInteger(historyData.index) ||
-		historyData.index < 0 ||
-		historyData.index >= historyData.entries.length ||
-		!historyData.entries.every(isLegacyHistoryEntry)
-	) {
-		return null;
-	}
-
-	const assets = createImageAssetStore();
-	const internedSnapshots = historyData.entries.map((entry) => {
-		return internDocumentImages(entry.snapshot, assets.intern);
-	});
-	const first = internedSnapshots[0];
-
-	if (!first) {
-		return null;
-	}
-
-	let stack = createHistoryState(first);
-
-	for (let index = 1; index < internedSnapshots.length; index += 1) {
-		const snapshot = internedSnapshots[index];
-		const label = historyData.entries[index]?.label ?? HISTORY_LABEL.Start;
-
-		if (!snapshot) {
-			continue;
-		}
-
-		stack = pushMovement(stack, label, snapshot);
-	}
-
-	const targetIndex = Math.min(historyData.index, stack.entries.length - 1);
-
-	return {
-		version: 2,
-		document: internDocumentImages(data.document, assets.intern),
-		images: assets.exportAll(),
-		history: {
-			baseline: stack.baseline,
-			entries: stack.entries,
-			index: targetIndex,
-		},
-	};
-};
-
-export const loadPersistedProject = (): PersistedProject | null => {
+export const loadPersistedProject = async (): Promise<HydratedProject | null> => {
 	try {
 		const raw = localStorage.getItem(PROJECT_STORAGE_KEY);
 
@@ -215,11 +123,20 @@ export const loadPersistedProject = (): PersistedProject | null => {
 
 		const parsed: unknown = JSON.parse(raw);
 
-		if (isPersistedProject(parsed)) {
-			return parsed;
+		if (!isPersistedProject(parsed)) {
+			return null;
 		}
 
-		return migrateLegacyProject(parsed);
+		const usedIds = collectAssetIdsFromPersistedHistory(
+			parsed.history,
+			parsed.document,
+		);
+		const images = await loadImageAssets(usedIds);
+
+		return {
+			...parsed,
+			images,
+		};
 	} catch {
 		return null;
 	}
@@ -235,47 +152,89 @@ const writeProject = (project: PersistedProject): boolean => {
 	}
 };
 
-const withUsedImages = (project: PersistedProject): PersistedProject => {
-	return {
-		...project,
-		images: pickImageAssets(
-			project.images,
-			collectAssetIdsFromPersistedHistory(project.history, project.document),
-		),
-	};
+const writeWithHistory = (
+	project: ProjectPersistenceInput,
+	history: PersistedHistoryStack,
+): boolean => {
+	return writeProject({
+		version: 3,
+		document: project.document,
+		history,
+	});
 };
 
-/** Guarda documento + historial. Si no cabe, recorta movimientos viejos. */
-export const persistProject = (project: PersistedProject): void => {
-	let history = project.history;
+/**
+ * Guarda primero los assets en IndexedDB y confirma después los metadatos.
+ * Si localStorage no admite el historial completo, recorta movimientos viejos.
+ *
+ * @returns El historial que quedó almacenado, o `null` si no se pudo guardar.
+ */
+export const persistProject = async (
+	project: ProjectPersistenceInput,
+): Promise<PersistedHistoryStack | null> => {
+	const allUsedIds = collectAssetIdsFromPersistedHistory(
+		project.history,
+		project.document,
+	);
 
-	while (true) {
-		const nextProject = withUsedImages({
-			version: 2,
-			document: project.document,
-			images: project.images,
-			history,
-		});
-
-		if (writeProject(nextProject)) {
-			return;
-		}
-
-		const trimmed = dropOldestMovement(fromPersistedHistory(history));
-
-		if (!trimmed) {
-			writeProject(
-				withUsedImages({
-					version: 2,
-					document: project.document,
-					images: project.images,
-					history: toPersistedHistory(createHistoryState(project.document)),
-				}),
-			);
-
-			return;
-		}
-
-		history = toPersistedHistory(trimmed);
+	try {
+		await saveImageAssets(project.images, allUsedIds);
+	} catch {
+		return null;
 	}
+
+	if (writeWithHistory(project, project.history)) {
+		await deleteImageAssetsExcept(allUsedIds).catch(() => undefined);
+
+		return project.history;
+	}
+
+	const state = fromPersistedHistory(project.history);
+	const movements = state.entries.length - 1;
+	const withoutHistory = toPersistedHistory(
+		createHistoryState(project.document),
+	);
+
+	if (!writeWithHistory(project, withoutHistory)) {
+		return null;
+	}
+
+	if (movements <= 0) {
+		const usedIds = collectAssetIdsFromPersistedHistory(
+			withoutHistory,
+			project.document,
+		);
+
+		await deleteImageAssetsExcept(usedIds).catch(() => undefined);
+
+		return withoutHistory;
+	}
+
+	// Bisección sobre cuántos movimientos recientes caben, para no re-serializar
+	// el proyecto entero una vez por movimiento descartado.
+	let fits = 0;
+	let fitsHistory = withoutHistory;
+	let tooMany = movements;
+
+	while (tooMany - fits > 1) {
+		const keep = Math.floor((fits + tooMany) / 2);
+		const trimmed = dropOldestMovements(state, movements - keep);
+		const history = trimmed ? toPersistedHistory(trimmed) : null;
+
+		if (history && writeWithHistory(project, history)) {
+			fits = keep;
+			fitsHistory = history;
+		} else {
+			tooMany = keep;
+		}
+	}
+
+	const usedIds = collectAssetIdsFromPersistedHistory(
+		fitsHistory,
+		project.document,
+	);
+
+	await deleteImageAssetsExcept(usedIds).catch(() => undefined);
+
+	return fitsHistory;
 };

@@ -1,7 +1,11 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
-import { PROJECT_STORAGE_KEY } from '@/lib/history/projectStorage';
+import { deleteImageAssetDatabase } from '@/lib/history/imageAssetDb';
+import {
+	PROJECT_STORAGE_KEY,
+	loadPersistedProject,
+} from '@/lib/history/projectStorage';
 import { Shape } from '@/models/Shape';
 import { ShapeImage } from '@/models/ShapeImage';
 import { TextBlock } from '@/models/TextBlock';
@@ -126,7 +130,7 @@ describe('manga history', () => {
 		expect(mangaStore.activePageId).toBe(firstId);
 	});
 
-	it('names movements with the page and restores them from localStorage', () => {
+	it('names movements with the page and restores them from localStorage', async () => {
 		const mangaStore = useMangaStore();
 		const historyStore = useHistoryStore();
 
@@ -136,6 +140,7 @@ describe('manga history', () => {
 		expect(historyStore.entries.at(-1)?.label).toBe(
 			historyLabelForPage(HISTORY_LABEL.AddPage, 'Page 2'),
 		);
+		await mangaStore.waitForPersistence();
 
 		const pinia = createPinia();
 
@@ -143,6 +148,8 @@ describe('manga history', () => {
 
 		const restoredManga = useMangaStore();
 		const restoredHistory = useHistoryStore();
+
+		await restoredManga.initialize();
 
 		expect(restoredManga.pages).toHaveLength(2);
 		expect(restoredManga.activePage.name).toBe('Page 2');
@@ -154,7 +161,7 @@ describe('manga history', () => {
 		expect(restoredHistory.canUndo).toBe(true);
 	});
 
-	it('records rotate and scale image as distinct movements', () => {
+	it('records rotate and scale image as distinct movements', async () => {
 		const mangaStore = useMangaStore();
 		const historyStore = useHistoryStore();
 		const shape = panel();
@@ -163,7 +170,7 @@ describe('manga history', () => {
 		mangaStore.setShapeImage(
 			shape.id,
 			new ShapeImage({
-				src: 'data:image/png;base64,xx',
+				src: 'data:image/png;base64,eHg=',
 				left: 10,
 				top: 10,
 				scaleX: 1,
@@ -173,7 +180,7 @@ describe('manga history', () => {
 		mangaStore.setShapeImage(
 			shape.id,
 			new ShapeImage({
-				src: 'data:image/png;base64,xx',
+				src: 'data:image/png;base64,eHg=',
 				left: 10,
 				top: 10,
 				scaleX: 1,
@@ -184,7 +191,7 @@ describe('manga history', () => {
 		mangaStore.setShapeImage(
 			shape.id,
 			new ShapeImage({
-				src: 'data:image/png;base64,xx',
+				src: 'data:image/png;base64,eHg=',
 				left: 10,
 				top: 10,
 				scaleX: 1.5,
@@ -199,14 +206,20 @@ describe('manga history', () => {
 			historyLabelForPage(HISTORY_LABEL.ScaleImage, 'Page 1'),
 		]);
 
-		const persisted = JSON.parse(localStorage.getItem(PROJECT_STORAGE_KEY)!) as {
-			images: Record<string, string>;
+		await mangaStore.waitForPersistence();
+
+		const raw = localStorage.getItem(PROJECT_STORAGE_KEY)!;
+		const persisted = JSON.parse(raw) as {
 			history: { entries: unknown[] };
 		};
+		const loaded = await loadPersistedProject();
 
-		expect(Object.values(persisted.images)).toEqual(['data:image/png;base64,xx']);
+		expect(raw).not.toContain('data:image');
+		expect(Object.values(loaded?.images ?? {})).toEqual([
+			'data:image/png;base64,eHg=',
+		]);
 		expect(JSON.stringify(persisted.history.entries)).not.toContain(
-			'data:image/png;base64,xx',
+			'data:image/png;base64,eHg=',
 		);
 	});
 
@@ -236,17 +249,20 @@ describe('manga history', () => {
 		expect(mangaStore.shapes[0]?.image?.src).toBe(src);
 	});
 
-	it('reloads an undone document and can still redo', () => {
+	it('reloads an undone document and can still redo', async () => {
 		const mangaStore = useMangaStore();
 		const shape = panel();
 
 		mangaStore.addShape(shape);
 		mangaStore.undoHistory();
+		await mangaStore.waitForPersistence();
 
 		setActivePinia(createPinia());
 
 		const restoredManga = useMangaStore();
 		const restoredHistory = useHistoryStore();
+
+		await restoredManga.initialize();
 
 		expect(restoredManga.shapes).toHaveLength(0);
 		expect(restoredHistory.canRedo).toBe(true);
@@ -335,13 +351,14 @@ describe('manga history', () => {
 		);
 	});
 
-	it('persists the selected page without adding a movement', () => {
+	it('persists the selected page without adding a movement', async () => {
 		const mangaStore = useMangaStore();
 		const historyStore = useHistoryStore();
 		const firstId = mangaStore.activePageId;
 
 		mangaStore.addPage();
 		mangaStore.selectPage(firstId);
+		await mangaStore.waitForPersistence();
 
 		const afterSelect = historyStore.entries.length;
 		const pinia = createPinia();
@@ -350,42 +367,67 @@ describe('manga history', () => {
 
 		const restored = useMangaStore();
 
+		await restored.initialize();
+
 		expect(restored.activePageId).toBe(firstId);
 		expect(useHistoryStore().entries).toHaveLength(afterSelect);
 	});
 
-	it('falls back to a blank document when persisted pages cannot be restored', () => {
-		localStorage.setItem(
-			PROJECT_STORAGE_KEY,
-			JSON.stringify({
-				version: 1,
-				document: {
-					title: 'Broken',
-					activePageId: 'missing',
-					pages: [null],
-				},
-				history: {
-					entries: [
-						{
-							id: 'start',
-							label: HISTORY_LABEL.Start,
-							snapshot: {
-								title: 'Broken',
-								activePageId: 'missing',
-								pages: [null],
-							},
-						},
-					],
-					index: 0,
-				},
+	it('falls back to a blank document when persisted pages cannot be restored', async () => {
+		const mangaStore = useMangaStore();
+		const shape = panel();
+
+		mangaStore.addShape(shape);
+		mangaStore.setShapeImage(
+			shape.id,
+			new ShapeImage({
+				src: 'data:image/webp;base64,d2VicA==',
+				left: 0,
+				top: 0,
+				scaleX: 1,
+				scaleY: 1,
 			}),
 		);
+		await mangaStore.waitForPersistence();
+		await deleteImageAssetDatabase();
 
+		setActivePinia(createPinia());
+
+		const restored = useMangaStore();
+
+		await restored.initialize();
+
+		expect(restored.pages).toHaveLength(1);
+		expect(restored.shapes).toHaveLength(0);
+		expect(restored.activePage.name).toBe('Page 1');
+		expect(useHistoryStore().currentLabel).toBe(HISTORY_LABEL.Start);
+	});
+
+	it('coalesces rapid writes into the latest persisted state', async () => {
 		const mangaStore = useMangaStore();
 
-		expect(mangaStore.pages).toHaveLength(1);
-		expect(mangaStore.activePage.name).toBe('Page 1');
-		expect(useHistoryStore().currentLabel).toBe(HISTORY_LABEL.Start);
+		mangaStore.addPage();
+		mangaStore.addPage();
+		await mangaStore.waitForPersistence();
+
+		setActivePinia(createPinia());
+
+		const restored = useMangaStore();
+
+		await restored.initialize();
+
+		expect(restored.pages).toHaveLength(3);
+		expect(restored.activePage.name).toBe('Page 3');
+	});
+
+	it('initializes only once and marks the store as hydrated', async () => {
+		const mangaStore = useMangaStore();
+
+		await Promise.all([mangaStore.initialize(), mangaStore.initialize()]);
+
+		expect(mangaStore.isHydrated).toBe(true);
+		await expect(mangaStore.initialize()).resolves.toBeUndefined();
+		expect(mangaStore.isHydrated).toBe(true);
 	});
 
 	it('does nothing when undo, redo or jump cannot move', () => {
@@ -402,10 +444,11 @@ describe('manga history', () => {
 		expect(historyStore.entries).toHaveLength(1);
 	});
 
-	it('uses the first page when the persisted activePageId is missing', () => {
+	it('uses the first page when the persisted activePageId is missing', async () => {
 		const mangaStore = useMangaStore();
 
 		mangaStore.addPage();
+		await mangaStore.waitForPersistence();
 
 		const raw = localStorage.getItem(PROJECT_STORAGE_KEY);
 
@@ -421,6 +464,8 @@ describe('manga history', () => {
 		setActivePinia(createPinia());
 
 		const restored = useMangaStore();
+
+		await restored.initialize();
 
 		expect(restored.pages).toHaveLength(2);
 		expect(restored.activePageId).toBe(restored.pages[0]?.id);

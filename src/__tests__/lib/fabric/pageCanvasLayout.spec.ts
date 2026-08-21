@@ -9,6 +9,12 @@ import type { StaticCanvas } from 'fabric';
 describe('pageCanvasLayout', () => {
 	it('sizes the canvas with pasteboard and keeps page origin at 0,0', () => {
 		const canvas = {
+			getWidth: () => {
+				return 0;
+			},
+			getHeight: () => {
+				return 0;
+			},
 			setDimensions: vi.fn(),
 			setViewportTransform: vi.fn(),
 		} as unknown as StaticCanvas;
@@ -37,6 +43,25 @@ describe('pageCanvasLayout', () => {
 			originY: 'top',
 			absolutePositioned: true,
 		});
+	});
+
+	// Reescribir el bitmap deja el canvas en blanco hasta el próximo render.
+	it('does not resize the canvas when the dimensions already match', () => {
+		const canvas = {
+			getWidth: () => {
+				return 800 + CONTROL_PASTEBOARD * 2;
+			},
+			getHeight: () => {
+				return 1200 + CONTROL_PASTEBOARD * 2;
+			},
+			setDimensions: vi.fn(),
+			setViewportTransform: vi.fn(),
+		} as unknown as StaticCanvas;
+
+		applyPageCanvasLayout(canvas, 800, 1200);
+
+		expect(canvas.setDimensions).not.toHaveBeenCalled();
+		expect(canvas.setViewportTransform).toHaveBeenCalledOnce();
 	});
 
 	it('crops export to the page, excluding the pasteboard', () => {

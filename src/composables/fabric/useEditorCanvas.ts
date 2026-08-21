@@ -18,7 +18,7 @@ import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import { useSelectionStore } from '@/stores/selection';
 import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
-import type { CanvasActions } from '@/types/editor';
+import type { ApplyActivePageOptions, CanvasActions } from '@/types/editor';
 
 /**
  * Orquestador del canvas: core Fabric (lib) + features + layout activo.
@@ -51,6 +51,7 @@ export const useEditorCanvas = (
 		cancelStroke: () => undefined,
 		exportDataUrl,
 		resetZoomView: () => undefined,
+		syncCanvasOffset: () => undefined,
 		addSimpleText: () => undefined,
 		addBoxedText: () => undefined,
 		addRoundedBoxedText: () => undefined,
@@ -71,7 +72,14 @@ export const useEditorCanvas = (
 		useSelectionStore().clearPendingFocus();
 	};
 
-	const applyActivePage = async () => {
+	/**
+	 * Rehidrata el canvas con la página activa. Solo el cambio de página
+	 * reposiciona la vista: los repintados de contenido (capas, layouts,
+	 * historial…) conservan el scroll del stage.
+	 */
+	const applyActivePage = async ({
+		resetView = false,
+	}: ApplyActivePageOptions = {}) => {
 		const page = activePage.value;
 		const generation = ++hydrateGeneration;
 
@@ -87,7 +95,13 @@ export const useEditorCanvas = (
 			hook();
 		});
 
-		canvasActions.resetZoomView();
+		if (resetView) {
+			canvasActions.resetZoomView();
+
+			return;
+		}
+
+		canvasActions.syncCanvasOffset();
 	};
 
 	ctx = createFeatureContext({
@@ -128,7 +142,7 @@ export const useEditorCanvas = (
 		const page = activePage.value;
 
 		init(page.width, page.height);
-		void applyActivePage();
+		void applyActivePage({ resetView: true });
 		editorStore.registerCanvas(canvasActions);
 	});
 
@@ -142,7 +156,7 @@ export const useEditorCanvas = (
 			return;
 		}
 
-		void applyActivePage();
+		void applyActivePage({ resetView: true });
 	});
 
 	const rootStyle = computed(() => {

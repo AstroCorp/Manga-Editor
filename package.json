@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@iconify/vue": "^5.0.1",
+    "@jsquash/webp": "^1.5.0",
     "@vueuse/core": "^14.3.0",
     "@yeger/vue-masonry-wall": "6.1.4",
     "@zip.js/zip.js": "^2.8.52",
@@ -31,6 +32,7 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
     "npm-run-all2": "^9.0.2",
     "tailwindcss": "^4.3.3",

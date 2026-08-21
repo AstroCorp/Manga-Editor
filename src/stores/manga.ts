@@ -16,7 +16,10 @@ import {
 import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
 import { Page } from '@/models/Page';
 import { useHistoryStore } from '@/stores/history';
-import type { HistoryDocumentJSON } from '@/types/history';
+import type {
+	HistoryDocumentJSON,
+	ProjectPersistenceInput,
+} from '@/types/history';
 import type { Layer } from '@/models/Layer';
 import type { Shape } from '@/models/Shape';
 import type { ShapeImage } from '@/models/ShapeImage';
@@ -30,7 +33,11 @@ export const useMangaStore = defineStore('manga', () => {
 	const firstPage = Page.createBlank(1);
 	const pages = ref<Page[]>([firstPage]);
 	const activePageId = ref(firstPage.id);
+	const isHydrated = ref(false);
 	let isRestoringHistory = false;
+	let pendingPersistence: ProjectPersistenceInput | null = null;
+	let persistencePromise: Promise<void> | null = null;
+	let initializationPromise: Promise<void> | null = null;
 
 	/**
 	 * Sube cuando hay que rehidratar el canvas
@@ -69,19 +76,55 @@ export const useMangaStore = defineStore('manga', () => {
 		});
 	};
 
+	const buildPersistedProject = () => {
+		const historyStore = useHistoryStore();
+
+		return {
+			version: 3 as const,
+			document: captureSnapshot(),
+			images: historyStore.exportImages(),
+			history: historyStore.getStack(),
+		};
+	};
+
+	const drainPersistence = async () => {
+		while (pendingPersistence) {
+			const project = pendingPersistence;
+
+			pendingPersistence = null;
+
+			const stored = await persistProject(project);
+
+			// Solo adopta un recorte si no apareció un estado más reciente
+			// durante la escritura asíncrona.
+			if (stored && stored !== project.history && !pendingPersistence) {
+				useHistoryStore().hydrate(stored);
+			}
+		}
+	};
+
 	const persistCurrentProject = () => {
 		if (isRestoringHistory) {
 			return;
 		}
 
-		const historyStore = useHistoryStore();
+		pendingPersistence = buildPersistedProject();
 
-		persistProject({
-			version: 2,
-			document: captureSnapshot(),
-			images: historyStore.exportImages(),
-			history: historyStore.getStack(),
-		});
+		if (!persistencePromise) {
+			persistencePromise = drainPersistence().finally(() => {
+				persistencePromise = null;
+
+				if (pendingPersistence) {
+					persistCurrentProject();
+				}
+			});
+		}
+	};
+
+	const waitForPersistence = async (): Promise<void> => {
+		while (persistencePromise) {
+			await persistencePromise;
+		}
 	};
 
 	const recordHistory = (action: string, pageName?: string | null) => {
@@ -491,12 +534,13 @@ export const useMangaStore = defineStore('manga', () => {
 		);
 	};
 
-	const hydrateFromStorage = () => {
-		const persisted = loadPersistedProject();
+	const hydrateFromStorage = async () => {
+		const persisted = await loadPersistedProject();
 
 		if (!persisted) {
 			useHistoryStore().resetWith(captureSnapshot());
 			persistCurrentProject();
+			await waitForPersistence();
 
 			return;
 		}
@@ -525,15 +569,31 @@ export const useMangaStore = defineStore('manga', () => {
 		} catch {
 			useHistoryStore().resetWith(captureSnapshot());
 			persistCurrentProject();
+			await waitForPersistence();
 		}
 	};
 
-	hydrateFromStorage();
+	const initialize = (): Promise<void> => {
+		if (initializationPromise) {
+			return initializationPromise;
+		}
+
+		initializationPromise = hydrateFromStorage().finally(() => {
+			isHydrated.value = true;
+		});
+
+		return initializationPromise;
+	};
+
+	// Las acciones quedan disponibles desde el primer tick; la hidratación
+	// asíncrona sustituirá este baseline antes de montar el editor.
+	useHistoryStore().resetWith(captureSnapshot());
 
 	return {
 		title,
 		pages,
 		activePageId,
+		isHydrated,
 		contentResetEpoch,
 		activePage,
 		activeLayer,
@@ -572,5 +632,7 @@ export const useMangaStore = defineStore('manga', () => {
 		undoHistory,
 		redoHistory,
 		jumpToHistory,
+		initialize,
+		waitForPersistence,
 	};
 });

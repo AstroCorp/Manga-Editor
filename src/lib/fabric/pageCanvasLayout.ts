@@ -19,10 +19,14 @@ export const applyPageCanvasLayout = (
 	pageWidth: number,
 	pageHeight: number,
 ): void => {
-	canvas.setDimensions({
-		width: pageWidth + CONTROL_PASTEBOARD * 2,
-		height: pageHeight + CONTROL_PASTEBOARD * 2,
-	});
+	const width = pageWidth + CONTROL_PASTEBOARD * 2;
+	const height = pageHeight + CONTROL_PASTEBOARD * 2;
+
+	// setDimensions reescribe el bitmap y lo deja en blanco hasta el próximo
+	// frame; saltarlo cuando el tamaño no cambia evita el parpadeo.
+	if (canvas.getWidth() !== width || canvas.getHeight() !== height) {
+		canvas.setDimensions({ width, height });
+	}
 	canvas.setViewportTransform([
 		1,
 		0,

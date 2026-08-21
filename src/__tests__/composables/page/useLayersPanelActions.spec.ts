@@ -175,6 +175,7 @@ describe('useLayersPanelActions', () => {
 			cancelStroke: vi.fn(),
 			exportDataUrl: vi.fn(() => null),
 			resetZoomView: vi.fn(),
+			syncCanvasOffset: vi.fn(),
 			addSimpleText: vi.fn(),
 			addBoxedText: vi.fn(),
 			addRoundedBoxedText: vi.fn(),

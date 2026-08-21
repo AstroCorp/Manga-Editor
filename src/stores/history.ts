@@ -18,6 +18,7 @@ import {
 import type {
 	HistoryDocumentJSON,
 	HistoryStackState,
+	ImageAssetMap,
 	InternImageSrc,
 	PersistedHistoryStack,
 	ResolveImageAsset,
@@ -76,11 +77,11 @@ export const useHistoryStore = defineStore('history', () => {
 		return assets.resolve(assetId);
 	};
 
-	const importImages = (images: Record<string, string>) => {
+	const importImages = (images: ImageAssetMap) => {
 		assets.hydrate(images);
 	};
 
-	const exportImages = (): Record<string, string> => {
+	const exportImages = (): ImageAssetMap => {
 		return assets.exportAll();
 	};
 

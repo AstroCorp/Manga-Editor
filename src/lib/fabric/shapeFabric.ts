@@ -1,4 +1,4 @@
-import type { StaticCanvas } from 'fabric';
+import type { FabricObject, StaticCanvas } from 'fabric';
 import { Polygon } from 'fabric';
 import {
 	PANEL_STROKE_COLOR,
@@ -62,19 +62,62 @@ export const shapeToPolygon = (
 	return polygon;
 };
 
+/** Objetos de la página fuera del canvas; las imágenes se cargan en paralelo. */
+const buildPageObjects = async (page: Page): Promise<FabricObject[]> => {
+	const activeLayerId = page.activeLayerId;
+	const layers = page.layers
+		.filter((layer) => {
+			return layer.visible;
+		})
+		.map((layer) => {
+			const interactive = layer.id === activeLayerId;
+
+			return {
+				shapes: layer.shapes.map((shape) => {
+					const polygon = shapeToPolygon(shape, {
+						layerId: layer.id,
+						interactive,
+					});
+
+					return {
+						polygon,
+						image: shape.image
+							? shapeImageToFabric(shape, shape.image, polygon, {
+									interactive,
+								})
+							: null,
+					};
+				}),
+				texts: layer.texts.map((text) => {
+					return textBlockToFabric(text, {
+						layerId: layer.id,
+						interactive,
+					});
+				}),
+			};
+		});
+
+	const objects: FabricObject[] = [];
+
+	for (const layer of layers) {
+		for (const { polygon, image } of layer.shapes) {
+			objects.push(polygon);
+
+			if (image) {
+				objects.push(await image);
+			}
+		}
+
+		objects.push(...layer.texts);
+	}
+
+	return objects;
+};
+
 export const hydrateCanvasFromPage = async (
 	canvas: StaticCanvas,
 	page: Page,
 ): Promise<void> => {
-	applyPageCanvasLayout(canvas, page.width, page.height);
-
-	canvas
-		.getObjects()
-		.slice()
-		.forEach((object) => {
-			canvas.remove(object);
-		});
-
 	const fontFamilies = [
 		...new Set(
 			page.layers.flatMap((layer) => {
@@ -91,45 +134,20 @@ export const hydrateCanvasFromPage = async (
 		}),
 	);
 
-	const activeLayerId = page.activeLayerId;
+	const objects = await buildPageObjects(page);
 
-	for (const layer of page.layers) {
-		if (!layer.visible) {
-			continue;
-		}
-
-		const interactive = layer.id === activeLayerId;
-
-		for (const shape of layer.shapes) {
-			const polygon = shapeToPolygon(shape, {
-				layerId: layer.id,
-				interactive,
-			});
-
-			canvas.add(polygon);
-
-			if (shape.image) {
-				const fabricImage = await shapeImageToFabric(
-					shape,
-					shape.image,
-					polygon,
-					{ interactive },
-				);
-
-				canvas.add(fabricImage);
-			}
-		}
-
-		for (const text of layer.texts) {
-			canvas.add(
-				textBlockToFabric(text, {
-					layerId: layer.id,
-					interactive,
-				}),
-			);
-		}
-	}
-
+	// Swap síncrono: el contenido anterior sigue a la vista mientras cargan
+	// fuentes e imágenes, así no se ve la página en blanco entre medias.
+	applyPageCanvasLayout(canvas, page.width, page.height);
+	canvas
+		.getObjects()
+		.slice()
+		.forEach((object) => {
+			canvas.remove(object);
+		});
+	objects.forEach((object) => {
+		canvas.add(object);
+	});
 	stackPageContent(canvas, page.visibleLayerIds());
 	canvas.requestRenderAll();
 };

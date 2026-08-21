@@ -47,6 +47,7 @@ export const useEditorStore = defineStore('editor', () => {
 			cancelStroke: () => undefined,
 			exportDataUrl: () => null,
 			resetZoomView: () => undefined,
+			syncCanvasOffset: () => undefined,
 			addSimpleText: () => undefined,
 			addBoxedText: () => undefined,
 			addRoundedBoxedText: () => undefined,

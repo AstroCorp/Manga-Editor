@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-	collectAssetIdsFromDocument,
 	collectAssetIdsFromHistory,
 	createImageAssetStore,
-	pickImageAssets,
 } from '@/lib/history/imageAssets';
 import type { HistoryDocumentJSON } from '@/types/history';
 
@@ -82,20 +80,6 @@ describe('imageAssets', () => {
 		expect(() => {
 			assets.resolve(drop);
 		}).toThrow(/Missing image asset/);
-	});
-
-	it('picks only referenced assets from a document', () => {
-		const images = {
-			a: 'src-a',
-			b: 'src-b',
-			c: 'src-c',
-		};
-		const ids = collectAssetIdsFromDocument(documentWithAssets('a', 'c'));
-
-		expect(pickImageAssets(images, ids)).toEqual({
-			a: 'src-a',
-			c: 'src-c',
-		});
 	});
 
 	it('collects asset ids from patch values, not only from the document', () => {

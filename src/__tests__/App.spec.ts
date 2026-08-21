@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
+import { useMangaStore } from '@/stores/manga';
 import App from '../App.vue';
 
 vi.mock('@/composables/fabric/useEditorCanvas', () => {
@@ -26,7 +27,7 @@ afterEach(() => {
 });
 
 describe('App', () => {
-	it('renders header, page strip and sidebar tabs', () => {
+	it('renders header, page strip and sidebar tabs', async () => {
 		const pinia = createPinia();
 
 		setActivePinia(pinia);
@@ -37,6 +38,11 @@ describe('App', () => {
 				plugins: [pinia],
 			},
 		});
+
+		expect(wrapper.text()).toContain('Cargando editor…');
+
+		await useMangaStore(pinia).initialize();
+		await nextTick();
 
 		expect(wrapper.text()).toContain('Manga Editor');
 		expect(wrapper.text()).toContain('Config');

@@ -18,6 +18,7 @@ export const zoomFeature: CanvasFeature = {
 
 		ctx.registerCanvasAction({
 			resetZoomView: api.resetZoomView,
+			syncCanvasOffset: api.syncCanvasOffset,
 		});
 	},
 };

@@ -6,7 +6,7 @@ import type {
 	Ref,
 	ShallowRef,
 } from 'vue';
-import type { CanvasActions } from '@/types/editor';
+import type { ApplyActivePageOptions, CanvasActions } from '@/types/editor';
 import type { GridPoint } from '@/types/geometry';
 
 export type FeatureActions = {
@@ -39,7 +39,7 @@ export type FeatureContext = {
 	registerCanvasAction: (partial: Partial<CanvasActions>) => void;
 	onAfterPageApply: (hook: () => void) => void;
 	addOverlay: (overlay: FeatureOverlay) => void;
-	applyActivePage: () => Promise<void>;
+	applyActivePage: (options?: ApplyActivePageOptions) => Promise<void>;
 	discardSelection: () => void;
 };
 

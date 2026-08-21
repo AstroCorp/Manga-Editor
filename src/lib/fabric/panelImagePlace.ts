@@ -12,32 +12,13 @@ import {
 } from '@/lib/fabric/panelImageFabric';
 import { panelFillColor } from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import { convertFileToWebpDataUrl } from '@/lib/image/convertFileToWebp';
 import { ShapeImage } from '@/models/ShapeImage';
 import { useMangaStore } from '@/stores/manga';
 import type { PlaceImageInPanelOptions } from '@/types/fabric';
 
 export const isImageFile = (file: File): boolean => {
 	return file.type.startsWith('image/');
-};
-
-const readFileAsDataUrl = (file: File): Promise<string> => {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-
-		reader.onload = () => {
-			if (typeof reader.result === 'string') {
-				resolve(reader.result);
-
-				return;
-			}
-
-			reject(new Error('Could not read the image'));
-		};
-		reader.onerror = () => {
-			reject(reader.error ?? new Error('Read error'));
-		};
-		reader.readAsDataURL(file);
-	});
 };
 
 const removeExistingPanelImage = (canvas: Canvas, panelId: string) => {
@@ -58,7 +39,6 @@ export const placeImageFileInPanel = async ({
 	file,
 	isStale,
 }: PlaceImageInPanelOptions): Promise<boolean> => {
-	const mangaStore = useMangaStore();
 	const stale = () => {
 		return Boolean(isStale?.());
 	};
@@ -69,8 +49,10 @@ export const placeImageFileInPanel = async ({
 		return false;
 	}
 
+	const mangaStore = useMangaStore();
+
 	const bounds = panel.getBoundingRect();
-	const dataUrl = await readFileAsDataUrl(file);
+	const dataUrl = await convertFileToWebpDataUrl(file);
 
 	if (stale()) {
 		return false;

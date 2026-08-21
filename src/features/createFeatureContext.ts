@@ -1,6 +1,6 @@
 import { shallowRef, type CSSProperties, type Ref, type ShallowRef } from 'vue';
 import type { Canvas } from 'fabric';
-import type { CanvasActions } from '@/types/editor';
+import type { ApplyActivePageOptions, CanvasActions } from '@/types/editor';
 import type { GridPoint } from '@/types/geometry';
 import type {
 	FeatureActions,
@@ -19,7 +19,7 @@ type CreateFeatureContextOptions = {
 	canvasActions: CanvasActions;
 	afterPageApplyHooks: Array<() => void>;
 	overlays: FeatureOverlay[];
-	applyActivePage: () => Promise<void>;
+	applyActivePage: (options?: ApplyActivePageOptions) => Promise<void>;
 	discardSelection: () => void;
 };
 

@@ -13,7 +13,7 @@ import {
 	listHistoryItems,
 	pushMovement,
 	stepHistoryIndex,
-	dropOldestMovement,
+	dropOldestMovements,
 	fromPersistedHistory,
 	toPersistedHistory,
 } from '@/lib/history/historyStack';
@@ -181,7 +181,7 @@ describe('historyStack', () => {
 		state = pushMovement(state, HISTORY_LABEL.AddPanel, snapshotOf('B'));
 		state = pushMovement(state, HISTORY_LABEL.AddText, snapshotOf('C'));
 
-		const dropped = dropOldestMovement(state);
+		const dropped = dropOldestMovements(state, 1);
 
 		expect(dropped).not.toBeNull();
 		expect(dropped!.entries[0]?.label).toBe(HISTORY_LABEL.AddPanel);
@@ -191,7 +191,31 @@ describe('historyStack', () => {
 		const restored = fromPersistedHistory(toPersistedHistory(dropped!));
 
 		expect(restored.current).toEqual(dropped!.current);
-		expect(dropOldestMovement(createHistoryState(snapshotOf('A')))).toBeNull();
+		expect(
+			dropOldestMovements(createHistoryState(snapshotOf('A')), 1),
+		).toBeNull();
+	});
+
+	it('bakes several movements at once and keeps the newest label', () => {
+		const third = snapshotOf('C');
+		let state = createHistoryState(snapshotOf('A'));
+
+		state = pushMovement(state, HISTORY_LABEL.AddPanel, snapshotOf('B'));
+		state = pushMovement(state, HISTORY_LABEL.AddText, third);
+		state = pushMovement(state, HISTORY_LABEL.DeleteText, snapshotOf('D'));
+
+		const dropped = dropOldestMovements(state, 2);
+
+		expect(dropped).not.toBeNull();
+		expect(dropped!.entries).toHaveLength(2);
+		expect(dropped!.entries[0]?.label).toBe(HISTORY_LABEL.AddText);
+		expect(dropped!.entries[0]?.patches).toEqual([]);
+		expect(dropped!.baseline).toEqual(third);
+		expect(dropped!.current).toEqual(state.current);
+		expect(dropped!.index).toBe(1);
+
+		// Nunca se descarta el baseline, aunque se pidan de más.
+		expect(dropOldestMovements(state, 99)?.entries).toHaveLength(1);
 	});
 
 	it('steps back and forward with inverse patches', () => {
