@@ -29,7 +29,7 @@ const {
 </script>
 
 <template>
-	<div class="flex flex-col">
+	<div class="flex min-w-0 flex-col">
 		<!-- Asa del strip + zoom (fuera del stage) -->
 		<div
 			class="relative z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-slate-200/80 bg-slate-100/90 px-4 py-2 backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/90"

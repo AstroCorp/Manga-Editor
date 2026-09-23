@@ -11,11 +11,11 @@ import PageStrip from '@/components/page/PageStrip.vue';
 	>
 		<TopMenu />
 
-		<div class="grid min-h-0 grid-cols-[auto_1fr]">
+		<div class="grid min-h-0 min-w-0 grid-cols-[auto_1fr]">
 			<EditorSidebar />
 
-			<div class="grid min-h-0 grid-rows-[1fr_auto]">
-				<main class="relative min-h-0 overflow-hidden">
+		<div class="grid min-h-0 min-w-0 grid-rows-[1fr_auto]">
+			<main class="relative min-h-0 min-w-0 overflow-hidden">
 					<EditorCanvas />
 				</main>
 				<PageStrip />
