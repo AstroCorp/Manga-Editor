@@ -239,6 +239,20 @@ export const useMangaStore = defineStore('manga', () => {
 		recordHistory(HISTORY_LABEL.ClearPage);
 	};
 
+	/** Sustituye el documento por Page 1 en blanco y reinicia historial e imágenes. */
+	const resetProject = () => {
+		const page = Page.createBlank(1);
+
+		isRestoringHistory = true;
+		title.value = 'Untitled';
+		pages.value = [page];
+		activePageId.value = page.id;
+		isRestoringHistory = false;
+		bumpContent();
+		useHistoryStore().resetWith(captureSnapshot());
+		persistCurrentProject();
+	};
+
 	const addPage = () => {
 		const active = getActivePage();
 		const page = Page.createBlank(
@@ -610,6 +624,7 @@ export const useMangaStore = defineStore('manga', () => {
 		getActivePageLayout,
 		applyActivePageLayout,
 		clearActivePage,
+		resetProject,
 		addShape,
 		removeShape,
 		addText,

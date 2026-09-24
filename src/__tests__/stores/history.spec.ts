@@ -430,6 +430,44 @@ describe('manga history', () => {
 		expect(mangaStore.isHydrated).toBe(true);
 	});
 
+	it('resetProject clears history and interned images', async () => {
+		const mangaStore = useMangaStore();
+		const historyStore = useHistoryStore();
+		const shape = panel();
+
+		mangaStore.addShape(shape);
+		mangaStore.setShapeImage(
+			shape.id,
+			new ShapeImage({
+				src: 'data:image/png;base64,eHg=',
+				left: 10,
+				top: 10,
+				scaleX: 1,
+				scaleY: 1,
+			}),
+		);
+		mangaStore.addPage();
+
+		expect(Object.values(historyStore.exportImages())).toEqual([
+			'data:image/png;base64,eHg=',
+		]);
+
+		mangaStore.resetProject();
+		await mangaStore.waitForPersistence();
+
+		expect(historyStore.entries.map((entry) => entry.label)).toEqual([
+			HISTORY_LABEL.Start,
+		]);
+		expect(historyStore.canUndo).toBe(false);
+		expect(historyStore.exportImages()).toEqual({});
+
+		const loaded = await loadPersistedProject();
+
+		expect(loaded?.document.pages).toHaveLength(1);
+		expect(loaded?.history.entries).toHaveLength(1);
+		expect(loaded?.images).toEqual({});
+	});
+
 	it('does nothing when undo, redo or jump cannot move', () => {
 		const mangaStore = useMangaStore();
 		const historyStore = useHistoryStore();

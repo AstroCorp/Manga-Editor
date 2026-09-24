@@ -3,6 +3,7 @@ import ThemeToggle from '@/components/shell/ThemeToggle.vue';
 import ExportActions from '@/components/toolbar/ExportActions.vue';
 import GuideToggle from '@/components/toolbar/GuideToggle.vue';
 import HistoryControls from '@/components/toolbar/HistoryControls.vue';
+import NewProjectAction from '@/components/toolbar/NewProjectAction.vue';
 import PageActions from '@/components/toolbar/PageActions.vue';
 </script>
 
@@ -18,11 +19,32 @@ import PageActions from '@/components/toolbar/PageActions.vue';
 			</p>
 			<ThemeToggle />
 		</div>
-		<div class="flex items-center gap-2">
-			<HistoryControls />
-			<GuideToggle />
-			<PageActions />
-			<ExportActions />
+		<div class="flex items-center">
+			<div class="flex items-center">
+				<NewProjectAction />
+			</div>
+			<span
+				class="mx-3 h-6 w-px shrink-0 self-center bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
+			<div class="flex items-center">
+				<HistoryControls />
+			</div>
+			<span
+				class="mx-3 h-6 w-px shrink-0 self-center bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
+			<div class="flex items-center gap-2">
+				<GuideToggle />
+				<PageActions />
+			</div>
+			<span
+				class="mx-3 h-6 w-px shrink-0 self-center bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
+			<div class="flex items-center">
+				<ExportActions />
+			</div>
 		</div>
 	</header>
 </template>

@@ -367,6 +367,36 @@ describe('useMangaStore config layout', () => {
 		expect(base.whiteFill).toBe(false);
 	});
 
+	it('resetProject replaces pages with a blank Page 1', () => {
+		const store = useMangaStore();
+		const previousId = store.activePageId;
+
+		store.addPage();
+		store.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				3,
+			),
+		);
+		store.renamePage(store.pages[0]!.id, 'Cover');
+
+		const epoch = store.contentResetEpoch;
+
+		store.resetProject();
+
+		expect(store.title).toBe('Untitled');
+		expect(store.pages).toHaveLength(1);
+		expect(store.activePage.name).toBe('Page 1');
+		expect(store.activePageId).not.toBe(previousId);
+		expect(store.shapes).toHaveLength(0);
+		expect(store.layers).toHaveLength(1);
+		expect(store.contentResetEpoch).toBe(epoch + 1);
+	});
+
 	it('clearActivePage resets to default layer and bumps contentResetEpoch', () => {
 		const store = useMangaStore();
 
