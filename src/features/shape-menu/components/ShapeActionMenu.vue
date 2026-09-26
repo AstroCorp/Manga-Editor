@@ -64,16 +64,6 @@ const onFileChange = (event: Event) => {
 			type="button"
 			role="menuitem"
 			class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
-			aria-label="Show element options"
-			title="Show element options"
-			@click="emit('showOptions')"
-		>
-			<Icon icon="fluent:panel-left-24-regular" class="size-5" />
-		</button>
-		<button
-			type="button"
-			role="menuitem"
-			class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 			:aria-label="hasImage ? 'Replace image' : 'Add image'"
 			:title="hasImage ? 'Replace image' : 'Add image'"
 			@click="openFilePicker"
@@ -156,6 +146,16 @@ const onFileChange = (event: Event) => {
 			@click="emit('clearImage')"
 		>
 			<Icon icon="fluent:image-off-24-regular" class="size-5" />
+		</button>
+		<button
+			type="button"
+			role="menuitem"
+			class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+			aria-label="Show element options"
+			title="Show element options"
+			@click="emit('showOptions')"
+		>
+			<Icon icon="fluent:options-24-regular" class="size-5" />
 		</button>
 		<button
 			type="button"

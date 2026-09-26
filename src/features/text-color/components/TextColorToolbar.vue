@@ -345,16 +345,6 @@ const boxStrokeRingStyle = computed(() => {
 			aria-label="Text format"
 			@pointerdown.stop
 		>
-			<button
-				type="button"
-				class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
-				title="Show element options"
-				aria-label="Show element options"
-				@click="emit('showOptions')"
-			>
-				<Icon icon="fluent:panel-left-24-regular" class="size-5" />
-			</button>
-
 			<label
 				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
 				title="Text color"
@@ -531,6 +521,15 @@ const boxStrokeRingStyle = computed(() => {
 
 			<PageAlignSelect @align="onPageAlign" />
 
+			<button
+				type="button"
+				class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+				title="Show element options"
+				aria-label="Show element options"
+				@click="emit('showOptions')"
+			>
+				<Icon icon="fluent:options-24-regular" class="size-5" />
+			</button>
 			<button
 				type="button"
 				class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"

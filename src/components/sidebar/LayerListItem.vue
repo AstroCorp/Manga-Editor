@@ -282,7 +282,7 @@ const isFocused = (kind: LayerElementKind, id: string) => {
 					@click.stop="$emit('showOptions', element.kind, element.id)"
 					@mousedown.stop
 				>
-					<Icon icon="fluent:panel-left-24-regular" class="size-3.5" />
+					<Icon icon="fluent:options-24-regular" class="size-3.5" />
 				</button>
 				<button
 					type="button"
