@@ -50,8 +50,14 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 
 		expect(layout.layers).toHaveLength(1);
 		expect(layout.layers[0]?.strokeWidth).toBe(4);
+		expect(layout.layers[0]?.strokeColor).toBe('#111111');
 		expect(layout.layers[0]?.shapes).toHaveLength(1);
 		expect(layout.layers[0]?.shapes?.[0]).not.toHaveProperty('strokeWidth');
+		expect(layout.layers[0]?.shapes?.[0]?.strokes).toEqual([
+			{ width: 4, color: '#111111' },
+			{ width: 4, color: '#111111' },
+			{ width: 4, color: '#111111' },
+		]);
 		expect(layout.layers[0]?.shapes?.[0]?.image).toBeNull();
 		expect(layout).not.toHaveProperty('shapes');
 		expect(layout).not.toHaveProperty('id');
@@ -126,7 +132,7 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		).toMatchObject({ grayscale: true, flipX: true, flipY: true });
 	});
 
-	it('setStrokeWidth applies to layer shapes and setShapeImage refreshes refs', () => {
+	it('layer stroke defaults do not touch existing shapes; setShapeImage refreshes refs', () => {
 		const page = Page.createBlank(1);
 		const layer = page.getActiveLayer();
 		const shape = Shape.create(
@@ -143,9 +149,15 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		const afterAdd = layer.shapes;
 
 		page.setActiveLayerStrokeWidth(8);
-		expect(layer.shapes).not.toBe(afterAdd);
+		page.setActiveLayerStrokeColor('#ff0000');
+		expect(layer.shapes).toBe(afterAdd);
 		expect(layer.strokeWidth).toBe(8);
-		expect(layer.shapes[0]?.strokeWidth).toBe(8);
+		expect(layer.strokeColor).toBe('#ff0000');
+		expect(layer.shapes[0]?.strokes).toEqual([
+			{ width: 2, color: '#111111' },
+			{ width: 2, color: '#111111' },
+			{ width: 2, color: '#111111' },
+		]);
 
 		const afterStroke = layer.shapes;
 		const image = new ShapeImage({
@@ -161,7 +173,7 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(layer.shapes[0]?.image?.src).toBe(image.src);
 	});
 
-	it('applyLayout forces layer stroke on every shape', () => {
+	it('applyLayout falls back to the layer stroke for shapes without strokes', () => {
 		const page = Page.createBlank(1);
 
 		page.applyLayout({
@@ -179,14 +191,140 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 							],
 							image: null,
 						},
+						{
+							id: 'b',
+							points: [
+								{ x: 20, y: 0 },
+								{ x: 30, y: 0 },
+								{ x: 30, y: 10 },
+							],
+							strokes: [{ width: 1, color: '#00ff00' }],
+							image: null,
+						},
 					],
 					strokeWidth: 12,
+					strokeColor: '#0000ff',
 				},
 			],
 		});
 
-		expect(page.getActiveLayer().strokeWidth).toBe(12);
-		expect(page.getActiveLayer().shapes[0]?.strokeWidth).toBe(12);
+		const layer = page.getActiveLayer();
+
+		expect(layer.strokeWidth).toBe(12);
+		expect(layer.strokeColor).toBe('#0000ff');
+		expect(layer.shapes[0]?.strokes).toEqual([
+			{ width: 12, color: '#0000ff' },
+			{ width: 12, color: '#0000ff' },
+			{ width: 12, color: '#0000ff' },
+		]);
+		expect(layer.shapes[1]?.strokes).toEqual([
+			{ width: 1, color: '#00ff00' },
+			{ width: 12, color: '#0000ff' },
+			{ width: 12, color: '#0000ff' },
+		]);
+	});
+
+	it('applyStrokeToAllShapes overrides every edge on every layer', () => {
+		const page = Page.createBlank(1);
+		const first = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		page.addShape(first);
+		page.addLayer();
+
+		const second = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+				{ x: 0, y: 10 },
+			],
+			9,
+			'#00ff00',
+		);
+
+		page.addShape(second);
+		second.setEdgeStroke(2, { width: 1 });
+		page.applyStrokeToAllShapes({ width: 4, color: '#ff0000' });
+
+		for (const layer of page.layers) {
+			expect(layer.strokeWidth).toBe(4);
+			expect(layer.strokeColor).toBe('#ff0000');
+
+			for (const shape of layer.shapes) {
+				expect(shape.strokes).toHaveLength(shape.points.length);
+				expect(
+					shape.strokes.every((stroke) => {
+						return stroke.width === 4 && stroke.color === '#ff0000';
+					}),
+				).toBe(true);
+			}
+		}
+	});
+
+	it('setShapeEdgeStroke patches a single edge and refreshes the shapes ref', () => {
+		const page = Page.createBlank(1);
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			3,
+		);
+
+		page.addShape(shape);
+
+		const before = page.getActiveLayer().shapes;
+
+		expect(page.setShapeEdgeStroke(shape.id, 1, { color: '#ff0000' })).toBe(
+			true,
+		);
+		expect(page.getActiveLayer().shapes).not.toBe(before);
+		expect(shape.strokes[1]).toEqual({ width: 3, color: '#ff0000' });
+		expect(shape.strokes[0]).toEqual({ width: 3, color: '#111111' });
+		expect(page.setShapeEdgeStroke(shape.id, 7, { width: 1 })).toBe(false);
+		expect(page.setShapeEdgeStroke('missing', 0, { width: 1 })).toBe(false);
+	});
+
+	it('Shape.fromJSON migrates legacy strokeWidth and clamps invalid strokes', () => {
+		const legacy = Shape.fromJSON({
+			id: 'legacy',
+			points: [
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			strokeWidth: 7,
+			image: null,
+		});
+
+		expect(legacy.strokes).toEqual([
+			{ width: 7, color: '#111111' },
+			{ width: 7, color: '#111111' },
+			{ width: 7, color: '#111111' },
+		]);
+
+		const partial = Shape.fromJSON({
+			id: 'partial',
+			points: [
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			strokes: [{ width: 999, color: 'not-a-color' }],
+			image: null,
+		});
+
+		expect(partial.strokes[0]?.width).toBe(40);
+		expect(partial.strokes[0]?.color).toBe('#111111');
+		expect(partial.strokes).toHaveLength(3);
 	});
 
 	it('applyLayout with a single layer updates only the active layer', () => {

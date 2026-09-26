@@ -48,7 +48,9 @@ const shapeToHistoryJSON = (
 		points: shape.points.map((point) => {
 			return { x: point.x, y: point.y };
 		}),
-		strokeWidth: shape.strokeWidth,
+		strokes: shape.strokes.map((stroke) => {
+			return { ...stroke };
+		}),
 		whiteFill: shape.whiteFill,
 		image: shape.image ? internShapeImage(shape.image, intern) : null,
 	};
@@ -58,10 +60,13 @@ const shapeFromHistoryJSON = (
 	data: HistoryShapeJSON,
 	resolve: ResolveImageAsset,
 ): Shape => {
+	// Snapshots antiguos traen `strokeWidth` en vez de `strokes`.
+	const legacy = data as HistoryShapeJSON & { strokeWidth?: number };
 	const shape = Shape.fromJSON({
 		id: data.id,
 		points: data.points,
-		strokeWidth: data.strokeWidth,
+		strokes: data.strokes,
+		strokeWidth: legacy.strokeWidth,
 		image: data.image ? resolveShapeImage(data.image, resolve) : null,
 	});
 
@@ -91,6 +96,7 @@ const layerToHistoryJSON = (
 		marginBottom: layer.marginBottom,
 		marginLeft: layer.marginLeft,
 		strokeWidth: layer.strokeWidth,
+		strokeColor: layer.strokeColor,
 	};
 };
 
@@ -111,6 +117,7 @@ const layerFromHistoryJSON = (
 		gridCols: data.gridCols,
 		gridRows: data.gridRows,
 		strokeWidth: data.strokeWidth,
+		strokeColor: data.strokeColor,
 	});
 
 	layer.marginTop = data.marginTop;

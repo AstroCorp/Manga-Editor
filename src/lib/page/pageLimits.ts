@@ -4,6 +4,7 @@ export const DEFAULT_GRID_COLS = 86;
 export const DEFAULT_GRID_ROWS = 129;
 export const DEFAULT_MARGIN = 18;
 export const DEFAULT_STROKE_WIDTH = 5;
+export const DEFAULT_STROKE_COLOR = '#111111';
 export const MIN_GRID_POINTS = 2;
 export const MAX_GRID_POINTS = 200;
 export const MIN_STROKE_WIDTH = 0;

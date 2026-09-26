@@ -33,8 +33,43 @@ describe('layoutPreviewShapes', () => {
 					{ x: 1, y: 1 },
 				],
 				image: null,
-				strokeWidth: 3,
+				strokes: [
+					{ width: 3, color: '#111111' },
+					{ width: 3, color: '#111111' },
+					{ width: 3, color: '#111111' },
+				],
 			},
+		]);
+	});
+
+	it('keeps per-edge strokes declared on the shape', () => {
+		const [shape] = layoutPreviewShapes({
+			width: 100,
+			height: 200,
+			layers: [
+				{
+					strokeWidth: 3,
+					strokeColor: '#ff0000',
+					shapes: [
+						{
+							id: 'a',
+							points: [
+								{ x: 0, y: 0 },
+								{ x: 1, y: 0 },
+								{ x: 1, y: 1 },
+							],
+							strokes: [{ width: 9, color: '#00ff00' }],
+							image: null,
+						},
+					],
+				},
+			],
+		});
+
+		expect(shape?.strokes).toEqual([
+			{ width: 9, color: '#00ff00' },
+			{ width: 3, color: '#ff0000' },
+			{ width: 3, color: '#ff0000' },
 		]);
 	});
 
@@ -74,7 +109,7 @@ describe('layoutPreviewShapes', () => {
 					},
 				],
 			}).map((shape) => {
-				return { id: shape.id, strokeWidth: shape.strokeWidth };
+				return { id: shape.id, strokeWidth: shape.strokes[0]?.width };
 			}),
 		).toEqual([
 			{ id: 'a', strokeWidth: 2 },

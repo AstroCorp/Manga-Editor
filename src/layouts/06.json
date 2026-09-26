@@ -26,6 +26,24 @@
               "y": 2562
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         },
         {
@@ -52,6 +70,28 @@
               "y": 2542.125
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         }
       ],
@@ -61,7 +101,8 @@
       "marginRight": 18,
       "marginBottom": 18,
       "marginLeft": 18,
-      "strokeWidth": 5
+      "strokeWidth": 5,
+      "strokeColor": "#111111"
     }
   ]
 }

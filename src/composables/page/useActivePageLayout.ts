@@ -37,6 +37,10 @@ export const useActivePageLayout = () => {
 		return activeLayer.value.strokeWidth;
 	});
 
+	const strokeColor = computed(() => {
+		return activeLayer.value.strokeColor;
+	});
+
 	const pageHasDrawing = computed(() => {
 		return activePage.value.hasDrawing();
 	});
@@ -55,6 +59,7 @@ export const useActivePageLayout = () => {
 		gridSize,
 		margins,
 		strokeWidth,
+		strokeColor,
 		pageHasDrawing,
 		activeLayerHasDrawing,
 	};

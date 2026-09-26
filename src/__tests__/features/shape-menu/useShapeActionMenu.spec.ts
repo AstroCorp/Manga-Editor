@@ -4,8 +4,10 @@ import { shallowRef } from 'vue';
 import { useShapeActionMenu } from '@/features/shape-menu/useShapeActionMenu';
 import { panelFillColor } from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import { shapeToPolygon } from '@/lib/fabric/shapeFabric';
 import { Shape } from '@/models/Shape';
 import { ShapeImage } from '@/models/ShapeImage';
+import { useHistoryStore } from '@/stores/history';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
 
@@ -379,5 +381,162 @@ describe('useShapeActionMenu', () => {
 		expect(fabricImage.set).toHaveBeenCalledWith({ flipY: true });
 		expect(shape.image?.flipY).toBe(true);
 		expect(api.isFlipY.value).toBe(true);
+	});
+
+	it('exposes edge strokes and syncs the fabric polygon on edge changes', () => {
+		const mangaStore = useMangaStore();
+		const historyStore = useHistoryStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			2,
+		);
+
+		mangaStore.addShape(shape);
+
+		const panel = shapeToPolygon(shape, {
+			layerId: mangaStore.activeLayer.id,
+			interactive: true,
+		});
+		const handlers: Record<string, () => void> = {};
+		const canvas = {
+			on: (event: string, handler: () => void) => {
+				handlers[event] = handler;
+			},
+			off: vi.fn(),
+			getActiveObject: () => {
+				return panel as unknown as FabricObject;
+			},
+			getObjects: () => {
+				return [panel as unknown as FabricObject];
+			},
+			requestRenderAll: vi.fn(),
+		} as unknown as Canvas;
+		const api = useShapeActionMenu({ fabricCanvas: shallowRef(canvas) });
+
+		handlers['selection:created']?.();
+
+		expect(api.strokes.value).toEqual(shape.strokes);
+		expect(api.strokes.value).not.toBe(shape.strokes);
+
+		const entriesBefore = historyStore.entries.length;
+
+		api.previewEdgeStroke(1, { color: '#ff0000' });
+
+		expect(shape.strokes[1]).toEqual({ width: 2, color: '#ff0000' });
+		expect(panel.edgeStrokes?.[1]).toEqual({ width: 2, color: '#ff0000' });
+		expect(historyStore.entries).toHaveLength(entriesBefore);
+
+		api.setEdgeStroke(1, { width: 9 });
+
+		expect(shape.strokes[1]).toEqual({ width: 9, color: '#ff0000' });
+		expect(panel.edgeStrokes?.[1]).toEqual({ width: 9, color: '#ff0000' });
+		expect(panel.strokeWidth).toBe(9);
+		expect(api.strokes.value[1]).toEqual({ width: 9, color: '#ff0000' });
+		expect(historyStore.entries).toHaveLength(entriesBefore + 1);
+		expect(canvas.requestRenderAll).toHaveBeenCalled();
+
+		api.setEdgeStroke(7, { width: 1 });
+
+		expect(historyStore.entries).toHaveLength(entriesBefore + 1);
+
+		handlers['selection:cleared']?.();
+
+		expect(api.strokes.value).toEqual([]);
+	});
+
+	it('draws a guide over the hovered edge and drops it when the hover ends', () => {
+		const mangaStore = useMangaStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			2,
+		);
+
+		mangaStore.addShape(shape);
+
+		const panel = shapeToPolygon(shape, {
+			layerId: mangaStore.activeLayer.id,
+			interactive: true,
+		});
+		const handlers: Record<string, () => void> = {};
+		const added: FabricObject[] = [];
+		const canvas = {
+			on: (event: string, handler: () => void) => {
+				handlers[event] = handler;
+			},
+			off: vi.fn(),
+			getActiveObject: () => {
+				return panel as unknown as FabricObject;
+			},
+			getObjects: () => {
+				return [panel as unknown as FabricObject, ...added];
+			},
+			add: vi.fn((object: FabricObject) => {
+				added.push(object);
+			}),
+			remove: vi.fn((object: FabricObject) => {
+				const index = added.indexOf(object);
+
+				if (index >= 0) {
+					added.splice(index, 1);
+				}
+			}),
+			bringObjectToFront: vi.fn(),
+			requestRenderAll: vi.fn(),
+		} as unknown as Canvas;
+		const api = useShapeActionMenu({ fabricCanvas: shallowRef(canvas) });
+
+		handlers['selection:created']?.();
+		api.highlightEdge(0);
+
+		const line = added[0] as FabricObject & {
+			isGuide?: boolean;
+			stroke?: string;
+			strokeWidth?: number;
+			points?: Array<{ x: number; y: number }>;
+			excludeFromExport?: boolean;
+		};
+
+		expect(added).toHaveLength(1);
+		expect(line.isGuide).toBe(true);
+		expect(line.excludeFromExport).toBe(true);
+		expect(line.stroke).toBe('#2563eb');
+		expect(line.strokeWidth).toBe(10);
+		expect(line.points).toEqual([
+			{ x: 0, y: 0 },
+			{ x: 20, y: 0 },
+		]);
+		expect(canvas.bringObjectToFront).toHaveBeenCalledWith(line);
+
+		api.highlightEdge(1);
+
+		expect(added).toHaveLength(1);
+		expect(line.points).toEqual([
+			{ x: 20, y: 0 },
+			{ x: 20, y: 20 },
+		]);
+
+		api.setEdgeStroke(1, { width: 20 });
+
+		expect(line.strokeWidth).toBe(28);
+		expect(shape.strokes[0]?.width).toBe(2);
+
+		api.highlightEdge(null);
+
+		expect(added).toHaveLength(0);
+		expect(canvas.remove).toHaveBeenCalledWith(line);
+
+		api.highlightEdge(2);
+		handlers['selection:cleared']?.();
+
+		expect(added).toHaveLength(0);
+		expect(api.strokes.value).toEqual([]);
 	});
 });

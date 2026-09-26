@@ -4,11 +4,11 @@ import type {
 	FabricObject,
 	Group,
 	Point,
-	Polygon,
 	Polyline,
 	Textbox,
 } from 'fabric';
 import type { ShallowRef } from 'vue';
+import type { PanelPolygonShape } from '@/lib/fabric/PanelPolygon';
 import type { Page } from '@/models/Page';
 import type { ExportImageFormat } from '@/types/editor';
 
@@ -32,7 +32,7 @@ export type PanelFillOptions = {
 	hasImage?: boolean;
 };
 
-export type PanelPolygon = Polygon & {
+export type PanelPolygon = PanelPolygonShape & {
 	objectType?: FabricObjectType;
 	panelId?: string;
 	layerId?: string;

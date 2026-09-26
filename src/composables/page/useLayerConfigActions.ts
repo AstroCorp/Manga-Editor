@@ -1,4 +1,5 @@
 import { storeToRefs } from 'pinia';
+import { normalizeStrokeColor } from '@/lib/page/shapeStrokes';
 import { useMangaStore } from '@/stores/manga';
 import type { PageMarginSide } from '@/types/page';
 
@@ -35,10 +36,21 @@ export const useLayerConfigActions = () => {
 		mangaStore.setActiveLayerStrokeWidth(width);
 	};
 
+	const setStrokeColor = (color: string) => {
+		const next = normalizeStrokeColor(color, activeLayer.value.strokeColor);
+
+		if (next === activeLayer.value.strokeColor) {
+			return;
+		}
+
+		mangaStore.setActiveLayerStrokeColor(next);
+	};
+
 	return {
 		setCols,
 		setRows,
 		setMargin,
 		setStrokeWidth,
+		setStrokeColor,
 	};
 };

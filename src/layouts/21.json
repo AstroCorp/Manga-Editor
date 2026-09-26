@@ -26,6 +26,24 @@
               "y": 2580
             }
           ],
+          "strokes": [
+            {
+              "width": 0,
+              "color": "#111111"
+            },
+            {
+              "width": 0,
+              "color": "#111111"
+            },
+            {
+              "width": 0,
+              "color": "#111111"
+            },
+            {
+              "width": 0,
+              "color": "#111111"
+            }
+          ],
           "image": null
         }
       ],
@@ -35,7 +53,8 @@
       "marginRight": 0,
       "marginBottom": 0,
       "marginLeft": 0,
-      "strokeWidth": 0
+      "strokeWidth": 0,
+      "strokeColor": "#111111"
     },
     {
       "name": "Layer 1",
@@ -65,6 +84,28 @@
               "y": 37.875
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         },
         {
@@ -85,6 +126,24 @@
             {
               "x": 850.0941176470589,
               "y": 872.625
+            }
+          ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
             }
           ],
           "image": null
@@ -109,6 +168,24 @@
               "y": 1727.25
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         }
       ],
@@ -118,7 +195,8 @@
       "marginRight": 18,
       "marginBottom": 18,
       "marginLeft": 18,
-      "strokeWidth": 5
+      "strokeWidth": 5,
+      "strokeColor": "#111111"
     }
   ]
 }

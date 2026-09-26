@@ -26,7 +26,12 @@ import type { ShapeImage } from '@/models/ShapeImage';
 import type { TextBlock } from '@/models/TextBlock';
 import type { PageLayoutMetrics } from '@/types/geometry';
 import type { LayoutJSON } from '@/types/layouts';
-import type { PageMargins, PageRotateDirection, TextBlockPatch } from '@/types/page';
+import type {
+	PageMargins,
+	PageRotateDirection,
+	ShapeStrokePatch,
+	TextBlockPatch,
+} from '@/types/page';
 
 export const useMangaStore = defineStore('manga', () => {
 	const title = ref('Untitled');
@@ -222,6 +227,10 @@ export const useMangaStore = defineStore('manga', () => {
 
 	const strokeWidth = computed(() => {
 		return getActivePage().getActiveLayer().strokeWidth;
+	});
+
+	const strokeColor = computed(() => {
+		return getActivePage().getActiveLayer().strokeColor;
 	});
 
 	const shapes = computed(() => {
@@ -493,9 +502,54 @@ export const useMangaStore = defineStore('manga', () => {
 		recordHistory(HISTORY_LABEL.RotatePage);
 	};
 
+	/** Solo cambia el valor por defecto de la capa; los paneles no se tocan. */
 	const setActiveLayerStrokeWidth = (width: number) => {
 		getActivePage().setActiveLayerStrokeWidth(width);
 		recordHistory(HISTORY_LABEL.ChangeStroke);
+	};
+
+	const setActiveLayerStrokeColor = (color: string) => {
+		getActivePage().setActiveLayerStrokeColor(color);
+		recordHistory(HISTORY_LABEL.ChangeStrokeColor);
+	};
+
+	/**
+	 * Aplica el stroke de la capa activa a todas las aristas de todos los
+	 * paneles de la página (todas las capas) y rehidrata el canvas.
+	 */
+	const applyPageStroke = () => {
+		const page = getActivePage();
+
+		page.applyStrokeToAllShapes(page.getActiveLayer().getDefaultStroke());
+		bumpContent();
+		recordHistory(HISTORY_LABEL.ApplyPageStroke);
+	};
+
+	/** Mutación sin historial (para arrastres de color); ver `recordHistory`. */
+	const updateShapeEdgeStroke = (
+		shapeId: string,
+		edgeIndex: number,
+		patch: ShapeStrokePatch,
+	): boolean => {
+		return getActivePage().setShapeEdgeStroke(shapeId, edgeIndex, patch);
+	};
+
+	const setShapeEdgeStroke = (
+		shapeId: string,
+		edgeIndex: number,
+		patch: ShapeStrokePatch,
+	): boolean => {
+		if (!updateShapeEdgeStroke(shapeId, edgeIndex, patch)) {
+			return false;
+		}
+
+		recordHistory(
+			patch.width !== undefined
+				? HISTORY_LABEL.ChangeEdgeWidth
+				: HISTORY_LABEL.ChangeEdgeColor,
+		);
+
+		return true;
 	};
 
 	const selectLayer = (layerId: string) => {
@@ -614,6 +668,7 @@ export const useMangaStore = defineStore('manga', () => {
 		layers,
 		layout,
 		strokeWidth,
+		strokeColor,
 		shapes,
 		texts,
 		addPage,
@@ -637,6 +692,10 @@ export const useMangaStore = defineStore('manga', () => {
 		setActiveLayerMargins,
 		rotateActivePage,
 		setActiveLayerStrokeWidth,
+		setActiveLayerStrokeColor,
+		applyPageStroke,
+		updateShapeEdgeStroke,
+		setShapeEdgeStroke,
 		selectLayer,
 		addLayer,
 		removeLayer,

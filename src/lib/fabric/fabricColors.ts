@@ -1,3 +1,4 @@
+import { DEFAULT_STROKE_COLOR } from '@/lib/page/pageLimits';
 import type { PanelFillOptions } from '@/types/fabric';
 
 /**
@@ -6,7 +7,8 @@ import type { PanelFillOptions } from '@/types/fabric';
 export const ACCENT_COLOR = '#2563eb';
 export const GUIDE_STROKE_COLOR = ACCENT_COLOR;
 export const DRAFT_STROKE_COLOR = '#222222';
-export const PANEL_STROKE_COLOR = '#111111';
+/** Color por defecto de los bordes de panel (cada arista puede sobrescribirlo). */
+export const PANEL_STROKE_COLOR = DEFAULT_STROKE_COLOR;
 
 /**
  * Sin relleno visible. Alpha mínimo para que perPixelTargetFind

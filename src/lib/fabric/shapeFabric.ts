@@ -1,10 +1,7 @@
 import type { FabricObject, StaticCanvas } from 'fabric';
-import { Polygon } from 'fabric';
-import {
-	PANEL_STROKE_COLOR,
-	panelFillColor,
-} from '@/lib/fabric/fabricColors';
+import { panelFillColor } from '@/lib/fabric/fabricColors';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
+import { PanelPolygonShape } from '@/lib/fabric/PanelPolygon';
 import { stackPageContent } from '@/lib/fabric/isGuide';
 import { applyPageCanvasLayout } from '@/lib/fabric/pageCanvasLayout';
 import { shapeImageToFabric } from '@/lib/fabric/panelImageFabric';
@@ -31,14 +28,12 @@ export const shapeToPolygon = (
 ): PanelPolygon => {
 	const hasImage = Boolean(shape.image);
 	const interactive = options.interactive && !hasImage;
-	const polygon = new Polygon(
+	const polygon = new PanelPolygonShape(
 		shape.points.map((point) => {
 			return { x: point.x, y: point.y };
 		}),
 		{
 			fill: panelFillColor(shape.whiteFill, { hasImage }),
-			stroke: PANEL_STROKE_COLOR,
-			strokeWidth: shape.strokeWidth,
 			selectable: interactive,
 			evented: interactive,
 			lockMovementX: true,
@@ -53,6 +48,7 @@ export const shapeToPolygon = (
 		},
 	) as PanelPolygon;
 
+	polygon.setEdgeStrokes(shape.strokes);
 	polygon.set({
 		objectType: FABRIC_OBJECT_TYPE.Panel,
 		panelId: shape.id,

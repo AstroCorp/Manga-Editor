@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import NumberInput from '@/components/ui/NumberInput.vue';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
+import { useApplyPageStroke } from '@/composables/page/useApplyPageStroke';
 import { useLayerConfigActions } from '@/composables/page/useLayerConfigActions';
 import { usePageConfigActions } from '@/composables/page/usePageConfigActions';
 import {
@@ -15,7 +16,7 @@ import {
 } from '@/lib/page/pageLimits';
 import type { PageMarginSide } from '@/types/page';
 
-const { pageSize, gridSize, margins, strokeWidth, activeLayer } =
+const { pageSize, gridSize, margins, strokeWidth, strokeColor, activeLayer } =
 	useActivePageLayout();
 
 const {
@@ -28,10 +29,24 @@ const {
 	confirmRotate,
 } = usePageConfigActions();
 
-const { setCols, setRows, setMargin, setStrokeWidth } = useLayerConfigActions();
+const { setCols, setRows, setMargin, setStrokeWidth, setStrokeColor } =
+	useLayerConfigActions();
+
+const {
+	pendingApply,
+	canApply,
+	applyMessage,
+	requestApply,
+	cancelApply,
+	confirmApply,
+} = useApplyPageStroke();
 
 const onMarginUpdate = (side: PageMarginSide, value: number) => {
 	setMargin(side, value);
+};
+
+const onStrokeColorChange = (event: Event) => {
+	setStrokeColor((event.target as HTMLInputElement).value);
 };
 </script>
 
@@ -126,7 +141,7 @@ const onMarginUpdate = (side: PageMarginSide, value: number) => {
 			</h3>
 
 			<p class="text-xs text-slate-500 dark:text-slate-400">
-				Grid, margins and stroke apply to the active layer.
+				Grid and margins apply to the active layer.
 			</p>
 
 			<label
@@ -184,10 +199,27 @@ const onMarginUpdate = (side: PageMarginSide, value: number) => {
 				/>
 			</label>
 
+		</section>
+
+		<section
+			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
+			aria-label="Stroke settings"
+		>
+			<h3
+				class="mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
+			>
+				Stroke
+			</h3>
+
+			<p class="text-xs text-slate-500 dark:text-slate-400">
+				Default for new panels on this layer. Each panel edge keeps its own
+				stroke; use Apply to override every edge on the page.
+			</p>
+
 			<label
 				class="flex min-h-9 items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
 			>
-				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke</span>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Width</span>
 				<NumberInput
 					:model-value="strokeWidth"
 					:min="MIN_STROKE_WIDTH"
@@ -200,6 +232,41 @@ const onMarginUpdate = (side: PageMarginSide, value: number) => {
 					@update:model-value="setStrokeWidth"
 				/>
 			</label>
+
+			<label
+				class="flex min-h-9 cursor-pointer items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Color</span>
+				<span
+					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200 dark:hover:border-blue-500/50"
+				>
+					<span
+						class="size-5 rounded-sm border border-slate-300 shadow-sm dark:border-zinc-600"
+						:style="{ background: strokeColor }"
+						aria-hidden="true"
+					/>
+					<span data-testid="stroke-color-value">{{ strokeColor }}</span>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="strokeColor"
+						aria-label="Stroke color"
+						@change="onStrokeColorChange"
+					/>
+				</span>
+			</label>
+
+			<button
+				type="button"
+				class="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:border-blue-600/50 hover:bg-blue-50 hover:text-blue-600 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-white disabled:hover:text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200 dark:hover:border-blue-500/50 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:disabled:hover:border-zinc-800 dark:disabled:hover:bg-zinc-950 dark:disabled:hover:text-slate-200"
+				:disabled="!canApply"
+				aria-label="Apply stroke to every panel on the page"
+				title="Apply stroke to every panel on the page"
+				@click="requestApply"
+			>
+				<Icon icon="fluent:line-thickness-24-regular" class="size-5" />
+				Apply to page
+			</button>
 		</section>
 
 		<ConfirmModal
@@ -210,6 +277,16 @@ const onMarginUpdate = (side: PageMarginSide, value: number) => {
 			cancel-label="Cancel"
 			@confirm="confirmRotate"
 			@cancel="cancelRotate"
+		/>
+
+		<ConfirmModal
+			v-if="pendingApply"
+			title="Apply stroke to page"
+			:message="applyMessage"
+			confirm-label="Apply"
+			cancel-label="Cancel"
+			@confirm="confirmApply"
+			@cancel="cancelApply"
 		/>
 	</div>
 </template>

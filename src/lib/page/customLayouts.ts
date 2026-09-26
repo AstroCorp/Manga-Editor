@@ -19,6 +19,13 @@ const stripShapeImages = (
 			points: shape.points.map((point) => {
 				return { x: point.x, y: point.y };
 			}),
+			...(shape.strokes
+				? {
+						strokes: shape.strokes.map((stroke) => {
+							return { width: stroke.width, color: stroke.color };
+						}),
+					}
+				: {}),
 			image: null,
 		};
 	});
@@ -38,6 +45,7 @@ const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
 			marginBottom: layer.marginBottom,
 			marginLeft: layer.marginLeft,
 			strokeWidth: layer.strokeWidth,
+			strokeColor: layer.strokeColor,
 		};
 	});
 

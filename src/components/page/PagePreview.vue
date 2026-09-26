@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue';
-import { PANEL_STROKE_COLOR } from '@/lib/fabric/fabricColors';
 import { ensureTextFontsLoaded } from '@/lib/fonts/loadGoogleFont';
 import { buildPagePreview } from '@/lib/page/pagePreview';
 import type { Shape } from '@/models/Shape';
@@ -184,11 +183,23 @@ const runDecoration = (run: PagePreviewTextRun) => {
 				/>
 			</g>
 			<polygon
+				v-if="panel.uniformStroke && panel.uniformStroke.width > 0"
 				:points="panel.points"
 				fill="none"
-				:stroke="PANEL_STROKE_COLOR"
-				:stroke-width="panel.strokeWidth"
+				:stroke="panel.uniformStroke.color"
+				:stroke-width="panel.uniformStroke.width"
 				stroke-linejoin="miter"
+			/>
+			<line
+				v-for="(edge, edgeIndex) in panel.edges"
+				:key="`edge-${index}-${edgeIndex}`"
+				:x1="edge.x1"
+				:y1="edge.y1"
+				:x2="edge.x2"
+				:y2="edge.y2"
+				:stroke="edge.color"
+				:stroke-width="edge.width"
+				stroke-linecap="square"
 			/>
 		</template>
 		<template v-for="(text, index) in model.texts" :key="`text-${index}`">

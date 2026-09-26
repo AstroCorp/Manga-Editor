@@ -3,17 +3,25 @@ import {
 	DEFAULT_GRID_COLS,
 	DEFAULT_GRID_ROWS,
 	DEFAULT_MARGIN,
+	DEFAULT_STROKE_COLOR,
 	DEFAULT_STROKE_WIDTH,
 	clampGridSize,
 	clampMargin,
 	clampStrokeWidth,
 } from '@/lib/page/pageLimits';
 import { resolveLayoutFields } from '@/lib/page/resolveLayoutFields';
+import { createStroke, normalizeStrokeColor } from '@/lib/page/shapeStrokes';
 import { Shape } from '@/models/Shape';
 import { TextBlock } from '@/models/TextBlock';
 import type { ShapeImage } from '@/models/ShapeImage';
 import type { LayoutLayerJSON } from '@/types/layouts';
-import type { LayerValue, PageMargins, TextBlockPatch } from '@/types/page';
+import type {
+	LayerValue,
+	PageMargins,
+	ShapeStroke,
+	ShapeStrokePatch,
+	TextBlockPatch,
+} from '@/types/page';
 
 export const DEFAULT_LAYER_NAME = 'Layer 1';
 
@@ -71,7 +79,9 @@ export class Layer {
 	public marginRight: number;
 	public marginBottom: number;
 	public marginLeft: number;
+	/** Stroke por defecto para paneles nuevos; los existentes no cambian. */
 	public strokeWidth: number;
+	public strokeColor: string;
 
 	constructor(value: LayerValue) {
 		this.id = value.id;
@@ -83,6 +93,10 @@ export class Layer {
 		this.gridRows = clampGridSize(value.gridRows ?? DEFAULT_GRID_ROWS);
 		this.strokeWidth = clampStrokeWidth(
 			value.strokeWidth ?? DEFAULT_STROKE_WIDTH,
+		);
+		this.strokeColor = normalizeStrokeColor(
+			value.strokeColor,
+			DEFAULT_STROKE_COLOR,
 		);
 		this.marginTop = 0;
 		this.marginRight = 0;
@@ -134,14 +148,41 @@ export class Layer {
 
 	setStrokeWidth(width: number) {
 		this.strokeWidth = clampStrokeWidth(width);
+	}
+
+	setStrokeColor(color: string) {
+		this.strokeColor = normalizeStrokeColor(color, this.strokeColor);
+	}
+
+	getDefaultStroke(): ShapeStroke {
+		return createStroke(this.strokeWidth, this.strokeColor);
+	}
+
+	/** Fija `stroke` como valor por defecto y en cada arista de cada panel. */
+	applyStrokeToShapes(stroke: ShapeStroke) {
+		this.setStrokeWidth(stroke.width);
+		this.setStrokeColor(stroke.color);
 
 		for (const shape of this.shapes) {
-			shape.strokeWidth = this.strokeWidth;
+			shape.setUniformStroke(this.getDefaultStroke());
 		}
 
 		if (this.shapes.length > 0) {
 			this.shapes = this.shapes.slice();
 		}
+	}
+
+	setShapeEdgeStroke(
+		shapeId: string,
+		edgeIndex: number,
+		patch: ShapeStrokePatch,
+	): boolean {
+		let changed = false;
+		const found = updateShapeOnLayer(this, shapeId, (shape) => {
+			changed = shape.setEdgeStroke(edgeIndex, patch);
+		});
+
+		return found && changed;
 	}
 
 	clearShapes() {
@@ -153,7 +194,6 @@ export class Layer {
 	}
 
 	addShape(shape: Shape) {
-		shape.strokeWidth = this.strokeWidth;
 		this.shapes = [...this.shapes, shape];
 	}
 
@@ -214,7 +254,7 @@ export class Layer {
 		pageHeight: number,
 	) {
 		const fields = resolveLayoutFields(data);
-		const layerStroke = clampStrokeWidth(fields.strokeWidth);
+		const layerStroke = createStroke(fields.strokeWidth, fields.strokeColor);
 
 		this.setGrid(fields.gridCols, fields.gridRows);
 		this.setMargins(
@@ -227,13 +267,16 @@ export class Layer {
 			pageWidth,
 			pageHeight,
 		);
-		this.strokeWidth = layerStroke;
+		this.strokeWidth = layerStroke.width;
+		this.strokeColor = layerStroke.color;
 		this.shapes = (data.shapes ?? []).map((shapeJson) => {
 			return Shape.fromJSON({
 				id: shapeJson.id,
 				points: shapeJson.points,
 				image: shapeJson.image,
-				strokeWidth: layerStroke,
+				strokes: shapeJson.strokes,
+				strokeWidth: layerStroke.width,
+				strokeColor: layerStroke.color,
 			});
 		});
 		this.texts = [];
@@ -244,9 +287,9 @@ export class Layer {
 	} {
 		return {
 			shapes: this.shapes.map((shape) => {
-				const { id, points, image } = shape.toLayoutJSON();
+				const { id, points, strokes, image } = shape.toLayoutJSON();
 
-				return { id, points, image };
+				return { id, points, strokes, image };
 			}),
 			gridCols: this.gridCols,
 			gridRows: this.gridRows,
@@ -255,6 +298,7 @@ export class Layer {
 			marginBottom: this.marginBottom,
 			marginLeft: this.marginLeft,
 			strokeWidth: this.strokeWidth,
+			strokeColor: this.strokeColor,
 		};
 	}
 }

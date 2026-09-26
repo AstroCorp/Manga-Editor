@@ -4,6 +4,8 @@ import type { CanvasActions } from '@/types/editor';
 import type { GridPoint } from '@/types/geometry';
 import type {
 	PageTextAnchor,
+	ShapeStroke,
+	ShapeStrokePatch,
 	TextBoxVerticalAlign,
 	TextTextAlign,
 } from '@/types/page';
@@ -73,6 +75,8 @@ export type ShapeActionMenuProps = {
 	isFlipX: boolean;
 	isFlipY: boolean;
 	whiteFill: boolean;
+	/** Trazo de cada arista del panel seleccionado (orden de sus puntos). */
+	strokes: ShapeStroke[];
 	left: number | null;
 	top: number | null;
 	placement: OverlayPlacement;
@@ -86,7 +90,22 @@ export type ShapeActionMenuEmits = {
 	toggleFlipX: [];
 	toggleFlipY: [];
 	toggleWhiteFill: [];
+	/** Cambio definitivo de una arista (se registra en el historial). */
+	setEdgeStroke: [edgeIndex: number, patch: ShapeStrokePatch];
+	/** Cambio en vivo mientras se arrastra el color picker (sin historial). */
+	previewEdgeStroke: [edgeIndex: number, patch: ShapeStrokePatch];
+	/** Fila de arista bajo el cursor o el foco; `null` al salir. */
+	hoverEdge: [edgeIndex: number | null];
 };
+
+export type EdgeStrokeMenuProps = {
+	strokes: ShapeStroke[];
+};
+
+export type EdgeStrokeMenuEmits = Pick<
+	ShapeActionMenuEmits,
+	'setEdgeStroke' | 'previewEdgeStroke' | 'hoverEdge'
+>;
 
 export type TextColorToolbarProps = {
 	colors: string[];

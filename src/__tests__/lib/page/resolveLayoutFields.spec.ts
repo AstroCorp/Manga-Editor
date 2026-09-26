@@ -3,6 +3,7 @@ import {
 	DEFAULT_GRID_COLS,
 	DEFAULT_GRID_ROWS,
 	DEFAULT_MARGIN,
+	DEFAULT_STROKE_COLOR,
 	DEFAULT_STROKE_WIDTH,
 } from '@/lib/page/pageLimits';
 import {
@@ -23,6 +24,7 @@ describe('resolveLayoutFields', () => {
 			marginBottom: DEFAULT_MARGIN,
 			marginLeft: DEFAULT_MARGIN,
 			strokeWidth: DEFAULT_STROKE_WIDTH,
+			strokeColor: DEFAULT_STROKE_COLOR,
 		});
 	});
 
@@ -36,6 +38,7 @@ describe('resolveLayoutFields', () => {
 				marginBottom: 3,
 				marginLeft: 4,
 				strokeWidth: 8,
+				strokeColor: '#ff0000',
 			}),
 		).toEqual({
 			gridCols: 10,
@@ -45,6 +48,7 @@ describe('resolveLayoutFields', () => {
 			marginBottom: 3,
 			marginLeft: 4,
 			strokeWidth: 8,
+			strokeColor: '#ff0000',
 		});
 	});
 });

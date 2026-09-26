@@ -37,6 +37,10 @@ export const HISTORY_LABEL = {
 	ChangeGrid: 'Change grid',
 	ChangeMargins: 'Change margins',
 	ChangeStroke: 'Change stroke',
+	ChangeStrokeColor: 'Change stroke color',
+	ApplyPageStroke: 'Apply stroke to page',
+	ChangeEdgeWidth: 'Change edge width',
+	ChangeEdgeColor: 'Change edge color',
 	ApplyLayout: 'Apply layout',
 	ClearPage: 'Clear page',
 } as const;

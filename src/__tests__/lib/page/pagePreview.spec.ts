@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildPagePreview } from '@/lib/page/pagePreview';
 import { plainPreviewLines } from '@/lib/page/previewTextRuns';
+import { createUniformStrokes } from '@/lib/page/shapeStrokes';
 import { TextBlock } from '@/models/TextBlock';
 import type { PagePreviewTextRun } from '@/types/page';
 
@@ -40,16 +41,44 @@ describe('pagePreview', () => {
 					{ x: 10, y: 0 },
 					{ x: 10, y: 10 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				image: null,
 			},
 		]);
 
 		expect(preview.panels).toHaveLength(1);
 		expect(preview.panels[0]?.points).toBe('0,0 10,0 10,10');
-		expect(preview.panels[0]?.strokeWidth).toBe(2);
+		expect(preview.panels[0]?.uniformStroke).toEqual({
+			width: 2,
+			color: '#111111',
+		});
+		expect(preview.panels[0]?.edges).toEqual([]);
 		expect(preview.panels[0]?.whiteFill).toBe(false);
 		expect(preview.panels[0]?.image).toBeNull();
+	});
+
+	it('splits mixed strokes into per-edge lines and skips hidden edges', () => {
+		const preview = buildPagePreview(200, 200, [
+			{
+				points: [
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				strokes: [
+					{ width: 2, color: '#111111' },
+					{ width: 0, color: '#111111' },
+					{ width: 6, color: '#ff0000' },
+				],
+				image: null,
+			},
+		]);
+
+		expect(preview.panels[0]?.uniformStroke).toBeNull();
+		expect(preview.panels[0]?.edges).toEqual([
+			{ x1: 0, y1: 0, x2: 10, y2: 0, width: 2, color: '#111111' },
+			{ x1: 10, y1: 10, x2: 0, y2: 0, width: 6, color: '#ff0000' },
+		]);
 	});
 
 	it('keeps whiteFill per panel in the preview model', () => {
@@ -60,7 +89,7 @@ describe('pagePreview', () => {
 					{ x: 10, y: 0 },
 					{ x: 10, y: 10 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				image: null,
 				whiteFill: true,
 			},
@@ -77,7 +106,7 @@ describe('pagePreview', () => {
 					{ x: 10, y: 0 },
 					{ x: 10, y: 10 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				whiteFill: true,
 				image: {
 					src: 'https://example.com/cover.png',
@@ -103,7 +132,7 @@ describe('pagePreview', () => {
 					{ x: 10, y: 0 },
 					{ x: 10, y: 10 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				image: {
 					src: 'https://example.com/cover.png',
 					left: 100,
@@ -141,7 +170,7 @@ describe('pagePreview', () => {
 					{ x: 20, y: 0 },
 					{ x: 20, y: 20 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				image: {
 					src: 'https://example.com/cover.png',
 					left: 10,
@@ -314,7 +343,7 @@ describe('pagePreview', () => {
 					{ x: 10, y: 0 },
 					{ x: 10, y: 10 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				image: {
 					src: 'https://example.com/cover.png',
 					left: 10,
@@ -341,7 +370,7 @@ describe('pagePreview', () => {
 					{ x: 10, y: 0 },
 					{ x: 10, y: 10 },
 				],
-				strokeWidth: 2,
+				strokes: createUniformStrokes(3, 2),
 				image: {
 					src: 'https://example.com/cover.png',
 					left: 10,

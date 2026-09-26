@@ -177,15 +177,34 @@ export type ShapeImageJSON = {
 	flipY?: boolean;
 };
 
+/** Grosor y color de una arista del panel. */
+export type ShapeStroke = {
+	width: number;
+	color: string;
+};
+
+export type ShapeStrokePatch = Partial<ShapeStroke>;
+
 export type ShapeJSON = {
 	id: string;
 	points: PagePoint[];
-	strokeWidth: number;
+	/** Un trazo por arista, en el orden de `points` (i → i+1). */
+	strokes: ShapeStroke[];
 	image: ShapeImageJSON | null;
 };
 
+/**
+ * Entrada tolerante para `Shape.fromJSON`: acepta JSON antiguos con un único
+ * `strokeWidth` en lugar de `strokes`.
+ */
+export type ShapeJSONInput = Omit<ShapeJSON, 'strokes'> & {
+	strokes?: unknown;
+	strokeWidth?: number;
+	strokeColor?: string;
+};
+
 export type ShapeLike =
-	| (Pick<ShapeJSON, 'points' | 'strokeWidth' | 'image'> & {
+	| (Pick<ShapeJSON, 'points' | 'strokes' | 'image'> & {
 			whiteFill?: boolean;
 	  })
 	| Shape;
@@ -204,9 +223,21 @@ export type PagePreviewImage = {
 	flipY: boolean;
 };
 
+export type PagePreviewEdge = {
+	x1: number;
+	y1: number;
+	x2: number;
+	y2: number;
+	width: number;
+	color: string;
+};
+
 export type PagePreviewPanel = {
 	points: string;
-	strokeWidth: number;
+	/** Trazo común si todas las aristas coinciden (borde único con miter). */
+	uniformStroke: ShapeStroke | null;
+	/** Aristas individuales cuando los trazos difieren. */
+	edges: PagePreviewEdge[];
 	whiteFill: boolean;
 	/** Imagen del panel; el borde se pinta encima (como en el canvas). */
 	image: PagePreviewImage | null;
@@ -254,7 +285,7 @@ export type ShapeImageValue = {
 export type ShapeValue = {
 	id: string;
 	points: PagePoint[];
-	strokeWidth: number;
+	strokes: ShapeStroke[];
 	image?: ShapeImage | null;
 	whiteFill?: boolean;
 };
@@ -268,6 +299,7 @@ export type LayerValue = {
 	gridCols?: number;
 	gridRows?: number;
 	strokeWidth?: number;
+	strokeColor?: string;
 };
 
 export type ResetLayerOptions = {
@@ -275,6 +307,7 @@ export type ResetLayerOptions = {
 	gridRows?: number;
 	margins?: PageMargins;
 	strokeWidth?: number;
+	strokeColor?: string;
 };
 
 export type PageValue = {

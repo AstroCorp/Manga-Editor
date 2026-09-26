@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
+import EdgeStrokeMenu from '@/features/shape-menu/components/EdgeStrokeMenu.vue';
 import type { ShapeActionMenuEmits, ShapeActionMenuProps } from '@/types/panel';
 
 const props = defineProps<ShapeActionMenuProps>();
@@ -76,6 +77,14 @@ const onFileChange = (event: Event) => {
 				class="size-5"
 			/>
 		</button>
+		<EdgeStrokeMenu
+			:strokes="strokes"
+			@set-edge-stroke="(index, patch) => emit('setEdgeStroke', index, patch)"
+			@preview-edge-stroke="
+				(index, patch) => emit('previewEdgeStroke', index, patch)
+			"
+			@hover-edge="(index) => emit('hoverEdge', index)"
+		/>
 		<button
 			type="button"
 			role="menuitem"

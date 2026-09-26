@@ -27,6 +27,7 @@ export const shapeMenuFeature: CanvasFeature = {
 					isFlipX: api.isFlipX.value,
 					isFlipY: api.isFlipY.value,
 					whiteFill: api.whiteFill.value,
+					strokes: api.strokes.value,
 					left: stage.left,
 					top: stage.top,
 					placement: api.placement.value,
@@ -42,6 +43,11 @@ export const shapeMenuFeature: CanvasFeature = {
 				toggleFlipX: api.toggleFlipX,
 				toggleFlipY: api.toggleFlipY,
 				toggleWhiteFill: api.toggleWhiteFill,
+				setEdgeStroke: api.setEdgeStroke as (...args: never[]) => unknown,
+				previewEdgeStroke: api.previewEdgeStroke as (
+					...args: never[]
+				) => unknown,
+				hoverEdge: api.highlightEdge as (...args: never[]) => unknown,
 			},
 		});
 	},

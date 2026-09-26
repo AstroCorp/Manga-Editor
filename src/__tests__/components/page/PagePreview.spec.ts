@@ -44,6 +44,39 @@ describe('PagePreview', () => {
 		expect(fills).toHaveLength(1);
 		expect(strokes).toHaveLength(2);
 		expect(fills[0]?.attributes('points')).toBe('0,0 10,0 10,10');
+		expect(strokes[0]?.attributes('stroke')).toBe('#111111');
+		expect(strokes[0]?.attributes('stroke-width')).toBe('2');
+	});
+
+	it('renders one line per edge when strokes differ', () => {
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		shape.setEdgeStroke(1, { width: 7, color: '#ff0000' });
+
+		const wrapper = mount(PagePreview, {
+			props: {
+				width: 100,
+				height: 100,
+				shapes: [shape],
+			},
+		});
+		const borderPolygons = wrapper.findAll('polygon').filter((node) => {
+			return node.attributes('fill') === 'none';
+		});
+		const lines = wrapper.findAll('line');
+
+		expect(borderPolygons).toHaveLength(0);
+		expect(lines).toHaveLength(3);
+		expect(lines[1]?.attributes('stroke')).toBe('#ff0000');
+		expect(lines[1]?.attributes('stroke-width')).toBe('7');
+		expect(lines[1]?.attributes('stroke-linecap')).toBe('square');
 	});
 
 	it('draws clipped image before stroke and skips white fill with image', () => {

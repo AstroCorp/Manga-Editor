@@ -37,7 +37,6 @@ import {
 	textBlockToFabric,
 } from '@/lib/fabric/textFabric';
 import { ensureTextFontsLoaded } from '@/lib/fonts/loadGoogleFont';
-import { clampStrokeWidth } from '@/lib/page/pageLimits';
 import {
 	applyEditingTextareaKey,
 	exitOrphanPageTextEditing,
@@ -349,27 +348,6 @@ export const usePanelSelection = ({
 		}
 
 		return false;
-	};
-
-	const applyPageStrokeWidth = (width: number) => {
-		const canvas = fabricCanvas.value;
-
-		if (!canvas) {
-			return;
-		}
-
-		const nextWidth = clampStrokeWidth(width);
-		const activeLayerId = mangaStore.activeLayer.id;
-
-		canvas.getObjects().forEach((object) => {
-			if (!isPanel(object) || getLayerId(object) !== activeLayerId) {
-				return;
-			}
-
-			object.set('strokeWidth', nextWidth);
-		});
-
-		canvas.requestRenderAll();
 	};
 
 	const persistTextObject = (object: FabricObject) => {
@@ -903,13 +881,6 @@ export const usePanelSelection = ({
 			});
 		},
 		{ immediate: true },
-	);
-
-	watch(
-		() => mangaStore.strokeWidth,
-		(width) => {
-			applyPageStrokeWidth(width);
-		},
 	);
 
 	useEventListener(window, 'keydown', onKeyDown);

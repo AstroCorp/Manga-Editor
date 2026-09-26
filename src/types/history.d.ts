@@ -27,6 +27,7 @@ export type HistoryLayerJSON = {
 	marginBottom: number;
 	marginLeft: number;
 	strokeWidth: number;
+	strokeColor: string;
 };
 
 export type HistoryPageJSON = {

@@ -3,6 +3,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { Shape } from '@/models/Shape';
 import { ShapeImage } from '@/models/ShapeImage';
 import { TextBlock } from '@/models/TextBlock';
+import { HISTORY_LABEL } from '@/lib/history/historyEnums';
+import { useHistoryStore } from '@/stores/history';
 import { useMangaStore } from '@/stores/manga';
 
 describe('useMangaStore config layout', () => {
@@ -75,7 +77,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
-	it('changing stroke width updates active layer shapes without clearing them', () => {
+	it('changing layer stroke defaults leaves existing shapes untouched', () => {
 		const store = useMangaStore();
 
 		store.addShape(
@@ -92,11 +94,81 @@ describe('useMangaStore config layout', () => {
 		const epoch = store.contentResetEpoch;
 
 		store.setActiveLayerStrokeWidth(8);
+		store.setActiveLayerStrokeColor('#ff0000');
 
 		expect(store.shapes).toHaveLength(1);
 		expect(store.strokeWidth).toBe(8);
-		expect(store.shapes[0]?.strokeWidth).toBe(8);
+		expect(store.strokeColor).toBe('#ff0000');
+		expect(store.shapes[0]?.strokes[0]).toEqual({
+			width: 3,
+			color: '#111111',
+		});
 		expect(store.contentResetEpoch).toBe(epoch);
+	});
+
+	it('applyPageStroke rewrites every edge, bumps content and records history', () => {
+		const store = useMangaStore();
+		const history = useHistoryStore();
+
+		store.addShape(
+			Shape.create(
+				[
+					{ x: 0, y: 0 },
+					{ x: 10, y: 0 },
+					{ x: 10, y: 10 },
+				],
+				3,
+			),
+		);
+		store.setActiveLayerStrokeWidth(8);
+		store.setActiveLayerStrokeColor('#ff0000');
+
+		const epoch = store.contentResetEpoch;
+
+		store.applyPageStroke();
+
+		expect(store.shapes[0]?.strokes).toEqual([
+			{ width: 8, color: '#ff0000' },
+			{ width: 8, color: '#ff0000' },
+			{ width: 8, color: '#ff0000' },
+		]);
+		expect(store.contentResetEpoch).toBe(epoch + 1);
+		expect(history.entries.at(-1)?.label).toContain(
+			HISTORY_LABEL.ApplyPageStroke,
+		);
+	});
+
+	it('setShapeEdgeStroke patches one edge and records the matching label', () => {
+		const store = useMangaStore();
+		const history = useHistoryStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			3,
+		);
+
+		store.addShape(shape);
+
+		const epoch = store.contentResetEpoch;
+		const entriesBefore = history.entries.length;
+
+		store.setShapeEdgeStroke(shape.id, 2, { width: 9 });
+		store.setShapeEdgeStroke(shape.id, 2, { color: '#00ff00' });
+		store.setShapeEdgeStroke(shape.id, 5, { width: 1 });
+
+		expect(store.shapes[0]?.strokes[2]).toEqual({ width: 9, color: '#00ff00' });
+		expect(store.shapes[0]?.strokes[0]).toEqual({ width: 3, color: '#111111' });
+		expect(store.contentResetEpoch).toBe(epoch);
+		expect(history.entries).toHaveLength(entriesBefore + 2);
+		expect(history.entries.at(-2)?.label).toContain(
+			HISTORY_LABEL.ChangeEdgeWidth,
+		);
+		expect(history.entries.at(-1)?.label).toContain(
+			HISTORY_LABEL.ChangeEdgeColor,
+		);
 	});
 
 	it('removeShape mutates the active layer', () => {
@@ -206,7 +278,7 @@ describe('useMangaStore config layout', () => {
 		expect(store.layers).toHaveLength(2);
 		expect(store.activeLayer.id).toBe(activeId);
 		expect(store.shapes).toHaveLength(1);
-		expect(store.shapes[0]?.strokeWidth).toBe(5);
+		expect(store.shapes[0]?.strokes[0]?.width).toBe(5);
 		expect(store.contentResetEpoch).toBe(epochBeforeApply + 1);
 	});
 

@@ -4,8 +4,13 @@ import {
 	type TextBlock,
 } from '@/models/TextBlock';
 import { buildStyledPreviewLines } from '@/lib/page/previewTextRuns';
+import {
+	normalizeShapeStrokes,
+	uniformStroke,
+} from '@/lib/page/shapeStrokes';
 import type {
 	PagePoint,
+	PagePreviewEdge,
 	PagePreviewImage,
 	PagePreviewModel,
 	PagePreviewPanel,
@@ -13,6 +18,7 @@ import type {
 	PreviewTextMeasureStyle,
 	ShapeImageJSON,
 	ShapeLike,
+	ShapeStroke,
 } from '@/types/page';
 
 const toSvgPoints = (points: PagePoint[]): string => {
@@ -21,6 +27,34 @@ const toSvgPoints = (points: PagePoint[]): string => {
 			return `${point.x},${point.y}`;
 		})
 		.join(' ');
+};
+
+/** Aristas visibles (grosor > 0) con su propio trazo. */
+const toPreviewEdges = (
+	points: PagePoint[],
+	strokes: ShapeStroke[],
+): PagePreviewEdge[] => {
+	const edges: PagePreviewEdge[] = [];
+
+	points.forEach((start, index) => {
+		const end = points[(index + 1) % points.length];
+		const stroke = strokes[index];
+
+		if (!end || !stroke || stroke.width <= 0) {
+			return;
+		}
+
+		edges.push({
+			x1: start.x,
+			y1: start.y,
+			x2: end.x,
+			y2: end.y,
+			width: stroke.width,
+			color: stroke.color,
+		});
+	});
+
+	return edges;
 };
 
 const imagePlacement = (image: ShapeImageJSON): PagePreviewImage | null => {
@@ -372,10 +406,13 @@ export const buildPagePreview = (
 
 		const imageJson = toImageJson(shape.image);
 		const image = imageJson ? imagePlacement(imageJson) : null;
+		const strokes = normalizeShapeStrokes(shape.points.length, shape.strokes);
+		const uniform = uniformStroke(strokes);
 
 		panels.push({
 			points,
-			strokeWidth: Math.max(0, shape.strokeWidth),
+			uniformStroke: uniform,
+			edges: uniform ? [] : toPreviewEdges(shape.points, strokes),
 			// Con imagen el panel va encima solo como borde (fill transparente).
 			whiteFill: Boolean(shape.whiteFill) && !image,
 			image,

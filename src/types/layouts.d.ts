@@ -1,13 +1,17 @@
-import type { PagePoint, ShapeImageJSON } from '@/types/page';
+import type { PagePoint, ShapeImageJSON, ShapeStroke } from '@/types/page';
 
-/** Geometría de panel en un layout (el stroke vive en la capa). */
+/**
+ * Geometría de panel en un layout. `strokes` es opcional: los layouts
+ * antiguos heredan el stroke de la capa en cada arista.
+ */
 export type LayoutShapeJSON = {
 	id: string;
 	points: PagePoint[];
+	strokes?: ShapeStroke[];
 	image: ShapeImageJSON | null;
 };
 
-/** Una capa: grid, márgenes y stroke propios. */
+/** Una capa: grid, márgenes y stroke por defecto para paneles nuevos. */
 export type LayoutLayerJSON = {
 	name?: string;
 	visible?: boolean;
@@ -19,6 +23,7 @@ export type LayoutLayerJSON = {
 	marginBottom?: number;
 	marginLeft?: number;
 	strokeWidth?: number;
+	strokeColor?: string;
 };
 
 /**

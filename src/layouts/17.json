@@ -24,6 +24,24 @@
               "y": 2562
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         },
         {
@@ -44,6 +62,24 @@
             {
               "x": 18,
               "y": 634.125
+            }
+          ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
             }
           ],
           "image": null
@@ -68,6 +104,24 @@
               "y": 18
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         },
         {
@@ -88,6 +142,24 @@
             {
               "x": 691.6,
               "y": 634.125
+            }
+          ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
             }
           ],
           "image": null
@@ -112,6 +184,24 @@
               "y": 654
             }
           ],
+          "strokes": [
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            },
+            {
+              "width": 5,
+              "color": "#111111"
+            }
+          ],
           "image": null
         }
       ],
@@ -121,7 +211,8 @@
       "marginRight": 18,
       "marginBottom": 18,
       "marginLeft": 18,
-      "strokeWidth": 5
+      "strokeWidth": 5,
+      "strokeColor": "#111111"
     }
   ]
 }

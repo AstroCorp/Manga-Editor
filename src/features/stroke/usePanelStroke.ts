@@ -38,7 +38,7 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 	const editorStore = useEditorStore();
 	const mangaStore = useMangaStore();
 	const { showGridGuides } = storeToRefs(editorStore);
-	const { layout, strokeWidth, shapes } = storeToRefs(mangaStore);
+	const { layout, strokeWidth, strokeColor, shapes } = storeToRefs(mangaStore);
 
 	// path = puntos de rejilla ya clicados (fuente de verdad del trazo).
 	const path = shallowRef<GridPoint[]>([]);
@@ -226,7 +226,7 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 
 		const line = new Polyline(points, {
 			fill: 'transparent',
-			stroke: DRAFT_STROKE_COLOR,
+			stroke: strokeColor.value || DRAFT_STROKE_COLOR,
 			strokeWidth: strokeWidth.value,
 			selectable: false,
 			evented: false,
@@ -355,7 +355,7 @@ export const usePanelStroke = (fabricCanvas: ShallowRef<Canvas | null>) => {
 		path.value = [];
 
 		// Shape de dominio → store (Page) + Polygon Fabric.
-		const shape = Shape.create(points, strokeWidth.value);
+		const shape = Shape.create(points, strokeWidth.value, strokeColor.value);
 
 		mangaStore.addShape(shape);
 

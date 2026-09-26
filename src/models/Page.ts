@@ -20,6 +20,8 @@ import type {
 	PageRotateDirection,
 	PageValue,
 	ResetLayerOptions,
+	ShapeStroke,
+	ShapeStrokePatch,
 	TextBlockPatch,
 } from '@/types/page';
 
@@ -140,7 +142,11 @@ export class Page {
 		}
 
 		if (options?.strokeWidth != null) {
-			defaultLayer.strokeWidth = options.strokeWidth;
+			defaultLayer.setStrokeWidth(options.strokeWidth);
+		}
+
+		if (options?.strokeColor != null) {
+			defaultLayer.setStrokeColor(options.strokeColor);
 		}
 
 		if (options?.margins) {
@@ -189,6 +195,7 @@ export class Page {
 		const nextCols = layer.gridRows;
 		const nextRows = layer.gridCols;
 		const strokeWidth = layer.strokeWidth;
+		const strokeColor = layer.strokeColor;
 
 		this.width = clampPageSize(nextWidth);
 		this.height = clampPageSize(nextHeight);
@@ -197,6 +204,7 @@ export class Page {
 			gridRows: nextRows,
 			margins: nextMargins,
 			strokeWidth,
+			strokeColor,
 		});
 	}
 
@@ -329,6 +337,25 @@ export class Page {
 
 	setActiveLayerStrokeWidth(width: number) {
 		this.getActiveLayer().setStrokeWidth(width);
+	}
+
+	setActiveLayerStrokeColor(color: string) {
+		this.getActiveLayer().setStrokeColor(color);
+	}
+
+	/** Aplica `stroke` a todas las aristas de todos los paneles de la página. */
+	applyStrokeToAllShapes(stroke: ShapeStroke) {
+		for (const layer of this.layers) {
+			layer.applyStrokeToShapes(stroke);
+		}
+	}
+
+	setShapeEdgeStroke(
+		shapeId: string,
+		edgeIndex: number,
+		patch: ShapeStrokePatch,
+	): boolean {
+		return this.getActiveLayer().setShapeEdgeStroke(shapeId, edgeIndex, patch);
 	}
 
 	addShape(shape: Shape) {
