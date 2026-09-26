@@ -3,6 +3,9 @@ import type { CanvasFeature } from '@/features/types';
 import { toStageCoords } from '@/features/toStageCoords';
 import TextColorToolbar from '@/features/text-color/components/TextColorToolbar.vue';
 import { useTextColorToolbar } from '@/features/text-color/useTextColorToolbar';
+import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
+import { useEditorStore } from '@/stores/editor';
+import { useElementInspectorStore } from '@/stores/elementInspector';
 
 export const textColorFeature: CanvasFeature = {
 	install(ctx) {
@@ -15,6 +18,55 @@ export const textColorFeature: CanvasFeature = {
 
 		ctx.actions.register({
 			clearTextColorMenu: api.clearMenu,
+		});
+
+		useElementInspectorStore().bindText({
+			elementId: api.elementId,
+			colors: api.colors,
+			strokeColors: api.strokeColors,
+			bold: api.bold,
+			italic: api.italic,
+			underline: api.underline,
+			linethrough: api.linethrough,
+			fontSize: api.fontSize,
+			dominantFontSize: api.dominantFontSize,
+			fontFamily: api.fontFamily,
+			dominantFontFamily: api.dominantFontFamily,
+			strokeWidth: api.strokeWidth,
+			dominantStrokeWidth: api.dominantStrokeWidth,
+			lineHeight: api.lineHeight,
+			dominantLineHeight: api.dominantLineHeight,
+			textAlign: api.textAlign,
+			hasBox: api.hasBox,
+			boxFill: api.boxFill,
+			boxStroke: api.boxStroke,
+			boxStrokeWidth: api.boxStrokeWidth,
+			boxCornerRadius: api.boxCornerRadius,
+			boxPadding: api.boxPadding,
+			boxWidth: api.boxWidth,
+			boxHeight: api.boxHeight,
+			boxVerticalAlign: api.boxVerticalAlign,
+			setColor: api.setColor,
+			setStrokeColor: api.setStrokeColor,
+			toggleBold: api.toggleBold,
+			toggleItalic: api.toggleItalic,
+			toggleUnderline: api.toggleUnderline,
+			toggleLinethrough: api.toggleLinethrough,
+			setFontSize: api.setFontSize,
+			setFontFamily: api.setFontFamily,
+			setStrokeWidth: api.setStrokeWidth,
+			setLineHeight: api.setLineHeight,
+			setTextAlign: api.setTextAlign,
+			setBoxFill: api.setBoxFill,
+			setBoxStroke: api.setBoxStroke,
+			setBoxStrokeWidth: api.setBoxStrokeWidth,
+			setBoxCornerRadius: api.setBoxCornerRadius,
+			setBoxPadding: api.setBoxPadding,
+			setBoxWidth: api.setBoxWidth,
+			setBoxHeight: api.setBoxHeight,
+			setBoxVerticalAlign: api.setBoxVerticalAlign,
+			alignToPage: api.alignToPage,
+			deleteText: api.deleteText,
 		});
 
 		ctx.addOverlay({
@@ -81,6 +133,9 @@ export const textColorFeature: CanvasFeature = {
 				) => unknown,
 				alignToPage: api.alignToPage as (...args: never[]) => unknown,
 				deleteText: api.deleteText,
+				showOptions: () => {
+					useEditorStore().openSidebarTab(SIDEBAR_TAB.Element);
+				},
 			},
 		});
 	},

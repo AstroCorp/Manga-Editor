@@ -113,6 +113,7 @@ export const useTextColorToolbar = ({
 	const boxVerticalAlign = shallowRef<TextBoxVerticalAlign>(
 		DEFAULT_TEXT_BOX.verticalAlign,
 	);
+	const textId = shallowRef<string | null>(null);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
 
@@ -121,6 +122,7 @@ export const useTextColorToolbar = ({
 	});
 
 	const clearMenu = () => {
+		textId.value = null;
 		colors.value = [DEFAULT_TEXT_FILL];
 		strokeColors.value = [DEFAULT_TEXT_STROKE];
 		bold.value = DEFAULT_FLAGS.bold;
@@ -216,13 +218,17 @@ export const useTextColorToolbar = ({
 		const active = getActiveText();
 		const textbox = active ? getPageTextbox(active) : null;
 
-		if (!canvas || !active || !textbox || !getTextId(active)) {
+		const activeTextId = active ? getTextId(active) : null;
+
+		if (!canvas || !active || !textbox || !activeTextId) {
 			clearMenu();
 
 			return;
 		}
 
 		const anchor = getObjectOverlayAnchor(active);
+
+		textId.value = activeTextId;
 
 		colors.value = collectTextColors(textbox);
 		strokeColors.value = collectTextStrokeColors(textbox);
@@ -526,6 +532,7 @@ export const useTextColorToolbar = ({
 		boxVerticalAlign,
 		position,
 		placement,
+		elementId: textId,
 		setColor,
 		setStrokeColor,
 		toggleBold,

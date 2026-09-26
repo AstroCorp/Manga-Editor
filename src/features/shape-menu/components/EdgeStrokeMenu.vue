@@ -6,7 +6,9 @@ import NumberInput from '@/components/ui/NumberInput.vue';
 import { MAX_STROKE_WIDTH, MIN_STROKE_WIDTH } from '@/lib/page/pageLimits';
 import type { EdgeStrokeMenuEmits, EdgeStrokeMenuProps } from '@/types/panel';
 
-const props = defineProps<EdgeStrokeMenuProps>();
+const props = withDefaults(defineProps<EdgeStrokeMenuProps>(), {
+	embedded: false,
+});
 
 const emit = defineEmits<EdgeStrokeMenuEmits>();
 
@@ -78,8 +80,9 @@ const onWidthUpdate = (index: number, width: number) => {
 </script>
 
 <template>
-	<div ref="root" class="relative">
+	<div ref="root" :class="props.embedded ? undefined : 'relative'">
 		<button
+			v-if="!props.embedded"
 			type="button"
 			role="menuitem"
 			class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:bg-blue-50 focus-visible:text-blue-600 dark:focus-visible:bg-blue-950 dark:focus-visible:text-blue-400"
@@ -98,13 +101,18 @@ const onWidthUpdate = (index: number, width: number) => {
 		</button>
 
 		<div
-			v-if="open"
-			class="absolute top-full left-0 z-40 mt-1 w-max min-w-60 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+			v-if="props.embedded || open"
+			:class="
+				props.embedded
+					? undefined
+					: 'absolute top-full left-0 z-40 mt-1 w-max min-w-60 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40'
+			"
 			role="group"
 			aria-label="Edge strokes"
 			@keydown.escape.prevent="close"
 		>
 			<div
+				v-if="!props.embedded"
 				class="flex items-center justify-between border-b border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 dark:border-zinc-700 dark:text-slate-400"
 			>
 				<span class="font-medium text-slate-700 dark:text-slate-200">

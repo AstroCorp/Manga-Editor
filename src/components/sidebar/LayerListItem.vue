@@ -30,6 +30,7 @@ const emit = defineEmits<{
 	toggleVisible: [];
 	toggleExpand: [];
 	focusElement: [kind: LayerElementKind, id: string];
+	showOptions: [kind: LayerElementKind, id: string];
 	deleteElement: [kind: LayerElementKind, id: string];
 	dragstart: [event: DragEvent];
 	dragover: [event: DragEvent];
@@ -270,6 +271,16 @@ const isFocused = (kind: LayerElementKind, id: string) => {
 					>
 						{{ element.label }}
 					</span>
+				</button>
+				<button
+					type="button"
+					class="inline-flex size-6 shrink-0 items-center justify-center rounded text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+					:aria-label="`Show options for ${element.label}`"
+					title="Show options"
+					@click.stop="$emit('showOptions', element.kind, element.id)"
+					@mousedown.stop
+				>
+					<Icon icon="fluent:panel-left-24-regular" class="size-3.5" />
 				</button>
 				<button
 					type="button"

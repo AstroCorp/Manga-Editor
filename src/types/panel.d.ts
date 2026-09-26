@@ -96,10 +96,13 @@ export type ShapeActionMenuEmits = {
 	previewEdgeStroke: [edgeIndex: number, patch: ShapeStrokePatch];
 	/** Fila de arista bajo el cursor o el foco; `null` al salir. */
 	hoverEdge: [edgeIndex: number | null];
+	showOptions: [];
 };
 
 export type EdgeStrokeMenuProps = {
 	strokes: ShapeStroke[];
+	/** Lista siempre visible, sin el botón desplegable de la toolbar. */
+	embedded?: boolean;
 };
 
 export type EdgeStrokeMenuEmits = Pick<
@@ -159,4 +162,5 @@ export type TextColorToolbarEmits = {
 	setBoxVerticalAlign: [verticalAlign: TextBoxVerticalAlign];
 	alignToPage: [anchor: PageTextAnchor];
 	deleteText: [];
+	showOptions: [];
 };

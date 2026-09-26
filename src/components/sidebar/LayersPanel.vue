@@ -26,6 +26,7 @@ const {
 	toggleVisible,
 	renameLayer,
 	focusElement,
+	showElementOptions,
 	deleteElement,
 	onDragStart,
 	onDragOver,
@@ -86,6 +87,9 @@ const {
 					@toggle-expand="toggleExpand(layer.id)"
 					@focus-element="
 						(kind, id) => focusElement(layer.id, kind, id)
+					"
+					@show-options="
+						(kind, id) => showElementOptions(layer.id, kind, id)
 					"
 					@delete-element="
 						(kind, id) => deleteElement(layer.id, kind, id)

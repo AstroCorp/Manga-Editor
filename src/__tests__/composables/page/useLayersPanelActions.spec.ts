@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
 import { useLayersPanelActions } from '@/composables/page/useLayersPanelActions';
+import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
 import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
 import { useEditorStore } from '@/stores/editor';
 import { useHistoryStore } from '@/stores/history';
@@ -202,5 +203,34 @@ describe('useLayersPanelActions', () => {
 			kind: 'text',
 			id: 'text-1',
 		});
+	});
+
+	it('opens the element panel when showing options for an element', () => {
+		const mangaStore = useMangaStore();
+		const editorStore = useEditorStore();
+		const focusLayerElement = vi.fn();
+		const { showElementOptions } = useLayersPanelActions();
+		const layerId = mangaStore.activeLayer.id;
+
+		editorStore.registerCanvas({
+			cancelStroke: vi.fn(),
+			exportDataUrl: vi.fn(() => null),
+			resetZoomView: vi.fn(),
+			syncCanvasOffset: vi.fn(),
+			addSimpleText: vi.fn(),
+			addBoxedText: vi.fn(),
+			addRoundedBoxedText: vi.fn(),
+			focusLayerElement,
+			deleteLayerElement: vi.fn(),
+		});
+
+		showElementOptions(layerId, 'text', 'text-9');
+
+		expect(focusLayerElement).toHaveBeenCalledExactlyOnceWith({
+			layerId,
+			kind: 'text',
+			id: 'text-9',
+		});
+		expect(editorStore.sidebarTab).toBe(SIDEBAR_TAB.Element);
 	});
 });

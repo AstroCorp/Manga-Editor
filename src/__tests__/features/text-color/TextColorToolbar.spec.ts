@@ -505,4 +505,19 @@ describe('TextColorToolbar', () => {
 		expect(wrapper.find('[aria-label="Box format"]').exists()).toBe(false);
 		expect(wrapper.get('[aria-label="Text format"]').exists()).toBe(true);
 	});
+
+	it('emits showOptions from the element options button', async () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Show element options"]').trigger('click');
+
+		expect(wrapper.emitted('showOptions')).toHaveLength(1);
+	});
 });

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
+import { storeToRefs } from 'pinia';
 import ConfigPanel from '@/components/sidebar/ConfigPanel.vue';
+import ElementPanel from '@/components/sidebar/ElementPanel.vue';
 import LayoutsPanel from '@/components/sidebar/LayoutsPanel.vue';
 import LayersPanel from '@/components/sidebar/LayersPanel.vue';
 import TextsPanel from '@/components/sidebar/TextsPanel.vue';
 import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
-import type { SidebarTab, SidebarTabDef } from '@/types/sidebar';
+import { useEditorStore } from '@/stores/editor';
+import type { SidebarTabDef } from '@/types/sidebar';
 
 const tabs: SidebarTabDef[] = [
 	{
@@ -33,9 +36,16 @@ const tabs: SidebarTabDef[] = [
 		icon: 'fluent:text-font-24-regular',
 		panel: TextsPanel,
 	},
+	{
+		id: SIDEBAR_TAB.Element,
+		label: 'Element',
+		icon: 'fluent:options-24-regular',
+		panel: ElementPanel,
+	},
 ];
 
-const activeTab = ref<SidebarTab | null>(SIDEBAR_TAB.Config);
+const editorStore = useEditorStore();
+const { sidebarTab: activeTab } = storeToRefs(editorStore);
 
 const activeTabDef = computed(() => {
 	return tabs.find((tab) => tab.id === activeTab.value) ?? null;
@@ -45,12 +55,12 @@ const panelTitle = computed(() => {
 	return activeTabDef.value?.label ?? '';
 });
 
-const selectTab = (tab: SidebarTab) => {
-	activeTab.value = activeTab.value === tab ? null : tab;
+const selectTab = (tab: (typeof tabs)[number]['id']) => {
+	editorStore.toggleSidebarTab(tab);
 };
 
 const closePanel = () => {
-	activeTab.value = null;
+	editorStore.closeSidebar();
 };
 </script>
 

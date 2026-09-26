@@ -431,6 +431,7 @@ export const useShapeActionMenu = ({
 		strokes,
 		position,
 		placement,
+		elementId: panelId,
 		deleteShape,
 		clearImage,
 		placeImage,

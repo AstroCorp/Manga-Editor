@@ -3,6 +3,9 @@ import type { CanvasFeature } from '@/features/types';
 import { toStageCoords } from '@/features/toStageCoords';
 import ShapeActionMenu from '@/features/shape-menu/components/ShapeActionMenu.vue';
 import { useShapeActionMenu } from '@/features/shape-menu/useShapeActionMenu';
+import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
+import { useEditorStore } from '@/stores/editor';
+import { useElementInspectorStore } from '@/stores/elementInspector';
 
 export const shapeMenuFeature: CanvasFeature = {
 	install(ctx) {
@@ -13,6 +16,28 @@ export const shapeMenuFeature: CanvasFeature = {
 
 		ctx.actions.register({
 			clearShapeMenu: api.clearMenu,
+		});
+
+		useElementInspectorStore().bindShape({
+			elementId: api.elementId,
+			hasImage: api.hasImage,
+			isGrayscale: api.isGrayscale,
+			isFlipX: api.isFlipX,
+			isFlipY: api.isFlipY,
+			whiteFill: api.whiteFill,
+			strokes: api.strokes,
+			deleteShape: api.deleteShape,
+			clearImage: api.clearImage,
+			placeImage: (file) => {
+				void api.placeImage(file);
+			},
+			toggleGrayscale: api.toggleGrayscale,
+			toggleFlipX: api.toggleFlipX,
+			toggleFlipY: api.toggleFlipY,
+			toggleWhiteFill: api.toggleWhiteFill,
+			setEdgeStroke: api.setEdgeStroke,
+			previewEdgeStroke: api.previewEdgeStroke,
+			highlightEdge: api.highlightEdge,
 		});
 
 		ctx.addOverlay({
@@ -48,6 +73,9 @@ export const shapeMenuFeature: CanvasFeature = {
 					...args: never[]
 				) => unknown,
 				hoverEdge: api.highlightEdge as (...args: never[]) => unknown,
+				showOptions: () => {
+					useEditorStore().openSidebarTab(SIDEBAR_TAB.Element);
+				},
 			},
 		});
 	},

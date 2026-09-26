@@ -62,6 +62,22 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(store.zoomPercent).toBe(DEFAULT_ZOOM_PERCENT);
 	});
 
+	it('opens, toggles and closes the sidebar tab', () => {
+		const store = useEditorStore();
+
+		expect(store.sidebarTab).toBe('config');
+
+		store.openSidebarTab('element');
+		expect(store.sidebarTab).toBe('element');
+
+		store.toggleSidebarTab('element');
+		expect(store.sidebarTab).toBeNull();
+
+		store.openSidebarTab('layers');
+		store.closeSidebar();
+		expect(store.sidebarTab).toBeNull();
+	});
+
 	it('registerCanvas wires cancelStroke and zoom actions', () => {
 		const store = useEditorStore();
 		const cancelStroke = vi.fn();

@@ -26,4 +26,5 @@ export const SIDEBAR_TAB = {
 	Layouts: 'layouts',
 	Layers: 'layers',
 	Texts: 'texts',
+	Element: 'element',
 } as const satisfies Record<string, SidebarTab>;

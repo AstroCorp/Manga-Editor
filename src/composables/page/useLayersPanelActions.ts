@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { toast } from 'vue3-toastify';
+import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
 import { setDragMoveEffect } from '@/lib/ui/setDragMoveEffect';
 import { normalizeNameKey } from '@/lib/ui/uniqueName';
@@ -177,6 +178,15 @@ export const useLayersPanelActions = () => {
 		editorStore.focusLayerElement({ layerId, kind, id });
 	};
 
+	const showElementOptions = (
+		layerId: string,
+		kind: LayerElementKind,
+		id: string,
+	) => {
+		focusElement(layerId, kind, id);
+		editorStore.openSidebarTab(SIDEBAR_TAB.Element);
+	};
+
 	const deleteElement = (
 		layerId: string,
 		kind: LayerElementKind,
@@ -243,6 +253,7 @@ export const useLayersPanelActions = () => {
 		toggleVisible,
 		renameLayer,
 		focusElement,
+		showElementOptions,
 		deleteElement,
 		onDragStart,
 		onDragOver,

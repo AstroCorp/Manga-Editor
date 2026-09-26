@@ -34,6 +34,19 @@ describe('EdgeStrokeMenu', () => {
 		).toBe('true');
 	});
 
+	it('lists every edge when embedded in the element panel', () => {
+		const wrapper = mount(EdgeStrokeMenu, {
+			props: { strokes, embedded: true },
+		});
+
+		expect(wrapper.find('button[aria-label="Edge strokes"]').exists()).toBe(
+			false,
+		);
+		expect(wrapper.get('[data-testid="edge-stroke-list"]').findAll('li')).toHaveLength(
+			3,
+		);
+	});
+
 	it('opens downward from the toolbar button', async () => {
 		const wrapper = mount(EdgeStrokeMenu, {
 			props: { strokes },

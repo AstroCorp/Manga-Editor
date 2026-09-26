@@ -1,6 +1,6 @@
 import type { Component } from 'vue';
 
-export type SidebarTab = 'config' | 'layouts' | 'layers' | 'texts';
+export type SidebarTab = 'config' | 'layouts' | 'layers' | 'texts' | 'element';
 
 export type SidebarTabDef = {
 	id: SidebarTab;

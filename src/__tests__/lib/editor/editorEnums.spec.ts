@@ -14,4 +14,8 @@ describe('editorEnums', () => {
 	it('exposes the texts sidebar tab', () => {
 		expect(SIDEBAR_TAB.Texts).toBe('texts');
 	});
+
+	it('exposes the element sidebar tab', () => {
+		expect(SIDEBAR_TAB.Element).toBe('element');
+	});
 });

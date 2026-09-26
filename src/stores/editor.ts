@@ -17,10 +17,13 @@ import {
 	ZOOM_STEP_PERCENT,
 	clampZoomPercent,
 } from '@/lib/zoom';
+import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
+import { useElementInspectorStore } from '@/stores/elementInspector';
 import { useLayoutsStore } from '@/stores/layouts';
 import { useMangaStore } from '@/stores/manga';
 import type { CanvasActions, ExportImageFormat, LayerElementFocusPayload, ZipDataUrlEntry } from '@/types/editor';
 import type { LayoutJSON } from '@/types/layouts';
+import type { SidebarTab } from '@/types/sidebar';
 import type { Page } from '@/models/Page';
 
 const warnHiddenLayersIfNeeded = (pages: readonly Page[]) => {
@@ -40,6 +43,7 @@ const warnHiddenLayersIfNeeded = (pages: readonly Page[]) => {
 export const useEditorStore = defineStore('editor', () => {
 	const showGridGuides = ref(true);
 	const zoomPercent = ref(DEFAULT_ZOOM_PERCENT);
+	const sidebarTab = ref<SidebarTab | null>(SIDEBAR_TAB.Config);
 
 	/** Stubs seguros hasta que EditorCanvas registre las acciones reales. */
 	const createCanvasActionStubs = (): CanvasActions => {
@@ -65,6 +69,19 @@ export const useEditorStore = defineStore('editor', () => {
 	/** Suelta closures del canvas desmontado (tests, HMR, remount). */
 	const unregisterCanvas = () => {
 		Object.assign(canvasActions, createCanvasActionStubs());
+		useElementInspectorStore().clear();
+	};
+
+	const openSidebarTab = (tab: SidebarTab) => {
+		sidebarTab.value = tab;
+	};
+
+	const toggleSidebarTab = (tab: SidebarTab) => {
+		sidebarTab.value = sidebarTab.value === tab ? null : tab;
+	};
+
+	const closeSidebar = () => {
+		sidebarTab.value = null;
 	};
 
 	const toggleGridGuides = () => {
@@ -180,6 +197,10 @@ export const useEditorStore = defineStore('editor', () => {
 	return {
 		showGridGuides,
 		zoomPercent,
+		sidebarTab,
+		openSidebarTab,
+		toggleSidebarTab,
+		closeSidebar,
 		toggleGridGuides,
 		setZoomPercent,
 		zoomIn,
