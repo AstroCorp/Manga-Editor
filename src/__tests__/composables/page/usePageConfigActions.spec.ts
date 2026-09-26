@@ -117,4 +117,19 @@ describe('useLayerConfigActions', () => {
 
 		expect(strokeWidth.value).toBe(4);
 	});
+
+	it('normalizes the stroke color and ignores values that do not change it', () => {
+		const { strokeColor } = useActivePageLayout();
+		const { setStrokeColor } = useLayerConfigActions();
+		const previous = strokeColor.value;
+
+		setStrokeColor('not-a-color');
+		expect(strokeColor.value).toBe(previous);
+
+		setStrokeColor('#ABCDEF');
+		expect(strokeColor.value).toBe('#abcdef');
+
+		setStrokeColor('#abcdef');
+		expect(strokeColor.value).toBe('#abcdef');
+	});
 });

@@ -34,7 +34,18 @@ Vue 3 + Pinia + Fabric.js v7 + Tailwind v4 + Vitest. Usar **pnpm**. Shell: Power
 
 ## Verificación antes de terminar
 
-```powershell
+1. Limpiar código muerto o en desuso que haya dejado el cambio (exports, helpers, props, tipos, imports, specs huérfanos) **antes** de ejecutar los tests:
+
+```
+pnpm dlx knip --reporter compact
+pnpm exec vue-tsc --noEmit --pretty false --noUnusedLocals --noUnusedParameters -p tsconfig.app.json
+```
+
+   Ignorar el aviso de knip sobre `ACCENT_COLOR`/`GUIDE_STROKE_COLOR` (alias intencional) y los avisos de `vue-tsc` sobre refs usadas solo en plantilla (`ref="..."`).
+
+2. Tests y type check:
+
+```
 pnpm exec vitest run <specs afectados>   # o sin argumentos si el cambio es transversal
 pnpm exec vue-tsc --build --force
 ```
