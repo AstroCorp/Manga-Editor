@@ -362,8 +362,47 @@ export const useShapeActionMenu = ({
 	};
 
 	/**
+	 * Color que el picker puede volver a emitir al cerrarse justo después de
+	 * quitar el relleno. Se descarta una sola vez.
+	 */
+	let fillEcho: string | null = null;
+	let fillEchoTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const clearFillEcho = () => {
+		fillEcho = null;
+
+		if (fillEchoTimer !== null) {
+			clearTimeout(fillEchoTimer);
+			fillEchoTimer = null;
+		}
+	};
+
+	const armFillEcho = (color: string) => {
+		clearFillEcho();
+		fillEcho = color.toLowerCase();
+		fillEchoTimer = setTimeout(() => {
+			fillEcho = null;
+			fillEchoTimer = null;
+		}, 400);
+	};
+
+	const consumeFillEcho = (color: string): boolean => {
+		if (!fillEcho || color.toLowerCase() !== fillEcho) {
+			clearFillEcho();
+
+			return false;
+		}
+
+		clearFillEcho();
+
+		return true;
+	};
+
+	/**
 	 * Cambia el relleno en el store y en el polígono Fabric. `record`
 	 * distingue el arrastre del color picker (sin historial) del valor final.
+	 * El canvas sigue al dominio aunque no haya entrada de historial (preview
+	 * revertida al valor anterior).
 	 */
 	const applyFill = (next: string | null, record: boolean) => {
 		const canvas = fabricCanvas.value;
@@ -376,33 +415,53 @@ export const useShapeActionMenu = ({
 		const changed = record
 			? mangaStore.setShapeFill(id, next)
 			: mangaStore.previewShapeFill(id, next);
-
-		if (!changed) {
-			return;
-		}
-
+		const shape = mangaStore.shapes.find((item) => {
+			return item.id === id;
+		});
 		const panel = findPanelById(canvas, id);
 
 		if (panel) {
 			panel.set({
-				fill: panelFillColor(next, { hasImage: hasImage.value }),
+				fill: panelFillColor(shape?.fill ?? null, {
+					hasImage: Boolean(shape?.image),
+				}),
 			});
 		}
 
-		onChanged?.();
+		if (changed) {
+			onChanged?.();
+		}
+
 		canvas.requestRenderAll();
 		refreshMenu();
 	};
 
 	const toggleFill = () => {
-		applyFill(fill.value === null ? DEFAULT_PANEL_FILL : null, true);
+		if (fill.value !== null) {
+			armFillEcho(fill.value);
+			applyFill(null, true);
+
+			return;
+		}
+
+		clearFillEcho();
+		applyFill(DEFAULT_PANEL_FILL, true);
 	};
 
 	const setFillColor = (color: string) => {
+		if (consumeFillEcho(color)) {
+			return;
+		}
+
 		applyFill(color, true);
 	};
 
 	const previewFillColor = (color: string) => {
+		if (fillEcho && color.toLowerCase() === fillEcho) {
+			return;
+		}
+
+		clearFillEcho();
 		applyFill(color, false);
 	};
 
@@ -436,6 +495,7 @@ export const useShapeActionMenu = ({
 			bindCanvasEvents(canvas);
 
 			onCleanup(() => {
+				clearFillEcho();
 				unbindCanvasEvents(canvas);
 				clearMenu();
 			});

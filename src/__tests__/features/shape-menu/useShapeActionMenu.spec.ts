@@ -192,6 +192,60 @@ describe('useShapeActionMenu', () => {
 		expect(history.entries).toHaveLength(entriesBefore + 3);
 	});
 
+	it('drops a custom fill preview and ignores the color picker closing afterwards', () => {
+		const mangaStore = useMangaStore();
+		const history = useHistoryStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+			],
+			2,
+		);
+
+		mangaStore.addShape(shape);
+
+		const { panel, panelState } = createPanelMock(shape.id);
+		const handlers: Record<string, () => void> = {};
+		const canvas = {
+			on: (event: string, handler: () => void) => {
+				handlers[event] = handler;
+			},
+			off: vi.fn(),
+			getActiveObject: () => {
+				return panel as unknown as FabricObject;
+			},
+			getObjects: () => {
+				return [panel as unknown as FabricObject];
+			},
+			requestRenderAll: vi.fn(),
+		} as unknown as Canvas;
+
+		const api = useShapeActionMenu({
+			fabricCanvas: shallowRef<Canvas | null>(canvas),
+			onChanged: vi.fn(),
+		});
+
+		handlers['selection:created']?.();
+		api.previewFillColor('#ff2200');
+
+		const entriesBefore = history.entries.length;
+
+		api.toggleFill();
+
+		expect(shape.fill).toBeNull();
+		expect(api.fill.value).toBeNull();
+		expect(panelState.fill).toBe(panelFillColor(null));
+		expect(history.entries).toHaveLength(entriesBefore);
+
+		api.previewFillColor('#FF2200');
+		api.setFillColor('#ff2200');
+
+		expect(shape.fill).toBeNull();
+		expect(panelState.fill).toBe(panelFillColor(null));
+	});
+
 	it('toggleFill keeps transparent fabric fill when panel has image', () => {
 		const mangaStore = useMangaStore();
 		const shape = Shape.create(
