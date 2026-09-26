@@ -5,7 +5,7 @@ import LayerListItem from '@/components/sidebar/LayerListItem.vue';
 import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { useLayersPanelActions } from '@/composables/page/useLayersPanelActions';
 
-const { pageSize } = useActivePageLayout();
+const { pageSize, pageBackground } = useActivePageLayout();
 
 const {
 	displayLayers,
@@ -71,6 +71,7 @@ const {
 					:can-remove="canRemove"
 					:width="pageSize.width"
 					:height="pageSize.height"
+					:background-color="pageBackground"
 					:shapes="layer.shapes"
 					:texts="layer.texts"
 					:expanded="isLayerExpanded(layer.id)"

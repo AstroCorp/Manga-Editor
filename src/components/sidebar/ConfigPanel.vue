@@ -16,14 +16,22 @@ import {
 } from '@/lib/page/pageLimits';
 import type { PageMarginSide } from '@/types/page';
 
-const { pageSize, gridSize, margins, strokeWidth, strokeColor, activeLayer } =
-	useActivePageLayout();
+const {
+	pageSize,
+	pageBackground,
+	gridSize,
+	margins,
+	strokeWidth,
+	strokeColor,
+	activeLayer,
+} = useActivePageLayout();
 
 const {
 	pendingRotate,
 	rotateMessage,
 	setWidth,
 	setHeight,
+	setBackgroundColor,
 	requestRotate,
 	cancelRotate,
 	confirmRotate,
@@ -47,6 +55,10 @@ const onMarginUpdate = (side: PageMarginSide, value: number) => {
 
 const onStrokeColorChange = (event: Event) => {
 	setStrokeColor((event.target as HTMLInputElement).value);
+};
+
+const onBackgroundColorChange = (event: Event) => {
+	setBackgroundColor((event.target as HTMLInputElement).value);
 };
 </script>
 
@@ -90,6 +102,28 @@ const onStrokeColorChange = (event: Event) => {
 					decrease-label="Decrease page height"
 					@update:model-value="setHeight"
 				/>
+			</label>
+			<label
+				class="flex min-h-9 cursor-pointer items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Background</span>
+				<span
+					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200 dark:hover:border-blue-500/50"
+				>
+					<span
+						class="size-5 rounded-sm border border-slate-300 shadow-sm dark:border-zinc-600"
+						:style="{ background: pageBackground }"
+						aria-hidden="true"
+					/>
+					<span data-testid="page-background-value">{{ pageBackground }}</span>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="pageBackground"
+						aria-label="Page background color"
+						@change="onBackgroundColorChange"
+					/>
+				</span>
 			</label>
 			<div
 				class="flex items-center justify-between gap-3"

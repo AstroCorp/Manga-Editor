@@ -294,6 +294,32 @@ describe('useEditorStore selection and zoom bridge', () => {
 		expect(downloadBlob).not.toHaveBeenCalled();
 	});
 
+	it('exports and imports the page background color in the layout JSON', async () => {
+		const store = useEditorStore();
+		const mangaStore = useMangaStore();
+		const downloadText = vi
+			.spyOn(download, 'downloadText')
+			.mockImplementation(() => undefined);
+
+		mangaStore.setActivePageBackgroundColor('#abc');
+		store.exportPageJson();
+
+		const payload = downloadText.mock.calls[0]?.[0];
+
+		expect(payload).toEqual(expect.any(String));
+
+		const exported: unknown = JSON.parse(String(payload));
+
+		expect(exported).toMatchObject({ backgroundColor: '#aabbcc' });
+
+		mangaStore.setActivePageBackgroundColor('#ffffff');
+		await store.importPageJson(
+			new File([String(payload)], 'page.json', { type: 'application/json' }),
+		);
+
+		expect(mangaStore.activePage.backgroundColor).toBe('#aabbcc');
+	});
+
 	it('clamps zoom percent and steps in/out', () => {
 		const store = useEditorStore();
 

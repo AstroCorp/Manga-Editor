@@ -9,6 +9,7 @@ const sampleLayout = (): LayoutJSON => {
 	return {
 		width: 800,
 		height: 1200,
+		backgroundColor: '#ABC',
 		layers: [
 			{
 				shapes: [
@@ -54,7 +55,16 @@ describe('customLayouts', () => {
 			'strokeWidth',
 		);
 		expect(entry.layout.layers[0]?.strokeWidth).toBe(5);
+		expect(entry.layout.backgroundColor).toBe('#aabbcc');
 		expect(entry.layout).not.toHaveProperty('shapes');
+	});
+
+	it('keeps the background absent when the layout does not define one', () => {
+		const layout = sampleLayout();
+
+		delete layout.backgroundColor;
+
+		expect(createCustomLayoutEntry(layout).layout.backgroundColor).toBeUndefined();
 	});
 
 	it('serializer round-trips valid custom layouts', () => {

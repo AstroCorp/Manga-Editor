@@ -1,9 +1,13 @@
 import type { StaticCanvas } from 'fabric';
 import { isGuide, isPanel } from '@/lib/fabric/isGuide';
 import { pageExportCrop } from '@/lib/fabric/pageCanvasLayout';
+import { DEFAULT_PAGE_BACKGROUND } from '@/lib/page/pageLimits';
 import type { ExportImageFormat } from '@/types/editor';
 
-/** Rasteriza el canvas de página: sin guías, paneles transparentes y fondo blanco. */
+/**
+ * Rasteriza el canvas de página: sin guías, paneles transparentes y con el
+ * fondo de la página (blanco si el canvas no tiene ninguno).
+ */
 export const exportCanvasDataUrl = (
 	canvas: StaticCanvas,
 	format: ExportImageFormat,
@@ -27,7 +31,7 @@ export const exportCanvasDataUrl = (
 	});
 
 	const previousBackground = canvas.backgroundColor;
-	canvas.backgroundColor = '#ffffff';
+	canvas.backgroundColor = previousBackground || DEFAULT_PAGE_BACKGROUND;
 
 	try {
 		return canvas.toDataURL({

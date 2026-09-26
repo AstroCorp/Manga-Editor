@@ -77,4 +77,31 @@ describe('exportCanvasDataUrl', () => {
 		expect(canvas.backgroundColor).toBe('');
 		expect(requestRenderAll).toHaveBeenCalled();
 	});
+
+	it('keeps the page background color of the canvas', () => {
+		const toDataURL = vi.fn(() => {
+			expect(canvas.backgroundColor).toBe('#204060');
+
+			return 'data:image/png;base64,abc';
+		});
+		const canvas = {
+			backgroundColor: '#204060',
+			getWidth: () => {
+				return 800 + CONTROL_PASTEBOARD * 2;
+			},
+			getHeight: () => {
+				return 1200 + CONTROL_PASTEBOARD * 2;
+			},
+			getObjects: () => {
+				return [] as FabricObject[];
+			},
+			toDataURL,
+			requestRenderAll: vi.fn(),
+		} as unknown as StaticCanvas;
+
+		exportCanvasDataUrl(canvas, EXPORT_IMAGE_FORMAT.Png);
+
+		expect(toDataURL).toHaveBeenCalledOnce();
+		expect(canvas.backgroundColor).toBe('#204060');
+	});
 });

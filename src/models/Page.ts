@@ -1,9 +1,11 @@
 import { createId } from '@/lib/id';
 import {
+	DEFAULT_PAGE_BACKGROUND,
 	DEFAULT_PAGE_HEIGHT,
 	DEFAULT_PAGE_WIDTH,
 	clampPageSize,
 } from '@/lib/page/pageLimits';
+import { normalizeStrokeColor } from '@/lib/page/shapeStrokes';
 import {
 	isSingleLayerLayout,
 	resolveLayoutLayerSources,
@@ -30,6 +32,7 @@ export class Page {
 	public name: string;
 	public width: number;
 	public height: number;
+	public backgroundColor: string;
 	public layers: Layer[];
 	public activeLayerId: string;
 
@@ -38,6 +41,10 @@ export class Page {
 		this.name = value.name;
 		this.width = clampPageSize(value.width);
 		this.height = clampPageSize(value.height);
+		this.backgroundColor = normalizeStrokeColor(
+			value.backgroundColor,
+			DEFAULT_PAGE_BACKGROUND,
+		);
 
 		if (value.layers && value.layers.length > 0) {
 			this.layers = value.layers;
@@ -166,6 +173,19 @@ export class Page {
 
 		this.layers = [defaultLayer];
 		this.activeLayerId = defaultLayer.id;
+	}
+
+	/** Devuelve `false` si el color no es válido o no cambia. */
+	setBackgroundColor(color: string): boolean {
+		const next = normalizeStrokeColor(color, this.backgroundColor);
+
+		if (next === this.backgroundColor) {
+			return false;
+		}
+
+		this.backgroundColor = next;
+
+		return true;
 	}
 
 	/** Al cambiar tamaño se resetea a la capa default (márgenes re-clamp). */
@@ -407,6 +427,13 @@ export class Page {
 		this.width = clampPageSize(data.width);
 		this.height = clampPageSize(data.height);
 
+		if (data.backgroundColor !== undefined) {
+			this.backgroundColor = normalizeStrokeColor(
+				data.backgroundColor,
+				this.backgroundColor,
+			);
+		}
+
 		const sources = resolveLayoutLayerSources(data);
 
 		if (isSingleLayerLayout(data)) {
@@ -445,6 +472,7 @@ export class Page {
 		return {
 			width: this.width,
 			height: this.height,
+			backgroundColor: this.backgroundColor,
 			layers: this.layers.map((layer) => {
 				return {
 					name: layer.name,

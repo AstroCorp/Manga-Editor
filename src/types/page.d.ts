@@ -315,6 +315,8 @@ export type PageValue = {
 	name: string;
 	width: number;
 	height: number;
+	/** Hex `#rrggbb`; por defecto blanco. */
+	backgroundColor?: string;
 	layers?: Layer[];
 	activeLayerId?: string;
 };

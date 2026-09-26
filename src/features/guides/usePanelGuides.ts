@@ -1,7 +1,8 @@
 import { storeToRefs } from 'pinia';
-import { watch, type ShallowRef } from 'vue';
+import { computed, watch, type ShallowRef } from 'vue';
 import type { Canvas } from 'fabric';
 import { createGridGuideImage } from '@/lib/fabric/createGridGuide';
+import { gridGuideDotColor } from '@/lib/fabric/fabricColors';
 import { isGridGuide } from '@/lib/fabric/isGuide';
 import { useMangaStore } from '@/stores/manga';
 import { useEditorStore } from '@/stores/editor';
@@ -10,7 +11,10 @@ export const usePanelGuides = (fabricCanvas: ShallowRef<Canvas | null>) => {
 	const editorStore = useEditorStore();
 	const mangaStore = useMangaStore();
 	const { showGridGuides } = storeToRefs(editorStore);
-	const { layout } = storeToRefs(mangaStore);
+	const { layout, activePage } = storeToRefs(mangaStore);
+	const dotColor = computed(() => {
+		return gridGuideDotColor(activePage.value.backgroundColor);
+	});
 
 	const clearGuides = () => {
 		const canvas = fabricCanvas.value;
@@ -38,7 +42,7 @@ export const usePanelGuides = (fabricCanvas: ShallowRef<Canvas | null>) => {
 		clearGuides();
 
 		if (showGridGuides.value) {
-			const guide = createGridGuideImage(layout.value);
+			const guide = createGridGuideImage(layout.value, dotColor.value);
 
 			canvas.add(guide);
 			canvas.sendObjectToBack(guide);
@@ -47,8 +51,8 @@ export const usePanelGuides = (fabricCanvas: ShallowRef<Canvas | null>) => {
 		canvas.requestRenderAll();
 	};
 
-	// Toggle de guías. Cambio de geometría: applyActivePage → refreshGuides.
-	watch(showGridGuides, () => {
+	// Toggle de guías y fondo de página. Cambio de geometría: applyActivePage → refreshGuides.
+	watch([showGridGuides, dotColor], () => {
 		refreshGuides();
 	});
 

@@ -37,6 +37,34 @@ describe('useMangaStore config layout', () => {
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
+	it('setActivePageBackgroundColor only affects the active page and records history', () => {
+		const store = useMangaStore();
+		const history = useHistoryStore();
+		const firstId = store.activePageId;
+		const entriesBefore = history.entries.length;
+
+		store.addPage();
+		store.setActivePageBackgroundColor('#123456');
+
+		expect(store.activePage.backgroundColor).toBe('#123456');
+		expect(
+			store.pages.find((page) => {
+				return page.id === firstId;
+			})?.backgroundColor,
+		).toBe('#ffffff');
+		expect(history.entries.at(-1)?.label).toContain(
+			HISTORY_LABEL.ChangePageBackground,
+		);
+
+		const entriesAfter = history.entries.length;
+
+		store.setActivePageBackgroundColor('#123456');
+		store.setActivePageBackgroundColor('nope');
+
+		expect(history.entries).toHaveLength(entriesAfter);
+		expect(entriesAfter).toBeGreaterThan(entriesBefore);
+	});
+
 	it('rotateActivePage swaps orientation and resets to default layer', () => {
 		const store = useMangaStore();
 
@@ -288,6 +316,7 @@ describe('useMangaStore config layout', () => {
 
 		expect(layout.layers).toHaveLength(1);
 		expect(layout.layers[0]?.shapes).toEqual([]);
+		expect(layout.backgroundColor).toBe('#ffffff');
 		expect(layout).not.toHaveProperty('shapes');
 		expect(layout).not.toHaveProperty('id');
 		expect(layout).not.toHaveProperty('name');

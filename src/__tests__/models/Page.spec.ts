@@ -5,6 +5,7 @@ import { ShapeImage } from '@/models/ShapeImage';
 import { TextBlock } from '@/models/TextBlock';
 import {
 	DEFAULT_GRID_COLS,
+	DEFAULT_PAGE_BACKGROUND,
 	DEFAULT_PAGE_HEIGHT,
 	DEFAULT_PAGE_WIDTH,
 } from '@/lib/page/pageLimits';
@@ -16,9 +17,47 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(page.name).toBe('Page 1');
 		expect(page.width).toBe(DEFAULT_PAGE_WIDTH);
 		expect(page.height).toBe(DEFAULT_PAGE_HEIGHT);
+		expect(page.backgroundColor).toBe(DEFAULT_PAGE_BACKGROUND);
 		expect(page.layers).toHaveLength(1);
 		expect(page.getActiveLayer().gridCols).toBe(DEFAULT_GRID_COLS);
 		expect(page.getActiveLayer().shapes).toEqual([]);
+	});
+
+	it('keeps the background color per page and survives size/rotation resets', () => {
+		const page = Page.createBlank(1);
+		const other = Page.createBlank(2);
+
+		expect(page.setBackgroundColor('#ABC')).toBe(true);
+		expect(page.backgroundColor).toBe('#aabbcc');
+		expect(other.backgroundColor).toBe(DEFAULT_PAGE_BACKGROUND);
+
+		expect(page.setBackgroundColor('#aabbcc')).toBe(false);
+		expect(page.setBackgroundColor('not-a-color')).toBe(false);
+		expect(page.backgroundColor).toBe('#aabbcc');
+
+		page.setSize(900, 1200);
+		page.rotateOrientation('clockwise');
+
+		expect(page.backgroundColor).toBe('#aabbcc');
+		expect(page.toLayoutJSON().backgroundColor).toBe('#aabbcc');
+	});
+
+	it('applyLayout only overrides the background when the layout defines it', () => {
+		const page = Page.createBlank(1);
+
+		page.setBackgroundColor('#aabbcc');
+		page.applyLayout({ width: 800, height: 1200, layers: [{}] });
+
+		expect(page.backgroundColor).toBe('#aabbcc');
+
+		page.applyLayout({
+			width: 800,
+			height: 1200,
+			backgroundColor: '#112233',
+			layers: [{}],
+		});
+
+		expect(page.backgroundColor).toBe('#112233');
 	});
 
 	it('applies layout JSON to the active layer and exports without images', () => {

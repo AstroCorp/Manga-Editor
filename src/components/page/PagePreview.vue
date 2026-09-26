@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue';
 import { ensureTextFontsLoaded } from '@/lib/fonts/loadGoogleFont';
+import { DEFAULT_PAGE_BACKGROUND } from '@/lib/page/pageLimits';
 import { buildPagePreview } from '@/lib/page/pagePreview';
 import type { Shape } from '@/models/Shape';
 import type { TextBlock } from '@/models/TextBlock';
@@ -16,10 +17,12 @@ const props = withDefaults(
 		height: number;
 		shapes?: Array<Shape | ShapeJSON> | null;
 		texts?: TextBlock[] | null;
+		backgroundColor?: string;
 	}>(),
 	{
 		shapes: null,
 		texts: null,
+		backgroundColor: DEFAULT_PAGE_BACKGROUND,
 	},
 );
 
@@ -129,7 +132,8 @@ const runDecoration = (run: PagePreviewTextRun) => {
 
 <template>
 	<svg
-		class="block h-full w-full bg-white dark:bg-zinc-100"
+		class="block h-full w-full"
+		:style="{ backgroundColor }"
 		:viewBox="`0 0 ${model.width} ${model.height}`"
 		preserveAspectRatio="xMidYMid meet"
 		role="img"
@@ -145,7 +149,12 @@ const runDecoration = (run: PagePreviewTextRun) => {
 				</clipPath>
 			</template>
 		</defs>
-		<rect :width="model.width" :height="model.height" fill="#ffffff" />
+		<rect
+			:width="model.width"
+			:height="model.height"
+			:fill="backgroundColor"
+			data-testid="page-background"
+		/>
 		<!-- Por panel (como el canvas): fill → imagen → borde; textos encima. -->
 		<template
 			v-for="(panel, index) in model.panels"

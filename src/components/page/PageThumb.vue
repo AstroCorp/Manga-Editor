@@ -12,6 +12,7 @@ const props = defineProps<{
 	canRemove: boolean;
 	width: number;
 	height: number;
+	backgroundColor?: string;
 	shapes: Shape[];
 	texts?: TextBlock[];
 	dragging?: boolean;
@@ -126,15 +127,19 @@ const onDragStart = (event: DragEvent) => {
 				aria-hidden="true"
 			>
 				<span
-					class="relative block aspect-(--page-ratio) w-[min(100%,calc(4.2rem*var(--page-ratio)))] overflow-hidden border border-slate-200 bg-white shadow-sm dark:border-zinc-800"
+					class="relative box-content block aspect-(--page-ratio) w-[min(100%,calc((4.2rem-2px)*var(--page-ratio)))] overflow-hidden border border-slate-200 bg-white shadow-sm dark:border-zinc-800"
 					:class="
 						active ? 'border-blue-600/40 dark:border-blue-500/40' : ''
 					"
-					:style="{ '--page-ratio': `${width} / ${height}` }"
+					:style="{
+						'--page-ratio': `${width} / ${height}`,
+						backgroundColor,
+					}"
 				>
 					<PagePreview
 						:width="width"
 						:height="height"
+						:background-color="backgroundColor"
 						:shapes="shapes"
 						:texts="texts"
 					/>

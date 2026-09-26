@@ -6,6 +6,25 @@ import { ShapeImage } from '@/models/ShapeImage';
 import { TextBlock } from '@/models/TextBlock';
 
 describe('PagePreview', () => {
+	it('paints the page background with the given color (white by default)', () => {
+		const plain = mount(PagePreview, {
+			props: { width: 100, height: 100 },
+		});
+		const tinted = mount(PagePreview, {
+			props: { width: 100, height: 100, backgroundColor: '#ffeecc' },
+		});
+
+		expect(
+			plain.get('[data-testid="page-background"]').attributes('fill'),
+		).toBe('#ffffff');
+		expect(
+			tinted.get('[data-testid="page-background"]').attributes('fill'),
+		).toBe('#ffeecc');
+		expect((tinted.get('svg').element as SVGElement).style.backgroundColor).toBe(
+			'rgb(255, 238, 204)',
+		);
+	});
+
 	it('renders white fill polygons only when whiteFill is enabled', () => {
 		const filled = Shape.create(
 			[

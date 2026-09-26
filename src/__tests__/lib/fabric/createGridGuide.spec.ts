@@ -12,18 +12,32 @@ const layout: PageLayoutMetrics = {
 	margins: ZERO_MARGINS,
 };
 
+type MockContext = {
+	clearRect: ReturnType<typeof vi.fn>;
+	beginPath: ReturnType<typeof vi.fn>;
+	arc: ReturnType<typeof vi.fn>;
+	fill: ReturnType<typeof vi.fn>;
+	fillStyle: string;
+};
+
 describe('createGridGuideImage', () => {
 	const originalGetContext = HTMLCanvasElement.prototype.getContext;
+	const contexts: MockContext[] = [];
 
 	beforeEach(() => {
+		contexts.length = 0;
 		HTMLCanvasElement.prototype.getContext = vi.fn(() => {
-			return {
+			const context: MockContext = {
 				clearRect: vi.fn(),
 				beginPath: vi.fn(),
 				arc: vi.fn(),
 				fill: vi.fn(),
 				fillStyle: '',
 			};
+
+			contexts.push(context);
+
+			return context;
 		}) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 	});
 
@@ -32,7 +46,7 @@ describe('createGridGuideImage', () => {
 	});
 
 	it('builds a non-interactive guide image sized to the page', () => {
-		const guide = createGridGuideImage(layout);
+		const guide = createGridGuideImage(layout, '#000000');
 
 		expect(isGuide(guide)).toBe(true);
 		expect(guide.isGridGuide).toBe(true);
@@ -41,6 +55,24 @@ describe('createGridGuideImage', () => {
 		expect(guide.excludeFromExport).toBe(true);
 		expect(guide.width).toBe(100);
 		expect(guide.height).toBe(80);
+	});
+
+	it('paints the dots with the given color and re-rasterizes when it changes', () => {
+		createGridGuideImage(layout, '#112233');
+
+		const first = contexts.at(-1);
+
+		expect(first?.fillStyle).toBe('#112233');
+		expect(first?.arc).toHaveBeenCalledTimes(layout.cols * layout.rows);
+
+		createGridGuideImage(layout, '#112233');
+
+		expect(contexts.at(-1)).toBe(first);
+
+		createGridGuideImage(layout, '#eeddcc');
+
+		expect(contexts.at(-1)).not.toBe(first);
+		expect(contexts.at(-1)?.fillStyle).toBe('#eeddcc');
 	});
 });
 

@@ -182,8 +182,9 @@ export const useEditorStore = defineStore('editor', () => {
 				return;
 			}
 
-			useLayoutsStore().addCustomLayout(parsed);
-			useMangaStore().applyActivePageLayout(parsed);
+			const entry = useLayoutsStore().addCustomLayout(parsed);
+
+			useMangaStore().applyActivePageLayout(entry.layout);
 		} catch {
 			window.alert('Could not read the JSON file.');
 		}

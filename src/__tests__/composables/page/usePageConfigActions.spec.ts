@@ -22,6 +22,15 @@ describe('usePageConfigActions', () => {
 		expect(pageSize.value).toEqual({ width: 900, height: 1100 });
 	});
 
+	it('updates the page background color', () => {
+		const { pageBackground } = useActivePageLayout();
+		const { setBackgroundColor } = usePageConfigActions();
+
+		setBackgroundColor('#0a0b0c');
+
+		expect(pageBackground.value).toBe('#0a0b0c');
+	});
+
 	it('rotates immediately when the page is empty with one layer', () => {
 		const mangaStore = useMangaStore();
 		const editorStore = useEditorStore();

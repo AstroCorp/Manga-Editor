@@ -32,6 +32,8 @@ export type LayoutLayerJSON = {
 export type LayoutJSON = {
 	width: number;
 	height: number;
+	/** Fondo de página. Ausente en layouts antiguos: al aplicarlos se conserva el fondo actual. */
+	backgroundColor?: string;
 	layers: LayoutLayerJSON[];
 };
 

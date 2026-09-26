@@ -17,6 +17,10 @@ export const useActivePageLayout = () => {
 		};
 	});
 
+	const pageBackground = computed(() => {
+		return activePage.value.backgroundColor;
+	});
+
 	const gridSize = computed(() => {
 		return {
 			cols: activeLayer.value.gridCols,
@@ -56,6 +60,7 @@ export const useActivePageLayout = () => {
 		activePage,
 		activeLayer,
 		pageSize,
+		pageBackground,
 		gridSize,
 		margins,
 		strokeWidth,

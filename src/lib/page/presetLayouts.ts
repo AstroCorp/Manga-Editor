@@ -1,3 +1,5 @@
+import { DEFAULT_PAGE_BACKGROUND } from '@/lib/page/pageLimits';
+import { normalizeStrokeColor } from '@/lib/page/shapeStrokes';
 import type { LayoutJSON, PresetLayout } from '@/types/layouts';
 
 /** Type guard: width/height y al menos una capa. */
@@ -16,13 +18,35 @@ export const isLayoutJSON = (value: unknown): value is LayoutJSON => {
 		return false;
 	}
 
+	if (
+		'backgroundColor' in data &&
+		data.backgroundColor !== undefined &&
+		typeof data.backgroundColor !== 'string'
+	) {
+		return false;
+	}
+
 	return true;
 };
 
+/** Hex normalizado, o ausente si el layout no define fondo. */
+export const layoutBackgroundColor = (
+	layout: LayoutJSON,
+): string | undefined => {
+	if (layout.backgroundColor === undefined) {
+		return undefined;
+	}
+
+	return normalizeStrokeColor(layout.backgroundColor, DEFAULT_PAGE_BACKGROUND);
+};
+
 const normalizePresetLayout = (value: LayoutJSON): LayoutJSON => {
+	const backgroundColor = layoutBackgroundColor(value);
+
 	return {
 		width: value.width,
 		height: value.height,
+		...(backgroundColor !== undefined ? { backgroundColor } : {}),
 		layers: value.layers,
 	};
 };

@@ -150,6 +150,7 @@ const onFileChange = (event: Event) => {
 									<PagePreview
 										:width="preset.layout.width"
 										:height="preset.layout.height"
+										:background-color="preset.layout.backgroundColor"
 										:shapes="layoutPreviewShapes(preset.layout)"
 									/>
 								</span>
@@ -250,6 +251,7 @@ const onFileChange = (event: Event) => {
 										<PagePreview
 											:width="preset.layout.width"
 											:height="preset.layout.height"
+											:background-color="preset.layout.backgroundColor"
 											:shapes="layoutPreviewShapes(preset.layout)"
 										/>
 									</span>

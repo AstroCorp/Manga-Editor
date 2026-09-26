@@ -39,6 +39,7 @@ describe('documentSnapshot', () => {
 		page.addShape(shape);
 		page.addText(text);
 		page.addLayer();
+		page.setBackgroundColor('#f0e0d0');
 
 		const snapshot = captureDocument({
 			title: 'Demo',
@@ -54,6 +55,7 @@ describe('documentSnapshot', () => {
 			snapshot.pages[0]?.layers[0]?.shapes[0]?.image?.assetId,
 		).toBeTruthy();
 		expect(restored?.id).toBe(page.id);
+		expect(restored?.backgroundColor).toBe('#f0e0d0');
 		expect(restored?.layers).toHaveLength(2);
 		expect(restored?.activeLayerId).toBe(page.activeLayerId);
 		expect(restored?.layers[0]?.shapes[0]?.whiteFill).toBe(true);

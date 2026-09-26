@@ -35,6 +35,8 @@ export type HistoryPageJSON = {
 	name: string;
 	width: number;
 	height: number;
+	/** Opcional: los snapshots antiguos no lo traen. */
+	backgroundColor?: string;
 	activeLayerId: string;
 	layers: HistoryLayerJSON[];
 };

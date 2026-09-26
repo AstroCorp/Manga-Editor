@@ -31,7 +31,7 @@ export const useEditorCanvas = (
 	const mangaStore = useMangaStore();
 	const editorStore = useEditorStore();
 	const { activePageId } = storeToRefs(mangaStore);
-	const { activePage, pageSize } = useActivePageLayout();
+	const { activePage, pageSize, pageBackground } = useActivePageLayout();
 
 	/** Descarta hydrates obsoletos al cambiar de página / reset rápido. */
 	let hydrateGeneration = 0;
@@ -159,6 +159,18 @@ export const useEditorCanvas = (
 		void applyActivePage({ resetView: true });
 	});
 
+	// Cambio de fondo (config, undo/redo): repinta sin rehidratar la página.
+	watch(pageBackground, (color) => {
+		const canvas = fabricCanvas.value;
+
+		if (!canvas || canvas.backgroundColor === color) {
+			return;
+		}
+
+		canvas.backgroundColor = color;
+		canvas.requestRenderAll();
+	});
+
 	const rootStyle = computed(() => {
 		const padding = CONTROL_PASTEBOARD * zoomFactor.value;
 
@@ -167,10 +179,18 @@ export const useEditorCanvas = (
 		};
 	});
 
+	// La lámina bajo el canvas evita un flash blanco antes del primer render.
+	const pageBackgroundStyle = computed((): CSSProperties => {
+		return {
+			backgroundColor: pageBackground.value,
+		};
+	});
+
 	return {
 		stageStyle,
 		scaleStyle,
 		rootStyle,
+		pageBackgroundStyle,
 		overlayViews,
 		cancelStroke: () => {
 			ctx.actions.cancelStroke();

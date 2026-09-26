@@ -137,6 +137,7 @@ const pageToHistoryJSON = (
 		name: page.name,
 		width: page.width,
 		height: page.height,
+		backgroundColor: page.backgroundColor,
 		activeLayerId: page.activeLayerId,
 		layers: page.layers.map((layer) => {
 			return layerToHistoryJSON(layer, intern);
@@ -153,6 +154,7 @@ const pageFromHistoryJSON = (
 		name: data.name,
 		width: data.width,
 		height: data.height,
+		backgroundColor: data.backgroundColor,
 		activeLayerId: data.activeLayerId,
 		layers: data.layers.map((layer) => {
 			return layerFromHistoryJSON(layer, resolve);

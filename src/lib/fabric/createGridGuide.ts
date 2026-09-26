@@ -3,7 +3,6 @@
  * Más barato que N círculos Fabric al mover el viewport.
  */
 import { FabricImage } from 'fabric';
-import { GUIDE_STROKE_COLOR } from '@/lib/fabric/fabricColors';
 import { toCanvasPoint } from '@/lib/panel/panelGeometry';
 import type { PageLayoutMetrics } from '@/types/geometry';
 import type { GridGuideImage } from '@/types/fabric';
@@ -15,7 +14,10 @@ type GuideCacheKey = string;
 let cachedKey: GuideCacheKey | null = null;
 let cachedElement: HTMLCanvasElement | null = null;
 
-const guideCacheKey = (layout: PageLayoutMetrics): GuideCacheKey => {
+const guideCacheKey = (
+	layout: PageLayoutMetrics,
+	dotColor: string,
+): GuideCacheKey => {
 	const { width, height, cols, rows, margins } = layout;
 
 	return [
@@ -27,10 +29,14 @@ const guideCacheKey = (layout: PageLayoutMetrics): GuideCacheKey => {
 		margins.marginRight,
 		margins.marginBottom,
 		margins.marginLeft,
+		dotColor,
 	].join(':');
 };
 
-const buildGuideElement = (layout: PageLayoutMetrics): HTMLCanvasElement => {
+const buildGuideElement = (
+	layout: PageLayoutMetrics,
+	dotColor: string,
+): HTMLCanvasElement => {
 	const { width, height, cols, rows } = layout;
 	const element = document.createElement('canvas');
 
@@ -44,7 +50,7 @@ const buildGuideElement = (layout: PageLayoutMetrics): HTMLCanvasElement => {
 	}
 
 	context.clearRect(0, 0, width, height);
-	context.fillStyle = GUIDE_STROKE_COLOR;
+	context.fillStyle = dotColor;
 
 	for (let col = 0; col < cols; col += 1) {
 		for (let row = 0; row < rows; row += 1) {
@@ -60,11 +66,14 @@ const buildGuideElement = (layout: PageLayoutMetrics): HTMLCanvasElement => {
 };
 
 /** Crea (o reutiliza de caché) la imagen Fabric de la rejilla de puntos. */
-export const createGridGuideImage = (layout: PageLayoutMetrics): GridGuideImage => {
-	const key = guideCacheKey(layout);
+export const createGridGuideImage = (
+	layout: PageLayoutMetrics,
+	dotColor: string,
+): GridGuideImage => {
+	const key = guideCacheKey(layout, dotColor);
 
 	if (cachedKey !== key || !cachedElement) {
-		cachedElement = buildGuideElement(layout);
+		cachedElement = buildGuideElement(layout, dotColor);
 		cachedKey = key;
 	}
 

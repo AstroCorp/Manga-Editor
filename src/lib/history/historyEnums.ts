@@ -34,6 +34,7 @@ export const HISTORY_LABEL = {
 	ShowLayer: 'Show layer',
 	ChangePageSize: 'Change page size',
 	RotatePage: 'Rotate page',
+	ChangePageBackground: 'Change page background',
 	ChangeGrid: 'Change grid',
 	ChangeMargins: 'Change margins',
 	ChangeStroke: 'Change stroke',

@@ -18,6 +18,17 @@ describe('presetLayouts', () => {
 		).toBe(true);
 	});
 
+	it('isLayoutJSON rejects a non-string background color', () => {
+		expect(
+			isLayoutJSON({
+				width: 100,
+				height: 200,
+				backgroundColor: 1,
+				layers: [{ shapes: [] }],
+			}),
+		).toBe(false);
+	});
+
 	it('isLayoutJSON rejects invalid payloads', () => {
 		expect(isLayoutJSON(null)).toBe(false);
 		expect(isLayoutJSON({ name: 'x' })).toBe(false);
@@ -57,6 +68,7 @@ describe('presetLayouts', () => {
 		expect(presets).toHaveLength(1);
 		expect(presets[0]?.id).toBe('01');
 		expect(presets[0]?.layout.layers.length).toBeGreaterThanOrEqual(1);
+		expect(presets[0]?.layout.backgroundColor).toBe('#ffffff');
 	});
 
 	it('listPresetLayouts loads packaged JSON presets', async () => {
@@ -75,6 +87,7 @@ describe('presetLayouts', () => {
 				return (
 					Array.isArray(layout.layers) &&
 					layout.layers.length >= 1 &&
+					layout.backgroundColor === '#ffffff' &&
 					!('shapes' in layout) &&
 					!('id' in layout) &&
 					!('name' in layout)

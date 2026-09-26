@@ -135,6 +135,7 @@ export const hydrateCanvasFromPage = async (
 	// Swap síncrono: el contenido anterior sigue a la vista mientras cargan
 	// fuentes e imágenes, así no se ve la página en blanco entre medias.
 	applyPageCanvasLayout(canvas, page.width, page.height);
+	canvas.backgroundColor = page.backgroundColor;
 	canvas
 		.getObjects()
 		.slice()

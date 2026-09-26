@@ -6,8 +6,14 @@ import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
 const rootEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
-const { stageStyle, scaleStyle, rootStyle, overlayViews, cancelStroke } =
-	useEditorCanvas(canvasEl, rootEl);
+const {
+	stageStyle,
+	scaleStyle,
+	rootStyle,
+	pageBackgroundStyle,
+	overlayViews,
+	cancelStroke,
+} = useEditorCanvas(canvasEl, rootEl);
 </script>
 
 <template>
@@ -27,7 +33,8 @@ const { stageStyle, scaleStyle, rootStyle, overlayViews, cancelStroke } =
 				}"
 			>
 				<div
-					class="pointer-events-none absolute inset-0 bg-white shadow-lg shadow-slate-900/20"
+					class="pointer-events-none absolute inset-0 shadow-lg shadow-slate-900/20"
+					:style="pageBackgroundStyle"
 				/>
 				<canvas ref="canvasEl" />
 			</div>

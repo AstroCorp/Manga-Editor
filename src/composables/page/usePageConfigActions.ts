@@ -6,7 +6,7 @@ import { useMangaStore } from '@/stores/manga';
 import type { PageRotateDirection } from '@/types/page';
 
 /**
- * Mutaciones de tamaño/rotación de página.
+ * Mutaciones de tamaño/rotación/fondo de página.
  * Grid/márgenes/stroke viven en la capa (ver useLayerConfigActions).
  */
 export const usePageConfigActions = () => {
@@ -30,6 +30,10 @@ export const usePageConfigActions = () => {
 
 	const setHeight = (height: number) => {
 		mangaStore.setActivePageSize(activePage.value.width, height);
+	};
+
+	const setBackgroundColor = (color: string) => {
+		mangaStore.setActivePageBackgroundColor(color);
 	};
 
 	const applyRotate = (direction: PageRotateDirection) => {
@@ -56,6 +60,7 @@ export const usePageConfigActions = () => {
 		rotateMessage,
 		setWidth,
 		setHeight,
+		setBackgroundColor,
 		requestRotate,
 		cancelRotate,
 		confirmRotate,

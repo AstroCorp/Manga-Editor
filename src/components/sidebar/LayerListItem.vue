@@ -14,6 +14,7 @@ const props = defineProps<{
 	canRemove: boolean;
 	width: number;
 	height: number;
+	backgroundColor?: string;
 	shapes: Shape[];
 	texts: TextBlock[];
 	expanded: boolean;
@@ -173,6 +174,7 @@ const isFocused = (kind: LayerElementKind, id: string) => {
 					<PagePreview
 						:width="width"
 						:height="height"
+						:background-color="backgroundColor"
 						:shapes="shapes"
 						:texts="texts"
 					/>

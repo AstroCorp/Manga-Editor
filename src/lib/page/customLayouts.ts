@@ -1,6 +1,6 @@
 import type { Serializer } from '@vueuse/core';
 import { createId } from '@/lib/id';
-import { isLayoutJSON } from '@/lib/page/presetLayouts';
+import { isLayoutJSON, layoutBackgroundColor } from '@/lib/page/presetLayouts';
 import type {
 	LayoutJSON,
 	LayoutLayerJSON,
@@ -49,9 +49,12 @@ const normalizeLayoutForCatalog = (layout: LayoutJSON): LayoutJSON => {
 		};
 	});
 
+	const backgroundColor = layoutBackgroundColor(layout);
+
 	return {
 		width: layout.width,
 		height: layout.height,
+		...(backgroundColor !== undefined ? { backgroundColor } : {}),
 		layers,
 	};
 };

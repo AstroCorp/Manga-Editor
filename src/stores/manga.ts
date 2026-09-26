@@ -502,6 +502,15 @@ export const useMangaStore = defineStore('manga', () => {
 		recordHistory(HISTORY_LABEL.RotatePage);
 	};
 
+	/** El canvas repinta el fondo por reactividad; no hace falta rehidratar. */
+	const setActivePageBackgroundColor = (color: string) => {
+		if (!getActivePage().setBackgroundColor(color)) {
+			return;
+		}
+
+		recordHistory(HISTORY_LABEL.ChangePageBackground);
+	};
+
 	/** Solo cambia el valor por defecto de la capa; los paneles no se tocan. */
 	const setActiveLayerStrokeWidth = (width: number) => {
 		getActivePage().setActiveLayerStrokeWidth(width);
@@ -691,6 +700,7 @@ export const useMangaStore = defineStore('manga', () => {
 		setActiveLayerGrid,
 		setActiveLayerMargins,
 		rotateActivePage,
+		setActivePageBackgroundColor,
 		setActiveLayerStrokeWidth,
 		setActiveLayerStrokeColor,
 		applyPageStroke,

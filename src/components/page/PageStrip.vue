@@ -72,6 +72,7 @@ const {
 				:can-remove="canRemove"
 				:width="page.width"
 				:height="page.height"
+				:background-color="page.backgroundColor"
 				:shapes="page.getVisibleShapes()"
 				:texts="page.getVisibleTexts()"
 				:dragging="dragFromIndex === index"

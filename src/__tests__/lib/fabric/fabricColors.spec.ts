@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { panelFillColor } from '@/lib/fabric/fabricColors';
+import {
+	gridGuideDotColor,
+	invertHexColor,
+	panelFillColor,
+} from '@/lib/fabric/fabricColors';
+
+describe('invertHexColor', () => {
+	it('inverts each channel of a hex color', () => {
+		expect(invertHexColor('#ffffff')).toBe('#000000');
+		expect(invertHexColor('#000000')).toBe('#ffffff');
+		expect(invertHexColor('#123456')).toBe('#edcba9');
+		expect(invertHexColor('#ABC')).toBe('#554433');
+	});
+
+	it('falls back to inverting white for invalid colors', () => {
+		expect(invertHexColor('nope')).toBe('#000000');
+	});
+
+	it('grid dots use the inverse of the page background', () => {
+		expect(gridGuideDotColor('#ffe4c4')).toBe('#001b3b');
+	});
+});
 
 describe('panelFillColor', () => {
 	it('returns white when whiteFill is enabled without image', () => {
