@@ -13,18 +13,7 @@
 
 ## English
 
-Online manga/comic layout editor: draw panels on a guide grid, manage pages, and export the active page.
-
-**Features**
-- Draw closed panels on a snap grid (guides on/off)
-- Select panels: delete, stroke width
-- Drop images onto panels and move / scale them
-- Multi-page strip: add, rename, reorder, remove
-- Zoom (controls + Ctrl/⌘ + wheel)
-- Light / dark / system theme
-- Page config: size, grid, margins, stroke
-- Layout presets + custom (import/export JSON)
-- Export active page as PNG or JPG (no guides / in-progress strokes)
+Design manga and comic pages in the browser: panels, images and text, exported as images or reusable layouts.
 
 **Stack:** Vue 3 · Vite · Pinia · Fabric.js · Tailwind CSS · TypeScript · pnpm
 
@@ -45,18 +34,7 @@ Requires Node `^22.18.0` or `>=24.12.0`.
 
 ## Español
 
-Editor online de layouts para manga/cómic: dibuja paneles sobre una rejilla, gestiona páginas y exporta la página activa.
-
-**Funciones**
-- Dibujar paneles cerrados con snap a rejilla (guías on/off)
-- Seleccionar paneles: borrar, grosor de trazo
-- Insertar imágenes arrastrándolas a paneles y manipularlas (mover / escalar)
-- Tira multipágina: añadir, renombrar, reordenar, eliminar
-- Zoom (controles + Ctrl/⌘ + rueda)
-- Tema claro / oscuro / sistema
-- Config de página: tamaño, rejilla, márgenes, stroke
-- Presets de layout + custom (import/export JSON)
-- Export PNG o JPG de la página activa (sin guías ni trazo en curso)
+Diseña páginas de manga y cómic en el navegador: paneles, imágenes y texto, exportables como imagen o como layouts reutilizables.
 
 **Stack:** Vue 3 · Vite · Pinia · Fabric.js · Tailwind CSS · TypeScript · pnpm
 
