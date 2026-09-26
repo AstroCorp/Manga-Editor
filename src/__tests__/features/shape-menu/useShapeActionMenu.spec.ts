@@ -11,7 +11,7 @@ import { useHistoryStore } from '@/stores/history';
 import { useMangaStore } from '@/stores/manga';
 import type { Canvas, FabricObject } from 'fabric';
 
-const createPanelMock = (shapeId: string, fill = panelFillColor(false)) => {
+const createPanelMock = (shapeId: string, fill = panelFillColor(null)) => {
 	const panelState = { fill };
 	const panel = {
 		evented: false,
@@ -120,8 +120,9 @@ describe('useShapeActionMenu', () => {
 		setActivePinia(createPinia());
 	});
 
-	it('toggleWhiteFill updates domain and fabric panel fill', () => {
+	it('toggleFill updates domain and fabric panel fill', () => {
 		const mangaStore = useMangaStore();
+		const history = useHistoryStore();
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -155,20 +156,43 @@ describe('useShapeActionMenu', () => {
 
 		handlers['selection:created']?.();
 
-		expect(api.whiteFill.value).toBe(false);
+		expect(api.fill.value).toBeNull();
 
-		api.toggleWhiteFill();
+		const entriesBefore = history.entries.length;
 
-		expect(shape.whiteFill).toBe(true);
+		api.toggleFill();
+
+		expect(shape.fill).toBe('#ffffff');
 		expect(panel.set).toHaveBeenCalledWith({
-			fill: panelFillColor(true, { hasImage: false }),
+			fill: panelFillColor('#ffffff', { hasImage: false }),
 		});
-		expect(api.whiteFill.value).toBe(true);
+		expect(api.fill.value).toBe('#ffffff');
 		expect(onChanged).toHaveBeenCalled();
 		expect(canvas.requestRenderAll).toHaveBeenCalled();
+		expect(history.entries).toHaveLength(entriesBefore + 1);
+
+		api.previewFillColor('#ffcc00');
+
+		expect(shape.fill).toBe('#ffcc00');
+		expect(api.fill.value).toBe('#ffcc00');
+		expect(panel.set).toHaveBeenLastCalledWith({ fill: '#ffcc00' });
+		expect(history.entries).toHaveLength(entriesBefore + 1);
+
+		api.setFillColor('#00ccff');
+
+		expect(shape.fill).toBe('#00ccff');
+		expect(panel.set).toHaveBeenLastCalledWith({ fill: '#00ccff' });
+		expect(history.entries).toHaveLength(entriesBefore + 2);
+
+		api.toggleFill();
+
+		expect(shape.fill).toBeNull();
+		expect(api.fill.value).toBeNull();
+		expect(panel.set).toHaveBeenLastCalledWith({ fill: panelFillColor(null) });
+		expect(history.entries).toHaveLength(entriesBefore + 3);
 	});
 
-	it('toggleWhiteFill keeps transparent fabric fill when panel has image', () => {
+	it('toggleFill keeps transparent fabric fill when panel has image', () => {
 		const mangaStore = useMangaStore();
 		const shape = Shape.create(
 			[
@@ -194,7 +218,7 @@ describe('useShapeActionMenu', () => {
 
 		const { panel } = createPanelMock(
 			shape.id,
-			panelFillColor(false, { hasImage: true }),
+			panelFillColor(null, { hasImage: true }),
 		);
 		const handlers: Record<string, () => void> = {};
 		const canvas = {
@@ -217,15 +241,15 @@ describe('useShapeActionMenu', () => {
 		});
 
 		handlers['selection:created']?.();
-		api.toggleWhiteFill();
+		api.toggleFill();
 
-		expect(shape.whiteFill).toBe(true);
+		expect(shape.fill).toBe('#ffffff');
 		expect(panel.set).toHaveBeenCalledWith({
-			fill: panelFillColor(true, { hasImage: true }),
+			fill: panelFillColor('#ffffff', { hasImage: true }),
 		});
 	});
 
-	it('clearImage restores panel fill from whiteFill preference', () => {
+	it('clearImage restores panel fill from the shape fill color', () => {
 		const mangaStore = useMangaStore();
 		const shape = Shape.create(
 			[
@@ -236,7 +260,7 @@ describe('useShapeActionMenu', () => {
 			2,
 		);
 
-		shape.setWhiteFill(true);
+		shape.setFill('#ffcc00');
 		shape.setImage(
 			new ShapeImage({
 				src: 'data:image/png;base64,xx',
@@ -252,7 +276,7 @@ describe('useShapeActionMenu', () => {
 
 		const { panel } = createPanelMock(
 			shape.id,
-			panelFillColor(true, { hasImage: true }),
+			panelFillColor('#ffcc00', { hasImage: true }),
 		);
 		const image = {
 			getBoundingRect: () => {
@@ -316,7 +340,7 @@ describe('useShapeActionMenu', () => {
 		expect(panel.evented).toBe(true);
 		expect(panel.selectable).toBe(true);
 		expect(panel.set).toHaveBeenCalledWith({
-			fill: panelFillColor(true),
+			fill: panelFillColor('#ffcc00'),
 		});
 		expect(canvas.setActiveObject).toHaveBeenCalledWith(panel);
 		expect(onChanged).toHaveBeenCalled();
@@ -328,7 +352,9 @@ describe('useShapeActionMenu', () => {
 		});
 
 		expect(() => {
-			api.toggleWhiteFill();
+			api.toggleFill();
+			api.setFillColor('#ffcc00');
+			api.previewFillColor('#ffcc00');
 			api.toggleFlipX();
 			api.toggleFlipY();
 		}).not.toThrow();

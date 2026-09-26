@@ -33,7 +33,7 @@ export const shapeToPolygon = (
 			return { x: point.x, y: point.y };
 		}),
 		{
-			fill: panelFillColor(shape.whiteFill, { hasImage }),
+			fill: panelFillColor(shape.fill, { hasImage }),
 			selectable: interactive,
 			evented: interactive,
 			lockMovementX: true,

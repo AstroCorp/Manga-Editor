@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
 	isLayoutJSON,
 	listPresetIds,
-	listPresetLayouts,
 	loadPresetLayoutsByIds,
 } from '@/lib/page/presetLayouts';
 import type { PresetLayout } from '@/types/layouts';
@@ -71,8 +70,10 @@ describe('presetLayouts', () => {
 		expect(presets[0]?.layout.backgroundColor).toBe('#ffffff');
 	});
 
-	it('listPresetLayouts loads packaged JSON presets', async () => {
-		const presets: PresetLayout[] = await listPresetLayouts();
+	it('loads every packaged JSON preset', async () => {
+		const presets: PresetLayout[] = await loadPresetLayoutsByIds(
+			listPresetIds(),
+		);
 
 		expect(presets.length).toBeGreaterThanOrEqual(1);
 		expect(

@@ -438,7 +438,8 @@ describe('useMangaStore config layout', () => {
 		expect(store.shapes[0]?.image).toBeNull();
 	});
 
-	it('setShapeWhiteFill updates the active layer shape only', () => {
+	it('setShapeFill updates the active layer shape only and labels history', () => {
+		const history = useHistoryStore();
 		const store = useMangaStore();
 		const base = Shape.create(
 			[
@@ -462,10 +463,64 @@ describe('useMangaStore config layout', () => {
 		);
 
 		store.addShape(ink);
-		store.setShapeWhiteFill(ink.id, true);
 
-		expect(ink.whiteFill).toBe(true);
-		expect(base.whiteFill).toBe(false);
+		const entriesBefore = history.entries.length;
+
+		expect(store.setShapeFill(ink.id, '#ffcc00')).toBe(true);
+		expect(ink.fill).toBe('#ffcc00');
+		expect(base.fill).toBeNull();
+		expect(history.entries.at(-1)?.label).toContain(HISTORY_LABEL.FillPanel);
+
+		expect(store.setShapeFill(ink.id, '#00ccff')).toBe(true);
+		expect(history.entries.at(-1)?.label).toContain(
+			HISTORY_LABEL.ChangePanelFill,
+		);
+
+		expect(store.previewShapeFill(ink.id, '#123456')).toBe(true);
+		expect(ink.fill).toBe('#123456');
+		expect(history.entries).toHaveLength(entriesBefore + 2);
+
+		expect(store.setShapeFill(ink.id, null)).toBe(true);
+		expect(ink.fill).toBeNull();
+		expect(history.entries.at(-1)?.label).toContain(
+			HISTORY_LABEL.ClearPanelFill,
+		);
+
+		expect(store.setShapeFill(ink.id, null)).toBe(false);
+		expect(history.entries).toHaveLength(entriesBefore + 3);
+	});
+
+	it('setShapeFill records history after a preview even if the value matches', () => {
+		const store = useMangaStore();
+		const history = useHistoryStore();
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		store.addShape(shape);
+
+		const entriesBefore = history.entries.length;
+
+		expect(store.previewShapeFill(shape.id, '#ff3300')).toBe(true);
+		expect(store.previewShapeFill(shape.id, '#ff3311')).toBe(true);
+		expect(history.entries).toHaveLength(entriesBefore);
+
+		expect(store.setShapeFill(shape.id, '#ff3311')).toBe(true);
+		expect(history.entries).toHaveLength(entriesBefore + 1);
+		expect(history.entries.at(-1)?.label).toContain(HISTORY_LABEL.FillPanel);
+
+		store.previewShapeFill(shape.id, '#00ff00');
+
+		expect(store.setShapeFill(shape.id, '#ff3311')).toBe(false);
+		expect(shape.fill).toBe('#ff3311');
+		expect(history.entries).toHaveLength(entriesBefore + 1);
+		expect(store.previewShapeFill('missing', '#ff3311')).toBe(false);
+		expect(store.setShapeFill('missing', '#ff3311')).toBe(false);
 	});
 
 	it('resetProject replaces pages with a blank Page 1', () => {

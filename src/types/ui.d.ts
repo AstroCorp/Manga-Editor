@@ -39,7 +39,7 @@ export type OverlayAnchorSource = {
 	placement: OverlayPlacement;
 };
 
-export type NumberInputVariant = 'toolbar' | 'field';
+type NumberInputVariant = 'toolbar' | 'field';
 
 export type NumberInputProps = {
 	modelValue: number | null;

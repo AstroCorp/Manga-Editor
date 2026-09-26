@@ -139,7 +139,7 @@ describe('shapeToPolygon', () => {
 		expect(ctx.stroke).not.toHaveBeenCalled();
 	});
 
-	it('applies white fill from the shape', () => {
+	it('applies the fill color from the shape', () => {
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -149,14 +149,14 @@ describe('shapeToPolygon', () => {
 			2,
 		);
 
-		shape.setWhiteFill(true);
+		shape.setFill('#ffcc00');
 
 		const polygon = shapeToPolygon(shape, {
 			layerId: 'layer-1',
 			interactive: true,
 		});
 
-		expect(polygon.fill).toBe('#ffffff');
+		expect(polygon.fill).toBe('#ffcc00');
 	});
 
 	it('disables selection when the shape already has an image', () => {

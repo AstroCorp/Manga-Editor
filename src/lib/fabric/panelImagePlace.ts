@@ -113,7 +113,7 @@ export const placeImageFileInPanel = async ({
 
 	livePanel.evented = false;
 	livePanel.selectable = false;
-	livePanel.set({ fill: panelFillColor(false, { hasImage: true }) });
+	livePanel.set({ fill: panelFillColor(null, { hasImage: true }) });
 
 	canvas.setActiveObject(image);
 	canvas.requestRenderAll();

@@ -6,6 +6,8 @@ export const DEFAULT_MARGIN = 18;
 export const DEFAULT_STROKE_WIDTH = 5;
 export const DEFAULT_STROKE_COLOR = '#111111';
 export const DEFAULT_PAGE_BACKGROUND = '#ffffff';
+/** Relleno que activa el toggle de fill de un panel. */
+export const DEFAULT_PANEL_FILL = '#ffffff';
 export const MIN_GRID_POINTS = 2;
 export const MAX_GRID_POINTS = 200;
 export const MIN_STROKE_WIDTH = 0;

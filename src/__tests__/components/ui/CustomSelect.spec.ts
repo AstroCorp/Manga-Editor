@@ -57,6 +57,33 @@ describe('CustomSelect', () => {
 		expect(wrapper.find('ul[role="listbox"]').exists()).toBe(false);
 	});
 
+	it('hides the trigger label with hideTriggerLabel but keeps option labels', async () => {
+		const wrapper = mount(CustomSelect, {
+			props: {
+				modelValue: 'a',
+				options: [...OPTIONS],
+				label: 'Pick letter',
+				hideTriggerLabel: true,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+		const trigger = wrapper.get('button[aria-label="Pick letter"]');
+
+		expect(trigger.text()).toBe('');
+		expect(trigger.attributes('title')).toBe('Pick letter');
+
+		await trigger.trigger('click');
+
+		const options = wrapper.findAll('ul[role="listbox"] button');
+
+		expect(options[0]?.text()).toBe('Alpha');
+		expect(options[1]?.text()).toBe('Beta');
+	});
+
 	it('closes on Escape', async () => {
 		const wrapper = mount(CustomSelect, {
 			props: {

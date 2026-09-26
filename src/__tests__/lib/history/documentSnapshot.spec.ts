@@ -22,7 +22,7 @@ describe('documentSnapshot', () => {
 			4,
 		);
 
-		shape.setWhiteFill(true);
+		shape.setFill('#ffcc00');
 		shape.setImage(
 			new ShapeImage({
 				src: 'data:image/png;base64,xx',
@@ -58,13 +58,49 @@ describe('documentSnapshot', () => {
 		expect(restored?.backgroundColor).toBe('#f0e0d0');
 		expect(restored?.layers).toHaveLength(2);
 		expect(restored?.activeLayerId).toBe(page.activeLayerId);
-		expect(restored?.layers[0]?.shapes[0]?.whiteFill).toBe(true);
+		expect(restored?.layers[0]?.shapes[0]?.fill).toBe('#ffcc00');
 		expect(restored?.layers[0]?.shapes[0]?.image?.src).toBe(
 			'data:image/png;base64,xx',
 		);
 		expect(restored?.layers[0]?.texts[0]?.content).toBe('Hello');
 		expect(restored?.layers[0]?.texts[0]?.angle).toBe(12);
 		expect(restored?.layers[0]?.id).toBe(page.layers[0]?.id);
+	});
+
+	it('maps legacy whiteFill snapshots to a white fill', () => {
+		const assets = createImageAssetStore();
+		const page = Page.createBlank(1);
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 4, y: 0 },
+				{ x: 4, y: 4 },
+			],
+			2,
+		);
+
+		page.addShape(shape);
+
+		const snapshot = captureDocument({
+			title: 'Demo',
+			activePageId: page.id,
+			pages: [page],
+			intern: assets.intern,
+		});
+		const legacyShape = snapshot.pages[0]!.layers[0]!.shapes[0]!;
+
+		delete legacyShape.fill;
+		legacyShape.whiteFill = true;
+
+		const [restored] = pagesFromDocument(snapshot, assets.resolve);
+
+		expect(restored?.layers[0]?.shapes[0]?.fill).toBe('#ffffff');
+
+		legacyShape.whiteFill = false;
+
+		const [plain] = pagesFromDocument(snapshot, assets.resolve);
+
+		expect(plain?.layers[0]?.shapes[0]?.fill).toBeNull();
 	});
 
 	it('reuses the same asset id for duplicate image sources', () => {

@@ -21,6 +21,7 @@ import {
 	placeImageFileInPanel,
 } from '@/lib/fabric/panelImagePlace';
 import { asPanelPolygonShape } from '@/lib/fabric/PanelPolygon';
+import { DEFAULT_PANEL_FILL } from '@/lib/page/pageLimits';
 import { cloneStrokes } from '@/lib/page/shapeStrokes';
 import { useMangaStore } from '@/stores/manga';
 import type { ShapeStroke, ShapeStrokePatch } from '@/types/page';
@@ -50,7 +51,7 @@ export const useShapeActionMenu = ({
 	const isGrayscale = shallowRef(false);
 	const isFlipX = shallowRef(false);
 	const isFlipY = shallowRef(false);
-	const whiteFill = shallowRef(false);
+	const fill = shallowRef<string | null>(null);
 	const strokes = shallowRef<ShapeStroke[]>([]);
 	const position = shallowRef<PageOverlayPosition | null>(null);
 	const placement = shallowRef<OverlayPlacement>('above');
@@ -143,7 +144,7 @@ export const useShapeActionMenu = ({
 		isGrayscale.value = false;
 		isFlipX.value = false;
 		isFlipY.value = false;
-		whiteFill.value = false;
+		fill.value = null;
 		strokes.value = [];
 		position.value = null;
 		placement.value = 'above';
@@ -184,7 +185,7 @@ export const useShapeActionMenu = ({
 		isGrayscale.value = Boolean(shape?.image?.grayscale);
 		isFlipX.value = Boolean(shape?.image?.flipX);
 		isFlipY.value = Boolean(shape?.image?.flipY);
-		whiteFill.value = Boolean(shape?.whiteFill);
+		fill.value = shape?.fill ?? null;
 		strokes.value = shape ? cloneStrokes(shape.strokes) : [];
 		position.value = { left: anchor.left, top: anchor.top };
 		placement.value = anchor.placement;
@@ -279,7 +280,7 @@ export const useShapeActionMenu = ({
 		if (panel) {
 			panel.evented = true;
 			panel.selectable = true;
-			panel.set({ fill: panelFillColor(Boolean(shape?.whiteFill)) });
+			panel.set({ fill: panelFillColor(shape?.fill ?? null) });
 			canvas.setActiveObject(panel);
 		} else {
 			canvas.discardActiveObject();
@@ -360,7 +361,11 @@ export const useShapeActionMenu = ({
 		refreshMenu();
 	};
 
-	const toggleWhiteFill = () => {
+	/**
+	 * Cambia el relleno en el store y en el polígono Fabric. `record`
+	 * distingue el arrastre del color picker (sin historial) del valor final.
+	 */
+	const applyFill = (next: string | null, record: boolean) => {
 		const canvas = fabricCanvas.value;
 		const id = panelId.value;
 
@@ -368,9 +373,13 @@ export const useShapeActionMenu = ({
 			return;
 		}
 
-		const next = !whiteFill.value;
+		const changed = record
+			? mangaStore.setShapeFill(id, next)
+			: mangaStore.previewShapeFill(id, next);
 
-		mangaStore.setShapeWhiteFill(id, next);
+		if (!changed) {
+			return;
+		}
 
 		const panel = findPanelById(canvas, id);
 
@@ -383,6 +392,18 @@ export const useShapeActionMenu = ({
 		onChanged?.();
 		canvas.requestRenderAll();
 		refreshMenu();
+	};
+
+	const toggleFill = () => {
+		applyFill(fill.value === null ? DEFAULT_PANEL_FILL : null, true);
+	};
+
+	const setFillColor = (color: string) => {
+		applyFill(color, true);
+	};
+
+	const previewFillColor = (color: string) => {
+		applyFill(color, false);
 	};
 
 	const bindCanvasEvents = (canvas: Canvas) => {
@@ -427,7 +448,7 @@ export const useShapeActionMenu = ({
 		isGrayscale,
 		isFlipX,
 		isFlipY,
-		whiteFill,
+		fill,
 		strokes,
 		position,
 		placement,
@@ -438,7 +459,9 @@ export const useShapeActionMenu = ({
 		toggleGrayscale,
 		toggleFlipX: () => toggleFlip('flipX'),
 		toggleFlipY: () => toggleFlip('flipY'),
-		toggleWhiteFill,
+		toggleFill,
+		setFillColor,
+		previewFillColor,
 		setEdgeStroke,
 		previewEdgeStroke,
 		highlightEdge,

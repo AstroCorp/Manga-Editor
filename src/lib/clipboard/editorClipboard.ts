@@ -19,10 +19,6 @@ export const peekClipboardEntryOfKind = <K extends ClipboardEntryKind>(
 	return clipboard as Extract<ClipboardEntry, { kind: K }>;
 };
 
-export const hasClipboardKind = (kind: ClipboardEntryKind): boolean => {
-	return clipboard?.kind === kind;
-};
-
 export const clearClipboard = () => {
 	clipboard = null;
 };

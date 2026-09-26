@@ -205,7 +205,7 @@ export type ShapeJSONInput = Omit<ShapeJSON, 'strokes'> & {
 
 export type ShapeLike =
 	| (Pick<ShapeJSON, 'points' | 'strokes' | 'image'> & {
-			whiteFill?: boolean;
+			fill?: string | null;
 	  })
 	| Shape;
 
@@ -238,7 +238,8 @@ export type PagePreviewPanel = {
 	uniformStroke: ShapeStroke | null;
 	/** Aristas individuales cuando los trazos difieren. */
 	edges: PagePreviewEdge[];
-	whiteFill: boolean;
+	/** Relleno del panel; `null` sin relleno (o con imagen). */
+	fill: string | null;
 	/** Imagen del panel; el borde se pinta encima (como en el canvas). */
 	image: PagePreviewImage | null;
 };
@@ -287,7 +288,8 @@ export type ShapeValue = {
 	points: PagePoint[];
 	strokes: ShapeStroke[];
 	image?: ShapeImage | null;
-	whiteFill?: boolean;
+	/** Hex `#rrggbb`; `null` o ausente = sin relleno. */
+	fill?: string | null;
 };
 
 export type LayerValue = {

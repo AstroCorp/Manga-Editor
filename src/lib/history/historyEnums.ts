@@ -21,6 +21,7 @@ export const HISTORY_LABEL = {
 	FlipImage: 'Flip image',
 	GrayscaleImage: 'Grayscale image',
 	FillPanel: 'Fill panel',
+	ChangePanelFill: 'Change panel fill',
 	ClearPanelFill: 'Clear panel fill',
 	AddPage: 'Add page',
 	DeletePage: 'Delete page',

@@ -7,8 +7,11 @@ export type HistoryShapeImageJSON = Omit<ShapeImageJSON, 'src'> & {
 	assetId: string;
 };
 
-/** Panel en un snapshot de historial (incluye relleno blanco de vista). */
+/** Panel en un snapshot de historial (incluye el relleno de vista). */
 export type HistoryShapeJSON = Omit<ShapeJSON, 'image'> & {
+	/** Relleno hex; `null` sin relleno. Ausente en snapshots antiguos. */
+	fill?: string | null;
+	/** Solo snapshots antiguos: `true` equivale a `fill: '#ffffff'`. */
 	whiteFill?: boolean;
 	image: HistoryShapeImageJSON | null;
 };

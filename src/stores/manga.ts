@@ -468,14 +468,64 @@ export const useMangaStore = defineStore('manga', () => {
 		);
 	};
 
-	const setShapeWhiteFill = (shapeId: string, whiteFill: boolean) => {
-		if (!getActivePage().setShapeWhiteFill(shapeId, whiteFill)) {
-			return;
+	const findActiveShape = (shapeId: string): Shape | undefined => {
+		return getActivePage()
+			.getActiveLayer()
+			.shapes.find((shape) => {
+				return shape.id === shapeId;
+			});
+	};
+
+	/**
+	 * Relleno confirmado antes de una preview en curso, por forma. Permite que
+	 * el `change` final registre historial aunque el dominio ya tenga el valor.
+	 */
+	const fillBeforePreview = new Map<string, string | null>();
+
+	/** Cambio en vivo (arrastre del color picker): sin historial. */
+	const previewShapeFill = (shapeId: string, fill: string | null): boolean => {
+		const shape = findActiveShape(shapeId);
+
+		if (!shape) {
+			return false;
 		}
 
-		recordHistory(
-			whiteFill ? HISTORY_LABEL.FillPanel : HISTORY_LABEL.ClearPanelFill,
-		);
+		if (!fillBeforePreview.has(shapeId)) {
+			fillBeforePreview.set(shapeId, shape.fill);
+		}
+
+		return getActivePage().setShapeFill(shapeId, fill);
+	};
+
+	const setShapeFill = (shapeId: string, fill: string | null): boolean => {
+		const shape = findActiveShape(shapeId);
+
+		if (!shape) {
+			fillBeforePreview.delete(shapeId);
+
+			return false;
+		}
+
+		const committed = fillBeforePreview.has(shapeId)
+			? (fillBeforePreview.get(shapeId) ?? null)
+			: shape.fill;
+
+		fillBeforePreview.delete(shapeId);
+		getActivePage().setShapeFill(shapeId, fill);
+
+		if (shape.fill === committed) {
+			return false;
+		}
+
+		if (shape.fill === null) {
+			recordHistory(HISTORY_LABEL.ClearPanelFill);
+		} else if (committed === null) {
+			recordHistory(HISTORY_LABEL.FillPanel);
+		} else {
+			recordHistory(HISTORY_LABEL.ChangePanelFill);
+		}
+
+		return true;
 	};
 
 	const setActivePageSize = (width: number, height: number) => {
@@ -695,7 +745,8 @@ export const useMangaStore = defineStore('manga', () => {
 		removeText,
 		updateText,
 		setShapeImage,
-		setShapeWhiteFill,
+		previewShapeFill,
+		setShapeFill,
 		setActivePageSize,
 		setActiveLayerGrid,
 		setActiveLayerMargins,

@@ -161,10 +161,11 @@ const runDecoration = (run: PagePreviewTextRun) => {
 			:key="`panel-${index}`"
 		>
 			<polygon
-				v-if="panel.whiteFill"
+				v-if="panel.fill"
 				:points="panel.points"
-				fill="#ffffff"
+				:fill="panel.fill"
 				stroke="none"
+				data-testid="panel-fill"
 			/>
 			<g
 				v-if="panel.image"

@@ -414,8 +414,8 @@ export class Page {
 		return this.getActiveLayer().setShapeImage(shapeId, image);
 	}
 
-	setShapeWhiteFill(shapeId: string, whiteFill: boolean): boolean {
-		return this.getActiveLayer().setShapeWhiteFill(shapeId, whiteFill);
+	setShapeFill(shapeId: string, fill: string | null): boolean {
+		return this.getActiveLayer().setShapeFill(shapeId, fill);
 	}
 
 	/**

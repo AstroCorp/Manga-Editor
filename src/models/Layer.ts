@@ -241,10 +241,13 @@ export class Layer {
 		});
 	}
 
-	setShapeWhiteFill(shapeId: string, whiteFill: boolean): boolean {
-		return updateShapeOnLayer(this, shapeId, (shape) => {
-			shape.setWhiteFill(whiteFill);
+	setShapeFill(shapeId: string, fill: string | null): boolean {
+		let changed = false;
+		const found = updateShapeOnLayer(this, shapeId, (shape) => {
+			changed = shape.setFill(fill);
 		});
+
+		return found && changed;
 	}
 
 	/** Aplica geometría de layout (sin tamaño de página). */

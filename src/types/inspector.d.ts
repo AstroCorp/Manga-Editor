@@ -14,7 +14,7 @@ export type ShapeInspectorApi = {
 	isGrayscale: Ref<boolean>;
 	isFlipX: Ref<boolean>;
 	isFlipY: Ref<boolean>;
-	whiteFill: Ref<boolean>;
+	fill: Ref<string | null>;
 	strokes: Ref<ShapeStroke[]>;
 	deleteShape: () => void;
 	clearImage: () => void;
@@ -22,7 +22,9 @@ export type ShapeInspectorApi = {
 	toggleGrayscale: () => void;
 	toggleFlipX: () => void;
 	toggleFlipY: () => void;
-	toggleWhiteFill: () => void;
+	toggleFill: () => void;
+	setFillColor: (color: string) => void;
+	previewFillColor: (color: string) => void;
 	setEdgeStroke: (edgeIndex: number, patch: ShapeStrokePatch) => void;
 	previewEdgeStroke: (edgeIndex: number, patch: ShapeStrokePatch) => void;
 	highlightEdge: (edgeIndex: number | null) => void;

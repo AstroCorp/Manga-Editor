@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	buildStyledPreviewLines,
-	plainPreviewLines,
-} from '@/lib/page/previewTextRuns';
+import { buildStyledPreviewLines } from '@/lib/page/previewTextRuns';
 import type { PreviewTextBaseStyle } from '@/types/page';
 
 const base: PreviewTextBaseStyle = {
@@ -15,6 +12,12 @@ const base: PreviewTextBaseStyle = {
 	linethrough: false,
 	stroke: null,
 	strokeWidth: 0,
+};
+
+const plainPreviewLines = (styledLines: { text: string }[][]): string[] => {
+	return styledLines.map((runs) => {
+		return runs.map((run) => run.text).join('');
+	});
 };
 
 describe('previewTextRuns', () => {

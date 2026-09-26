@@ -24,7 +24,7 @@ export const shapeMenuFeature: CanvasFeature = {
 			isGrayscale: api.isGrayscale,
 			isFlipX: api.isFlipX,
 			isFlipY: api.isFlipY,
-			whiteFill: api.whiteFill,
+			fill: api.fill,
 			strokes: api.strokes,
 			deleteShape: api.deleteShape,
 			clearImage: api.clearImage,
@@ -34,7 +34,9 @@ export const shapeMenuFeature: CanvasFeature = {
 			toggleGrayscale: api.toggleGrayscale,
 			toggleFlipX: api.toggleFlipX,
 			toggleFlipY: api.toggleFlipY,
-			toggleWhiteFill: api.toggleWhiteFill,
+			toggleFill: api.toggleFill,
+			setFillColor: api.setFillColor,
+			previewFillColor: api.previewFillColor,
 			setEdgeStroke: api.setEdgeStroke,
 			previewEdgeStroke: api.previewEdgeStroke,
 			highlightEdge: api.highlightEdge,
@@ -51,7 +53,7 @@ export const shapeMenuFeature: CanvasFeature = {
 					isGrayscale: api.isGrayscale.value,
 					isFlipX: api.isFlipX.value,
 					isFlipY: api.isFlipY.value,
-					whiteFill: api.whiteFill.value,
+					fill: api.fill.value,
 					strokes: api.strokes.value,
 					left: stage.left,
 					top: stage.top,
@@ -67,7 +69,11 @@ export const shapeMenuFeature: CanvasFeature = {
 				toggleGrayscale: api.toggleGrayscale,
 				toggleFlipX: api.toggleFlipX,
 				toggleFlipY: api.toggleFlipY,
-				toggleWhiteFill: api.toggleWhiteFill,
+				toggleFill: api.toggleFill,
+				setFillColor: api.setFillColor as (...args: never[]) => unknown,
+				previewFillColor: api.previewFillColor as (
+					...args: never[]
+				) => unknown,
 				setEdgeStroke: api.setEdgeStroke as (...args: never[]) => unknown,
 				previewEdgeStroke: api.previewEdgeStroke as (
 					...args: never[]

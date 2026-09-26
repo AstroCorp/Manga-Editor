@@ -8,6 +8,7 @@ import {
 	createStroke,
 	createUniformStrokes,
 	normalizeShapeStrokes,
+	normalizeStrokeColor,
 } from '@/lib/page/shapeStrokes';
 import { ShapeImage } from '@/models/ShapeImage';
 import type {
@@ -25,15 +26,26 @@ export class Shape {
 	/** Un trazo por arista: `strokes[i]` une `points[i]` con `points[i+1]`. */
 	public strokes: ShapeStroke[];
 	public image: ShapeImage | null;
-	/** Preferencia de vista; no se serializa en JSON de layout. */
-	public whiteFill: boolean;
+	/** Relleno de vista (`null` = sin relleno); no se serializa en JSON de layout. */
+	public fill: string | null;
 
 	constructor(value: ShapeValue) {
 		this.id = value.id;
 		this.points = value.points;
 		this.strokes = normalizeShapeStrokes(value.points.length, value.strokes);
 		this.image = value.image ?? null;
-		this.whiteFill = Boolean(value.whiteFill);
+		this.fill = Shape.normalizeFill(value.fill);
+	}
+
+	/** Hex válido en minúsculas o `null`; cualquier otro valor se descarta. */
+	static normalizeFill(fill: string | null | undefined): string | null {
+		if (fill === null || fill === undefined) {
+			return null;
+		}
+
+		const normalized = normalizeStrokeColor(fill, '');
+
+		return normalized || null;
 	}
 
 	static create(
@@ -52,8 +64,21 @@ export class Shape {
 		this.image = image;
 	}
 
-	setWhiteFill(whiteFill: boolean) {
-		this.whiteFill = whiteFill;
+	/** Devuelve `false` si el color no es válido o no cambia nada. */
+	setFill(fill: string | null): boolean {
+		const next = Shape.normalizeFill(fill);
+
+		if (fill !== null && next === null) {
+			return false;
+		}
+
+		if (next === this.fill) {
+			return false;
+		}
+
+		this.fill = next;
+
+		return true;
 	}
 
 	/** Reemplaza el trazo de todas las aristas. */

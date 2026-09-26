@@ -31,15 +31,15 @@ export const PANEL_STROKE_COLOR = DEFAULT_STROKE_COLOR;
  * siga registrando clics en el interior del polígono.
  */
 const PANEL_FILL_NONE = 'rgba(255,255,255,0.01)';
-const PANEL_FILL_WHITE = '#ffffff';
 
+/** Relleno Fabric del panel: el color del dominio o casi transparente; con imagen nunca se pinta. */
 export const panelFillColor = (
-	whiteFill: boolean,
+	fill: string | null,
 	options: PanelFillOptions = {},
 ): string => {
-	if (options.hasImage) {
+	if (options.hasImage || fill === null) {
 		return PANEL_FILL_NONE;
 	}
 
-	return whiteFill ? PANEL_FILL_WHITE : PANEL_FILL_NONE;
+	return fill;
 };

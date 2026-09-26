@@ -153,8 +153,9 @@ const boxStrokeRingStyle = computed(() => {
 			aria-label="Box format"
 			@pointerdown.stop
 		>
+			<div class="flex items-center gap-0.5" role="group" aria-label="Box paint">
 			<label
-				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+				class="relative inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
 				title="Box fill"
 			>
 				<span
@@ -164,7 +165,7 @@ const boxStrokeRingStyle = computed(() => {
 				/>
 				<input
 					type="color"
-					class="sr-only"
+					class="absolute inset-0 size-full cursor-pointer opacity-0"
 					:value="boxFillValue"
 					aria-label="Box fill"
 					@input="onBoxFillInput"
@@ -172,7 +173,7 @@ const boxStrokeRingStyle = computed(() => {
 			</label>
 
 			<label
-				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+				class="relative inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
 				title="Box stroke"
 			>
 				<span
@@ -189,7 +190,7 @@ const boxStrokeRingStyle = computed(() => {
 				</span>
 				<input
 					type="color"
-					class="sr-only"
+					class="absolute inset-0 size-full cursor-pointer opacity-0"
 					:value="boxStrokeValue"
 					aria-label="Box stroke"
 					@input="onBoxStrokeInput"
@@ -213,6 +214,11 @@ const boxStrokeRingStyle = computed(() => {
 					</span>
 				</template>
 			</NumberInput>
+			</div>
+			<span
+				class="mx-1 h-5 w-px shrink-0 bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
 
 			<NumberInput
 				variant="toolbar"
@@ -249,6 +255,10 @@ const boxStrokeRingStyle = computed(() => {
 					</span>
 				</template>
 			</NumberInput>
+			<span
+				class="mx-1 h-5 w-px shrink-0 bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
 
 			<NumberInput
 				variant="toolbar"
@@ -285,6 +295,10 @@ const boxStrokeRingStyle = computed(() => {
 					</span>
 				</template>
 			</NumberInput>
+			<span
+				class="mx-1 h-5 w-px shrink-0 bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
 
 			<div
 				class="flex items-center gap-0.5"
@@ -345,24 +359,6 @@ const boxStrokeRingStyle = computed(() => {
 			aria-label="Text format"
 			@pointerdown.stop
 		>
-			<label
-				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
-				title="Text color"
-			>
-				<span
-					class="size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-					:style="swatchStyle"
-					aria-hidden="true"
-				/>
-				<input
-					type="color"
-					class="sr-only"
-					:value="colorValue"
-					aria-label="Text color"
-					@input="onColorInput"
-				/>
-			</label>
-
 			<FontFamilySelect
 				:model-value="fontFamily"
 				:dominant-font-family="dominantFontFamily"
@@ -413,45 +409,6 @@ const boxStrokeRingStyle = computed(() => {
 					</span>
 				</template>
 			</NumberInput>
-
-			<label
-				class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
-				title="Stroke color"
-			>
-				<span
-					class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-					aria-hidden="true"
-				>
-					<span
-						class="absolute inset-0 rounded-full"
-						:style="strokeSwatchStyle"
-					/>
-					<span
-						class="absolute inset-[4px] rounded-full border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
-					/>
-				</span>
-				<input
-					type="color"
-					class="sr-only"
-					:value="strokeColorValue"
-					aria-label="Stroke color"
-					@input="onStrokeColorInput"
-				/>
-			</label>
-
-			<NumberInput
-				variant="toolbar"
-				:model-value="strokeWidth"
-				:fallback-value="dominantStrokeWidth"
-				:min="MIN_TEXT_STROKE_WIDTH"
-				input-width-class="w-8"
-				commit-on-input
-				:ariaLabel="strokeWidthAriaLabel"
-				increase-label="Increase stroke width"
-				decrease-label="Decrease stroke width"
-				title="Stroke width"
-				@update:model-value="emit('setStrokeWidth', $event)"
-			/>
 
 			<button
 				type="button"
@@ -518,27 +475,97 @@ const boxStrokeRingStyle = computed(() => {
 				:model-value="textAlign"
 				@update:model-value="onTextAlignUpdate"
 			/>
+			<span
+				class="mx-1 h-5 w-px shrink-0 bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
+			<div class="flex items-center gap-0.5" role="group" aria-label="Text paint">
+				<label
+					class="relative inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+					title="Text color"
+				>
+					<span
+						class="size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+						:style="swatchStyle"
+						aria-hidden="true"
+					/>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="colorValue"
+						aria-label="Text color"
+						@input="onColorInput"
+					/>
+				</label>
+				<label
+					class="relative inline-flex size-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-blue-50 dark:hover:bg-blue-950"
+					title="Stroke color"
+				>
+					<span
+						class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+						aria-hidden="true"
+					>
+						<span
+							class="absolute inset-0 rounded-full"
+							:style="strokeSwatchStyle"
+						/>
+						<span
+							class="absolute inset-[4px] rounded-full border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
+						/>
+					</span>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="strokeColorValue"
+						aria-label="Stroke color"
+						@input="onStrokeColorInput"
+					/>
+				</label>
+				<NumberInput
+					variant="toolbar"
+					:model-value="strokeWidth"
+					:fallback-value="dominantStrokeWidth"
+					:min="MIN_TEXT_STROKE_WIDTH"
+					input-width-class="w-8"
+					commit-on-input
+					:ariaLabel="strokeWidthAriaLabel"
+					increase-label="Increase stroke width"
+					decrease-label="Decrease stroke width"
+					title="Stroke width"
+					@update:model-value="emit('setStrokeWidth', $event)"
+				/>
+			</div>
+			<span
+				class="mx-1 h-5 w-px shrink-0 bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
 
 			<PageAlignSelect @align="onPageAlign" />
+			<span
+				class="mx-1 h-5 w-px shrink-0 bg-slate-200/80 dark:bg-zinc-700"
+				aria-hidden="true"
+			/>
 
-			<button
-				type="button"
-				class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
-				title="Show element options"
-				aria-label="Show element options"
-				@click="emit('showOptions')"
-			>
-				<Icon icon="fluent:options-24-regular" class="size-5" />
-			</button>
-			<button
-				type="button"
-				class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
-				title="Delete text"
-				aria-label="Delete text"
-				@click="emit('deleteText')"
-			>
-				<Icon icon="fluent:delete-24-regular" class="size-5" />
-			</button>
+			<div class="flex items-center gap-0.5" role="group" aria-label="Text actions">
+				<button
+					type="button"
+					class="inline-flex size-9 items-center justify-center rounded-md text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+					title="Show element options"
+					aria-label="Show element options"
+					@click="emit('showOptions')"
+				>
+					<Icon icon="fluent:options-24-regular" class="size-5" />
+				</button>
+				<button
+					type="button"
+					class="inline-flex size-9 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+					title="Delete text"
+					aria-label="Delete text"
+					@click="emit('deleteText')"
+				>
+					<Icon icon="fluent:delete-24-regular" class="size-5" />
+				</button>
+			</div>
 		</div>
 	</div>
 </template>

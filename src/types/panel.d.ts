@@ -74,7 +74,8 @@ export type ShapeActionMenuProps = {
 	isGrayscale: boolean;
 	isFlipX: boolean;
 	isFlipY: boolean;
-	whiteFill: boolean;
+	/** Relleno del panel; `null` sin relleno. */
+	fill: string | null;
 	/** Trazo de cada arista del panel seleccionado (orden de sus puntos). */
 	strokes: ShapeStroke[];
 	left: number | null;
@@ -89,7 +90,12 @@ export type ShapeActionMenuEmits = {
 	toggleGrayscale: [];
 	toggleFlipX: [];
 	toggleFlipY: [];
-	toggleWhiteFill: [];
+	/** Activa el relleno (color por defecto) o lo quita. */
+	toggleFill: [];
+	/** Color de relleno definitivo (se registra en el historial). */
+	setFillColor: [color: string];
+	/** Color de relleno en vivo mientras se arrastra el picker (sin historial). */
+	previewFillColor: [color: string];
 	/** Cambio definitivo de una arista (se registra en el historial). */
 	setEdgeStroke: [edgeIndex: number, patch: ShapeStrokePatch];
 	/** Cambio en vivo mientras se arrastra el color picker (sin historial). */

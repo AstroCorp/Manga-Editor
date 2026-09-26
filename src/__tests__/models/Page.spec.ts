@@ -134,11 +134,37 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		expect(shape.toJSON().image).not.toBeNull();
 		expect(shape.toLayoutJSON().image).toBeNull();
 
-		shape.setWhiteFill(true);
-		expect(shape.whiteFill).toBe(true);
-		expect(shape.toJSON()).not.toHaveProperty('whiteFill');
-		expect(shape.toLayoutJSON()).not.toHaveProperty('whiteFill');
-		expect(Shape.fromJSON(shape.toJSON()).whiteFill).toBe(false);
+		expect(shape.setFill('#ABC')).toBe(true);
+		expect(shape.fill).toBe('#aabbcc');
+		expect(shape.toJSON()).not.toHaveProperty('fill');
+		expect(shape.toLayoutJSON()).not.toHaveProperty('fill');
+		expect(Shape.fromJSON(shape.toJSON()).fill).toBeNull();
+	});
+
+	it('Shape.setFill normalizes colors and rejects invalid or unchanged values', () => {
+		const shape = Shape.create(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+				{ x: 10, y: 10 },
+			],
+			2,
+		);
+
+		expect(shape.fill).toBeNull();
+		expect(shape.setFill(null)).toBe(false);
+		expect(shape.setFill('not-a-color')).toBe(false);
+		expect(shape.fill).toBeNull();
+
+		expect(shape.setFill('#FFCC00')).toBe(true);
+		expect(shape.fill).toBe('#ffcc00');
+		expect(shape.setFill('#ffcc00')).toBe(false);
+		expect(shape.setFill('nope')).toBe(false);
+		expect(shape.fill).toBe('#ffcc00');
+
+		expect(shape.setFill(null)).toBe(true);
+		expect(shape.fill).toBeNull();
+		expect(new Shape({ ...shape.toJSON(), fill: 'bad' }).fill).toBeNull();
 	});
 
 	it('ShapeImage persists grayscale and flips through JSON round-trip', () => {
@@ -532,7 +558,7 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 		]);
 	});
 
-	it('setShapeWhiteFill toggles view fill without touching other layers', () => {
+	it('setShapeFill changes the view fill without touching other layers', () => {
 		const page = Page.createBlank(1);
 		const shape = Shape.create(
 			[
@@ -559,11 +585,12 @@ describe('Page / Layer / Shape / ShapeImage', () => {
 
 		const before = page.getActiveLayer().shapes;
 
-		expect(page.setShapeWhiteFill(otherShape.id, true)).toBe(true);
+		expect(page.setShapeFill(otherShape.id, '#ffcc00')).toBe(true);
 		expect(page.getActiveLayer().shapes).not.toBe(before);
-		expect(otherShape.whiteFill).toBe(true);
-		expect(shape.whiteFill).toBe(false);
-		expect(page.setShapeWhiteFill('missing', true)).toBe(false);
+		expect(otherShape.fill).toBe('#ffcc00');
+		expect(shape.fill).toBeNull();
+		expect(page.setShapeFill(otherShape.id, '#ffcc00')).toBe(false);
+		expect(page.setShapeFill('missing', '#ffcc00')).toBe(false);
 	});
 
 	it('setSize resets to default layer and reclamps margins', () => {

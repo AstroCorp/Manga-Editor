@@ -23,20 +23,20 @@ describe('invertHexColor', () => {
 });
 
 describe('panelFillColor', () => {
-	it('returns white when whiteFill is enabled without image', () => {
-		expect(panelFillColor(true)).toBe('#ffffff');
-		expect(panelFillColor(true, { hasImage: false })).toBe('#ffffff');
+	it('returns the shape fill color when there is no image', () => {
+		expect(panelFillColor('#ffffff')).toBe('#ffffff');
+		expect(panelFillColor('#ffcc00', { hasImage: false })).toBe('#ffcc00');
 	});
 
-	it('returns near-transparent fill when whiteFill is off', () => {
-		expect(panelFillColor(false)).toMatch(/^rgba\(255,255,255,/);
+	it('returns near-transparent fill when the shape has no fill', () => {
+		expect(panelFillColor(null)).toMatch(/^rgba\(255,255,255,/);
 	});
 
 	it('forces transparent fill when the panel has an image', () => {
-		expect(panelFillColor(true, { hasImage: true })).toMatch(
+		expect(panelFillColor('#ffcc00', { hasImage: true })).toMatch(
 			/^rgba\(255,255,255,/,
 		);
-		expect(panelFillColor(false, { hasImage: true })).toMatch(
+		expect(panelFillColor(null, { hasImage: true })).toMatch(
 			/^rgba\(255,255,255,/,
 		);
 	});

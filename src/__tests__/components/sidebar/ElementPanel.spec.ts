@@ -15,7 +15,7 @@ const shapeApi = (): ShapeInspectorApi => {
 		isGrayscale: ref(false),
 		isFlipX: ref(false),
 		isFlipY: ref(false),
-		whiteFill: ref(false),
+		fill: ref<string | null>(null),
 		strokes: shallowRef([
 			{ width: 2, color: '#111111' },
 			{ width: 4, color: '#ff0000' },
@@ -26,7 +26,9 @@ const shapeApi = (): ShapeInspectorApi => {
 		toggleGrayscale: vi.fn(),
 		toggleFlipX: vi.fn(),
 		toggleFlipY: vi.fn(),
-		toggleWhiteFill: vi.fn(),
+		toggleFill: vi.fn(),
+		setFillColor: vi.fn(),
+		previewFillColor: vi.fn(),
 		setEdgeStroke: vi.fn(),
 		previewEdgeStroke: vi.fn(),
 		highlightEdge: vi.fn(),
@@ -109,7 +111,7 @@ describe('ElementPanel', () => {
 		wrapper.unmount();
 	});
 
-	it('shows panel options and forwards white fill', async () => {
+	it('shows panel options and forwards fill changes', async () => {
 		const wrapper = mountPanel();
 		const mangaStore = useMangaStore();
 		const selectionStore = useSelectionStore();
@@ -124,14 +126,41 @@ describe('ElementPanel', () => {
 		});
 		await wrapper.vm.$nextTick();
 
-		expect(wrapper.text()).toContain('White fill');
+		expect(wrapper.text()).toContain('Fill panel');
+		expect(wrapper.get('[data-testid="panel-fill-value"]').text()).toBe('None');
 		expect(wrapper.text()).toContain('Edge 1');
 		expect(wrapper.text()).toContain('Edge 2');
 		expect(wrapper.text()).toContain('Black and white');
 
-		await wrapper.get('button[aria-label="White fill"]').trigger('click');
+		await wrapper.get('button[aria-label="Fill panel"]').trigger('click');
 
-		expect(api.toggleWhiteFill).toHaveBeenCalledOnce();
+		expect(api.toggleFill).toHaveBeenCalledOnce();
+
+		const input = wrapper.get('input[aria-label="Fill color"]');
+
+		await input.setValue('#00ff00');
+
+		expect(api.previewFillColor).toHaveBeenCalledExactlyOnceWith('#00ff00');
+		expect(api.setFillColor).toHaveBeenCalledExactlyOnceWith('#00ff00');
+
+		api.fill.value = '#00ff00';
+		await wrapper.vm.$nextTick();
+
+		expect(wrapper.get('[data-testid="panel-fill-value"]').text()).toBe(
+			'#00ff00',
+		);
+		expect(wrapper.get('button[aria-label="Remove fill"]').exists()).toBe(true);
+
+		const sections = wrapper.findAll('section').map((node) => {
+			return node.attributes('aria-label');
+		});
+
+		expect(sections).toEqual([
+			'Panel fill',
+			'Panel edges',
+			'Panel image',
+			'Panel actions',
+		]);
 		wrapper.unmount();
 	});
 
@@ -150,7 +179,7 @@ describe('ElementPanel', () => {
 		await wrapper.vm.$nextTick();
 
 		expect(wrapper.text()).toContain('Updating the selection');
-		expect(wrapper.find('button[aria-label="White fill"]').exists()).toBe(false);
+		expect(wrapper.find('button[aria-label="Fill panel"]').exists()).toBe(false);
 		wrapper.unmount();
 	});
 
@@ -171,6 +200,23 @@ describe('ElementPanel', () => {
 
 		expect(wrapper.get('[aria-label="Text format"]').exists()).toBe(true);
 		expect(wrapper.get('[aria-label="Box format"]').exists()).toBe(true);
+
+		const textLabels = wrapper
+			.get('[aria-label="Text format"]')
+			.findAll('[aria-label]')
+			.map((node) => {
+				return node.attributes('aria-label');
+			});
+
+		expect(textLabels.indexOf('Font family')).toBeLessThan(
+			textLabels.indexOf('Text style'),
+		);
+		expect(textLabels.indexOf('Text style')).toBeLessThan(
+			textLabels.indexOf('Text color'),
+		);
+		expect(textLabels.indexOf('Text color')).toBeLessThan(
+			textLabels.indexOf('Stroke color'),
+		);
 
 		await wrapper.get('button[aria-label="Bold"]').trigger('click');
 		await wrapper.get('button[aria-label="Delete text"]').trigger('click');

@@ -11,10 +11,13 @@ const props = withDefaults(
 		label: string;
 		title?: string;
 		listLabel?: string;
+		/** Solo icono en el disparador; las opciones mantienen su texto. */
+		hideTriggerLabel?: boolean;
 	}>(),
 	{
 		title: undefined,
 		listLabel: undefined,
+		hideTriggerLabel: false,
 	},
 );
 
@@ -142,7 +145,7 @@ const onListKeydown = (event: KeyboardEvent) => {
 					class="size-5 shrink-0"
 					aria-hidden="true"
 				/>
-				<span class="text-xs whitespace-nowrap">{{
+				<span v-if="!hideTriggerLabel" class="text-xs whitespace-nowrap">{{
 					selectedOption?.label
 				}}</span>
 				<Icon

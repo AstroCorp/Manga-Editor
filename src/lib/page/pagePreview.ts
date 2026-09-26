@@ -414,7 +414,7 @@ export const buildPagePreview = (
 			uniformStroke: uniform,
 			edges: uniform ? [] : toPreviewEdges(shape.points, strokes),
 			// Con imagen el panel va encima solo como borde (fill transparente).
-			whiteFill: Boolean(shape.whiteFill) && !image,
+			fill: image ? null : (shape.fill ?? null),
 			image,
 		});
 	}

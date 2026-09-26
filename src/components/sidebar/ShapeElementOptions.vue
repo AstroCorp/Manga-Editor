@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { storeToRefs } from 'pinia';
 import EdgeStrokeMenu from '@/features/shape-menu/components/EdgeStrokeMenu.vue';
+import { DEFAULT_PANEL_FILL } from '@/lib/page/pageLimits';
 import { useElementInspectorStore } from '@/stores/elementInspector';
 import { useSelectionStore } from '@/stores/selection';
 
@@ -38,9 +39,29 @@ const isFlipY = computed(() => {
 	return shapeApi.value?.isFlipY.value ?? false;
 });
 
-const whiteFill = computed(() => {
-	return shapeApi.value?.whiteFill.value ?? false;
+const fill = computed(() => {
+	return shapeApi.value?.fill.value ?? null;
 });
+
+const hasFill = computed(() => {
+	return fill.value !== null;
+});
+
+const fillColorValue = computed(() => {
+	return fill.value ?? DEFAULT_PANEL_FILL;
+});
+
+const colorFromEvent = (event: Event) => {
+	return (event.target as HTMLInputElement).value;
+};
+
+const onFillColorInput = (event: Event) => {
+	shapeApi.value?.previewFillColor(colorFromEvent(event));
+};
+
+const onFillColorChange = (event: Event) => {
+	shapeApi.value?.setFillColor(colorFromEvent(event));
+};
 
 const strokes = computed(() => {
 	return shapeApi.value?.strokes.value ?? [];
@@ -87,6 +108,76 @@ const pressedClass = (pressed: boolean) => {
 	</p>
 
 	<div v-else class="flex flex-col">
+		<section
+			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
+			aria-label="Panel fill"
+		>
+			<h3
+				class="mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
+			>
+				Fill
+			</h3>
+			<button
+				type="button"
+				class="flex min-h-9 w-full items-center justify-between gap-3 rounded-md border px-2.5 text-sm transition"
+				:class="pressedClass(hasFill)"
+				:aria-pressed="hasFill"
+				:aria-label="hasFill ? 'Remove fill' : 'Fill panel'"
+				@click="shapeApi?.toggleFill()"
+			>
+				<span>Fill panel</span>
+				<Icon icon="fluent:paint-bucket-24-regular" class="size-5 shrink-0" />
+			</button>
+			<label
+				class="flex min-h-9 cursor-pointer items-center justify-between gap-3 text-sm leading-snug text-slate-900 dark:text-slate-100"
+			>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Color</span>
+				<span
+					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 transition hover:border-blue-600/50 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200 dark:hover:border-blue-500/50"
+				>
+					<span
+						class="size-5 rounded-sm border border-slate-300 shadow-sm dark:border-zinc-600"
+						:class="hasFill ? undefined : 'opacity-40'"
+						:style="{ background: fillColorValue }"
+						aria-hidden="true"
+					/>
+					<span data-testid="panel-fill-value">
+						{{ hasFill ? fillColorValue : 'None' }}
+					</span>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="fillColorValue"
+						aria-label="Fill color"
+						@input="onFillColorInput"
+						@change="onFillColorChange"
+					/>
+				</span>
+			</label>
+		</section>
+
+		<section
+			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
+			aria-label="Panel edges"
+		>
+			<h3
+				class="mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
+			>
+				Edges
+			</h3>
+			<EdgeStrokeMenu
+				embedded
+				:strokes="strokes"
+				@set-edge-stroke="
+					(index, patch) => shapeApi?.setEdgeStroke(index, patch)
+				"
+				@preview-edge-stroke="
+					(index, patch) => shapeApi?.previewEdgeStroke(index, patch)
+				"
+				@hover-edge="(index) => shapeApi?.highlightEdge(index)"
+			/>
+		</section>
+
 		<section
 			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
 			aria-label="Panel image"
@@ -166,50 +257,6 @@ const pressedClass = (pressed: boolean) => {
 				class="hidden"
 				tabindex="-1"
 				@change="onFileChange"
-			/>
-		</section>
-
-		<section
-			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
-			aria-label="Panel fill"
-		>
-			<h3
-				class="mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
-			>
-				Fill
-			</h3>
-			<button
-				type="button"
-				class="flex min-h-9 w-full items-center justify-between gap-3 rounded-md border px-2.5 text-sm transition"
-				:class="pressedClass(whiteFill)"
-				:aria-pressed="whiteFill"
-				:aria-label="whiteFill ? 'Remove white fill' : 'White fill'"
-				@click="shapeApi?.toggleWhiteFill()"
-			>
-				<span>White fill</span>
-				<Icon icon="fluent:paint-bucket-24-regular" class="size-5 shrink-0" />
-			</button>
-		</section>
-
-		<section
-			class="flex flex-col gap-3 border-b border-slate-200/70 py-5 first:pt-3 last:border-b-0 last:pb-1 dark:border-zinc-800/70"
-			aria-label="Panel edges"
-		>
-			<h3
-				class="mb-1 flex items-center gap-2.5 text-xs font-semibold tracking-[0.08em] text-blue-600 uppercase before:block before:h-3.5 before:w-0.5 before:shrink-0 before:rounded-full before:bg-blue-600 before:content-[''] dark:text-blue-400 dark:before:bg-blue-500"
-			>
-				Edges
-			</h3>
-			<EdgeStrokeMenu
-				embedded
-				:strokes="strokes"
-				@set-edge-stroke="
-					(index, patch) => shapeApi?.setEdgeStroke(index, patch)
-				"
-				@preview-edge-stroke="
-					(index, patch) => shapeApi?.previewEdgeStroke(index, patch)
-				"
-				@hover-edge="(index) => shapeApi?.highlightEdge(index)"
 			/>
 		</section>
 

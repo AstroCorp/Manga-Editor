@@ -198,29 +198,6 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 			<label
 				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
 			>
-				<span class="pr-2 text-slate-500 dark:text-slate-400">Color</span>
-				<span
-					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200"
-				>
-					<span
-						class="size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-						:style="swatchStyle"
-						aria-hidden="true"
-					/>
-					<span>{{ colorValue }}</span>
-					<input
-						type="color"
-						class="absolute inset-0 size-full cursor-pointer opacity-0"
-						:value="colorValue"
-						aria-label="Text color"
-						@input="onColorInput"
-					/>
-				</span>
-			</label>
-
-			<label
-				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
-			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Font</span>
 				<FontFamilySelect
 					:model-value="fontFamily"
@@ -265,53 +242,6 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 					increase-label="Increase line height"
 					decrease-label="Decrease line height"
 					@update:model-value="textApi?.setLineHeight($event)"
-				/>
-			</label>
-
-			<label
-				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
-			>
-				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke</span>
-				<span
-					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200"
-				>
-					<span
-						class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
-						aria-hidden="true"
-					>
-						<span
-							class="absolute inset-0 rounded-full"
-							:style="strokeSwatchStyle"
-						/>
-						<span
-							class="absolute inset-[4px] rounded-full border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
-						/>
-					</span>
-					<span>{{ strokeColorValue }}</span>
-					<input
-						type="color"
-						class="absolute inset-0 size-full cursor-pointer opacity-0"
-						:value="strokeColorValue"
-						aria-label="Stroke color"
-						@input="onStrokeColorInput"
-					/>
-				</span>
-			</label>
-
-			<label
-				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
-			>
-				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke width</span>
-				<NumberInput
-					:model-value="strokeWidth"
-					:fallback-value="dominantStrokeWidth"
-					:min="MIN_TEXT_STROKE_WIDTH"
-					input-width-class="w-14"
-					commit-on-input
-					ariaLabel="Stroke width"
-					increase-label="Increase stroke width"
-					decrease-label="Decrease stroke width"
-					@update:model-value="textApi?.setStrokeWidth($event)"
 				/>
 			</label>
 
@@ -365,6 +295,76 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 				<TextAlignSelect
 					:model-value="textAlign"
 					@update:model-value="textApi?.setTextAlign($event)"
+				/>
+			</label>
+
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
+			>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Color</span>
+				<span
+					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200"
+				>
+					<span
+						class="size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+						:style="swatchStyle"
+						aria-hidden="true"
+					/>
+					<span>{{ colorValue }}</span>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="colorValue"
+						aria-label="Text color"
+						@input="onColorInput"
+					/>
+				</span>
+			</label>
+
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
+			>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke</span>
+				<span
+					class="relative inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 font-mono text-xs text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200"
+				>
+					<span
+						class="relative size-5 rounded-full border border-slate-300 shadow-sm dark:border-zinc-600"
+						aria-hidden="true"
+					>
+						<span
+							class="absolute inset-0 rounded-full"
+							:style="strokeSwatchStyle"
+						/>
+						<span
+							class="absolute inset-[4px] rounded-full border border-slate-300 bg-white dark:border-zinc-600 dark:bg-zinc-950"
+						/>
+					</span>
+					<span>{{ strokeColorValue }}</span>
+					<input
+						type="color"
+						class="absolute inset-0 size-full cursor-pointer opacity-0"
+						:value="strokeColorValue"
+						aria-label="Stroke color"
+						@input="onStrokeColorInput"
+					/>
+				</span>
+			</label>
+
+			<label
+				class="flex min-h-9 items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100"
+			>
+				<span class="pr-2 text-slate-500 dark:text-slate-400">Stroke width</span>
+				<NumberInput
+					:model-value="strokeWidth"
+					:fallback-value="dominantStrokeWidth"
+					:min="MIN_TEXT_STROKE_WIDTH"
+					input-width-class="w-14"
+					commit-on-input
+					ariaLabel="Stroke width"
+					increase-label="Increase stroke width"
+					decrease-label="Decrease stroke width"
+					@update:model-value="textApi?.setStrokeWidth($event)"
 				/>
 			</label>
 

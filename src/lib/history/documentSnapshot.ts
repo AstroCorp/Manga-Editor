@@ -1,3 +1,4 @@
+import { DEFAULT_PANEL_FILL } from '@/lib/page/pageLimits';
 import { Layer } from '@/models/Layer';
 import { Page } from '@/models/Page';
 import { Shape } from '@/models/Shape';
@@ -51,9 +52,18 @@ const shapeToHistoryJSON = (
 		strokes: shape.strokes.map((stroke) => {
 			return { ...stroke };
 		}),
-		whiteFill: shape.whiteFill,
+		fill: shape.fill,
 		image: shape.image ? internShapeImage(shape.image, intern) : null,
 	};
+};
+
+/** Snapshots antiguos solo traen `whiteFill`. */
+const historyShapeFill = (data: HistoryShapeJSON): string | null => {
+	if (data.fill !== undefined) {
+		return data.fill;
+	}
+
+	return data.whiteFill ? DEFAULT_PANEL_FILL : null;
 };
 
 const shapeFromHistoryJSON = (
@@ -70,7 +80,7 @@ const shapeFromHistoryJSON = (
 		image: data.image ? resolveShapeImage(data.image, resolve) : null,
 	});
 
-	shape.whiteFill = Boolean(data.whiteFill);
+	shape.fill = Shape.normalizeFill(historyShapeFill(data));
 
 	return shape;
 };

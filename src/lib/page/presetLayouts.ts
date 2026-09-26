@@ -111,8 +111,3 @@ export const loadPresetLayoutsByIds = async (
 		return comparePresetId(a.id, b.id);
 	});
 };
-
-/** Carga todos los presets (tests / utilidades). */
-export const listPresetLayouts = async (): Promise<PresetLayout[]> => {
-	return loadPresetLayoutsByIds(listPresetIds());
-};

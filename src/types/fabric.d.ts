@@ -45,7 +45,7 @@ export type PanelLikeObject = FabricObject & {
 	isGuide?: boolean;
 };
 
-export type PageTextMeta = {
+type PageTextMeta = {
 	objectType?: FabricObjectType;
 	textId?: string;
 	layerId?: string;

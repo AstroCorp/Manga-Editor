@@ -209,7 +209,9 @@ describe('TextColorToolbar', () => {
 			},
 		});
 
-		const swatch = wrapper.get('span[aria-hidden="true"]');
+		const swatch = wrapper
+			.get('label[title="Text color"]')
+			.get('span[aria-hidden="true"]');
 
 		expect(swatch.attributes('style')).toContain('conic-gradient');
 	});
@@ -346,7 +348,7 @@ describe('TextColorToolbar', () => {
 		await wrapper.get('button[aria-label="Text align"]').trigger('click');
 
 		const justifyRight = wrapper.findAll('ul[role="listbox"] button').find((node) => {
-			return node.text().includes('Justify right');
+			return node.text() === 'Justify right';
 		});
 
 		expect(justifyRight).toBeTruthy();
@@ -519,5 +521,54 @@ describe('TextColorToolbar', () => {
 		await wrapper.get('button[aria-label="Show element options"]').trigger('click');
 
 		expect(wrapper.emitted('showOptions')).toHaveLength(1);
+	});
+
+	it('groups type, paint and placement in that order', () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: {
+				...baseProps,
+				hasBox: true,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+		const textLabels = wrapper
+			.get('[aria-label="Text format"]')
+			.findAll('[aria-label]')
+			.map((node) => {
+				return node.attributes('aria-label');
+			});
+		const boxLabels = wrapper
+			.get('[aria-label="Box format"]')
+			.findAll('[aria-label]')
+			.map((node) => {
+				return node.attributes('aria-label');
+			});
+
+		expect(textLabels.indexOf('Font family')).toBeLessThan(
+			textLabels.indexOf('Bold'),
+		);
+		expect(textLabels.indexOf('Bold')).toBeLessThan(
+			textLabels.indexOf('Text paint'),
+		);
+		expect(textLabels.indexOf('Text color')).toBeLessThan(
+			textLabels.indexOf('Stroke color'),
+		);
+		expect(textLabels.indexOf('Text paint')).toBeLessThan(
+			textLabels.indexOf('Show element options'),
+		);
+		expect(boxLabels.indexOf('Box paint')).toBeLessThan(
+			boxLabels.indexOf('Corner radius'),
+		);
+		expect(boxLabels.indexOf('Corner radius')).toBeLessThan(
+			boxLabels.indexOf('Box width'),
+		);
+		expect(boxLabels.indexOf('Box width')).toBeLessThan(
+			boxLabels.indexOf('Box vertical align'),
+		);
+		wrapper.unmount();
 	});
 });

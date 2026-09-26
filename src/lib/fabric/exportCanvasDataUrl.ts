@@ -25,7 +25,7 @@ export const exportCanvasDataUrl = (
 	guides.forEach((guide) => {
 		guide.visible = false;
 	});
-	/* whiteFill es solo vista en editor; la descarga siempre sin relleno. */
+	/* El relleno del panel es solo vista en editor; la descarga siempre sin relleno. */
 	panels.forEach((panel) => {
 		panel.set({ fill: 'transparent' });
 	});

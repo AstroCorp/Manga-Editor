@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildPagePreview } from '@/lib/page/pagePreview';
-import { plainPreviewLines } from '@/lib/page/previewTextRuns';
 import { createUniformStrokes } from '@/lib/page/shapeStrokes';
 import { TextBlock } from '@/models/TextBlock';
 import type { PagePreviewTextRun } from '@/types/page';
@@ -22,6 +21,12 @@ const baseRun = (
 		strokeWidth: 0,
 		...overrides,
 	};
+};
+
+const plainPreviewLines = (styledLines: PagePreviewTextRun[][]): string[] => {
+	return styledLines.map((runs) => {
+		return runs.map((run) => run.text).join('');
+	});
 };
 
 describe('pagePreview', () => {
@@ -53,7 +58,7 @@ describe('pagePreview', () => {
 			color: '#111111',
 		});
 		expect(preview.panels[0]?.edges).toEqual([]);
-		expect(preview.panels[0]?.whiteFill).toBe(false);
+		expect(preview.panels[0]?.fill).toBeNull();
 		expect(preview.panels[0]?.image).toBeNull();
 	});
 
@@ -81,7 +86,7 @@ describe('pagePreview', () => {
 		]);
 	});
 
-	it('keeps whiteFill per panel in the preview model', () => {
+	it('keeps the fill color per panel in the preview model', () => {
 		const preview = buildPagePreview(200, 200, [
 			{
 				points: [
@@ -91,14 +96,14 @@ describe('pagePreview', () => {
 				],
 				strokes: createUniformStrokes(3, 2),
 				image: null,
-				whiteFill: true,
+				fill: '#ffcc00',
 			},
 		]);
 
-		expect(preview.panels[0]?.whiteFill).toBe(true);
+		expect(preview.panels[0]?.fill).toBe('#ffcc00');
 	});
 
-	it('clears whiteFill when the panel has an image', () => {
+	it('clears the fill when the panel has an image', () => {
 		const preview = buildPagePreview(200, 200, [
 			{
 				points: [
@@ -107,7 +112,7 @@ describe('pagePreview', () => {
 					{ x: 10, y: 10 },
 				],
 				strokes: createUniformStrokes(3, 2),
-				whiteFill: true,
+				fill: '#ffcc00',
 				image: {
 					src: 'https://example.com/cover.png',
 					left: 0,
@@ -120,7 +125,7 @@ describe('pagePreview', () => {
 			},
 		]);
 
-		expect(preview.panels[0]?.whiteFill).toBe(false);
+		expect(preview.panels[0]?.fill).toBeNull();
 		expect(preview.panels[0]?.image).not.toBeNull();
 	});
 

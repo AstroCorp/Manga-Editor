@@ -25,7 +25,7 @@ describe('PagePreview', () => {
 		);
 	});
 
-	it('renders white fill polygons only when whiteFill is enabled', () => {
+	it('renders a fill polygon with the shape color only when a fill is set', () => {
 		const filled = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -43,7 +43,7 @@ describe('PagePreview', () => {
 			2,
 		);
 
-		filled.setWhiteFill(true);
+		filled.setFill('#ffcc00');
 
 		const wrapper = mount(PagePreview, {
 			props: {
@@ -53,14 +53,13 @@ describe('PagePreview', () => {
 			},
 		});
 		const polygons = wrapper.findAll('polygon');
-		const fills = polygons.filter((node) => {
-			return node.attributes('fill') === '#ffffff';
-		});
+		const fills = wrapper.findAll('[data-testid="panel-fill"]');
 		const strokes = polygons.filter((node) => {
 			return node.attributes('fill') === 'none';
 		});
 
 		expect(fills).toHaveLength(1);
+		expect(fills[0]?.attributes('fill')).toBe('#ffcc00');
 		expect(strokes).toHaveLength(2);
 		expect(fills[0]?.attributes('points')).toBe('0,0 10,0 10,10');
 		expect(strokes[0]?.attributes('stroke')).toBe('#111111');
@@ -98,7 +97,7 @@ describe('PagePreview', () => {
 		expect(lines[1]?.attributes('stroke-linecap')).toBe('square');
 	});
 
-	it('draws clipped image before stroke and skips white fill with image', () => {
+	it('draws clipped image before stroke and skips the fill with image', () => {
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -108,7 +107,7 @@ describe('PagePreview', () => {
 			3,
 		);
 
-		shape.setWhiteFill(true);
+		shape.setFill('#ffffff');
 		shape.setImage(
 			new ShapeImage({
 				src: 'data:image/png;base64,xx',
@@ -135,11 +134,7 @@ describe('PagePreview', () => {
 
 		expect(tags).toEqual(['defs', 'rect', 'g', 'polygon']);
 		expect(children[3]?.getAttribute('fill')).toBe('none');
-		expect(
-			[...wrapper.findAll('polygon')].filter((node) => {
-				return node.attributes('fill') === '#ffffff';
-			}),
-		).toHaveLength(0);
+		expect(wrapper.findAll('[data-testid="panel-fill"]')).toHaveLength(0);
 
 		const clipPolygon = wrapper.find('defs').find('polygon');
 		const imageGroup = wrapper.find('g');
@@ -150,7 +145,7 @@ describe('PagePreview', () => {
 		expect(imageGroup.find('image').exists()).toBe(true);
 	});
 
-	it('draws white fill then stroke when panel has no image', () => {
+	it('draws the fill then stroke when panel has no image', () => {
 		const shape = Shape.create(
 			[
 				{ x: 0, y: 0 },
@@ -160,7 +155,7 @@ describe('PagePreview', () => {
 			3,
 		);
 
-		shape.setWhiteFill(true);
+		shape.setFill('#ffffff');
 
 		const wrapper = mount(PagePreview, {
 			props: {

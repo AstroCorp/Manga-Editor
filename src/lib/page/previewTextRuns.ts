@@ -102,11 +102,3 @@ export const buildStyledPreviewLines = (
 		return runs;
 	});
 };
-
-export const plainPreviewLines = (
-	styledLines: PagePreviewTextRun[][],
-): string[] => {
-	return styledLines.map((runs) => {
-		return runs.map((run) => run.text).join('');
-	});
-};

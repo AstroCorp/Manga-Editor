@@ -42,6 +42,7 @@ const onUpdate = (value: string) => {
 		:options="options"
 		label="Text align"
 		title="Text align"
+		hide-trigger-label
 		@update:model-value="onUpdate"
 	/>
 </template>
