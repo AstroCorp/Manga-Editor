@@ -122,22 +122,27 @@ const onDragStart = (event: DragEvent) => {
 			@click="$emit('select')"
 		>
 			<span
-				class="relative h-[4.2rem] w-12 overflow-hidden border border-slate-200 bg-white shadow-sm dark:border-zinc-800"
-				:class="
-					active ? 'border-blue-600/40 dark:border-blue-500/40' : ''
-				"
+				class="flex h-[4.2rem] w-full items-center justify-center"
 				aria-hidden="true"
 			>
-				<PagePreview
-					:width="width"
-					:height="height"
-					:shapes="shapes"
-					:texts="texts"
-				/>
 				<span
-					class="absolute right-0.5 bottom-0.5 rounded bg-black/55 px-1 text-[0.65rem] leading-4 font-medium text-white"
+					class="relative block aspect-(--page-ratio) w-[min(100%,calc(4.2rem*var(--page-ratio)))] overflow-hidden border border-slate-200 bg-white shadow-sm dark:border-zinc-800"
+					:class="
+						active ? 'border-blue-600/40 dark:border-blue-500/40' : ''
+					"
+					:style="{ '--page-ratio': `${width} / ${height}` }"
 				>
-					{{ index + 1 }}
+					<PagePreview
+						:width="width"
+						:height="height"
+						:shapes="shapes"
+						:texts="texts"
+					/>
+					<span
+						class="absolute right-0.5 bottom-0.5 rounded bg-black/55 px-1 text-[0.65rem] leading-4 font-medium text-white"
+					>
+						{{ index + 1 }}
+					</span>
 				</span>
 			</span>
 		</button>
