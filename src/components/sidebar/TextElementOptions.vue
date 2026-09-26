@@ -19,14 +19,21 @@ import {
 	DEFAULT_TEXT_FILL,
 	DEFAULT_TEXT_STROKE,
 } from '@/models/TextBlock';
+import { collectDocumentFontFamilies } from '@/lib/fonts/documentFonts';
 import { useElementInspectorStore } from '@/stores/elementInspector';
+import { useMangaStore } from '@/stores/manga';
 import { useSelectionStore } from '@/stores/selection';
 import type { TextBoxVerticalAlign } from '@/types/page';
 
+const mangaStore = useMangaStore();
 const selectionStore = useSelectionStore();
 const inspectorStore = useElementInspectorStore();
 const { focused } = storeToRefs(selectionStore);
 const { textApi } = storeToRefs(inspectorStore);
+
+const usedFontFamilies = computed(() => {
+	return collectDocumentFontFamilies(mangaStore.pages);
+});
 
 const ready = computed(() => {
 	const current = focused.value;
@@ -202,6 +209,7 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 				<FontFamilySelect
 					:model-value="fontFamily"
 					:dominant-font-family="dominantFontFamily"
+					:used-font-families="usedFontFamilies"
 					@update:model-value="textApi?.setFontFamily($event)"
 				/>
 			</label>

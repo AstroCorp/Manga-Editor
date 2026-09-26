@@ -4,11 +4,17 @@ import { toStageCoords } from '@/features/toStageCoords';
 import TextColorToolbar from '@/features/text-color/components/TextColorToolbar.vue';
 import { useTextColorToolbar } from '@/features/text-color/useTextColorToolbar';
 import { SIDEBAR_TAB } from '@/lib/editor/editorEnums';
+import { collectDocumentFontFamilies } from '@/lib/fonts/documentFonts';
 import { useEditorStore } from '@/stores/editor';
 import { useElementInspectorStore } from '@/stores/elementInspector';
+import { useMangaStore } from '@/stores/manga';
 
 export const textColorFeature: CanvasFeature = {
 	install(ctx) {
+		const mangaStore = useMangaStore();
+		const usedFontFamilies = computed(() => {
+			return collectDocumentFontFamilies(mangaStore.pages);
+		});
 		const api = useTextColorToolbar({
 			fabricCanvas: ctx.fabricCanvas,
 			rootEl: ctx.rootEl,
@@ -86,6 +92,7 @@ export const textColorFeature: CanvasFeature = {
 					dominantFontSize: api.dominantFontSize.value,
 					fontFamily: api.fontFamily.value,
 					dominantFontFamily: api.dominantFontFamily.value,
+					usedFontFamilies: usedFontFamilies.value,
 					strokeWidth: api.strokeWidth.value,
 					dominantStrokeWidth: api.dominantStrokeWidth.value,
 					lineHeight: api.lineHeight.value,

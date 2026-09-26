@@ -13,6 +13,7 @@ const baseProps = {
 	dominantFontSize: 24,
 	fontFamily: 'Arial' as string | null,
 	dominantFontFamily: 'Arial',
+	usedFontFamilies: [] as string[],
 	strokeWidth: 0 as number | null,
 	dominantStrokeWidth: 0,
 	lineHeight: 1.16 as number | null,

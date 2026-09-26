@@ -2,17 +2,28 @@
 import { computed, nextTick, ref, shallowRef } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { Icon } from '@iconify/vue';
+import FontFamilyOption from '@/features/text-color/components/FontFamilyOption.vue';
+import { useFavoriteFonts } from '@/composables/fonts/useFavoriteFonts';
 import { useScrollPagedSlice } from '@/composables/ui/useScrollPagedSlice';
+import { fontsInUse } from '@/lib/fonts/documentFonts';
+import { pinnedFavoriteFonts } from '@/lib/fonts/favoriteFonts';
 import { getEditorFontCatalog } from '@/lib/fonts/googleFontsCatalog';
 import type { EditorFontFamily } from '@/types/fonts';
 
 const MIXED_VALUE_LABEL = 'mix';
 const PAGE_SIZE = 20;
 
-const props = defineProps<{
-	modelValue: string | null;
-	dominantFontFamily: string;
-}>();
+const props = withDefaults(
+	defineProps<{
+		modelValue: string | null;
+		dominantFontFamily: string;
+		/** Familias usadas en el documento (todas las páginas); sección "In use". */
+		usedFontFamilies?: readonly string[];
+	}>(),
+	{
+		usedFontFamilies: () => [],
+	},
+);
 
 const emit = defineEmits<{
 	'update:modelValue': [value: string];
@@ -27,6 +38,11 @@ const query = ref('');
 const catalog = shallowRef<EditorFontFamily[]>([]);
 const failedPreviewIds = shallowRef(new Set<string>());
 const loadedPreviewIds = shallowRef(new Set<string>());
+const { favoriteFontIds, isFavorite, toggleFavorite } = useFavoriteFonts();
+
+const isSearching = computed(() => {
+	return query.value.trim().length > 0;
+});
 
 const filteredCatalog = computed(() => {
 	const needle = query.value.trim().toLowerCase();
@@ -38,6 +54,23 @@ const filteredCatalog = computed(() => {
 	return catalog.value.filter((font) => {
 		return font.family.toLowerCase().includes(needle);
 	});
+});
+
+/** Solo sin búsqueda: al buscar, las favoritas se ven marcadas en el listado normal. */
+const pinnedFavorites = computed(() => {
+	if (isSearching.value) {
+		return [];
+	}
+
+	return pinnedFavoriteFonts(catalog.value, favoriteFontIds.value);
+});
+
+const usedFonts = computed(() => {
+	if (isSearching.value) {
+		return [];
+	}
+
+	return fontsInUse(catalog.value, props.usedFontFamilies);
 });
 
 const { scrollEl, visibleItems } = useScrollPagedSlice(filteredCatalog, {
@@ -95,10 +128,6 @@ const close = () => {
 const selectFamily = (family: string) => {
 	emit('update:modelValue', family);
 	close();
-};
-
-const showPreview = (font: EditorFontFamily) => {
-	return Boolean(font.previewUrl) && !failedPreviewIds.value.has(font.id);
 };
 
 const isPreviewLoaded = (fontId: string) => {
@@ -186,54 +215,75 @@ const onPreviewError = (fontId: string) => {
 				>
 					No fonts found
 				</li>
-				<li
+				<template v-if="!loading && pinnedFavorites.length > 0">
+					<li
+						role="presentation"
+						class="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold tracking-[0.08em] text-slate-400 uppercase dark:text-slate-500"
+						data-testid="favorite-fonts-heading"
+					>
+						Favorites
+					</li>
+					<FontFamilyOption
+						v-for="font in pinnedFavorites"
+						:key="`favorite-${font.id}`"
+						:font="font"
+						:selected="font.family === modelValue"
+						favorite
+						:preview-loaded="isPreviewLoaded(font.id)"
+						:preview-failed="failedPreviewIds.has(font.id)"
+						data-testid="favorite-font-option"
+						@select="selectFamily"
+						@toggle-favorite="toggleFavorite"
+						@preview-load="markPreviewLoaded"
+						@preview-error="onPreviewError"
+					/>
+					<li
+						role="presentation"
+						class="mx-2.5 my-1 border-t border-slate-200 dark:border-zinc-700"
+						aria-hidden="true"
+					/>
+				</template>
+				<template v-if="!loading && usedFonts.length > 0">
+					<li
+						role="presentation"
+						class="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold tracking-[0.08em] text-slate-400 uppercase dark:text-slate-500"
+						data-testid="used-fonts-heading"
+					>
+						In use
+					</li>
+					<FontFamilyOption
+						v-for="font in usedFonts"
+						:key="`used-${font.id}`"
+						:font="font"
+						:selected="font.family === modelValue"
+						:favorite="isFavorite(font.id)"
+						:preview-loaded="isPreviewLoaded(font.id)"
+						:preview-failed="failedPreviewIds.has(font.id)"
+						data-testid="used-font-option"
+						@select="selectFamily"
+						@toggle-favorite="toggleFavorite"
+						@preview-load="markPreviewLoaded"
+						@preview-error="onPreviewError"
+					/>
+					<li
+						role="presentation"
+						class="mx-2.5 my-1 border-t border-slate-200 dark:border-zinc-700"
+						aria-hidden="true"
+					/>
+				</template>
+				<FontFamilyOption
 					v-for="font in visibleItems"
 					:key="font.id"
-					role="option"
-					:aria-selected="font.family === modelValue"
-				>
-					<button
-						type="button"
-						class="flex h-11 w-full items-center px-2.5 text-left text-xs transition"
-						:class="
-							font.family === modelValue
-								? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-								: 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800'
-						"
-						:title="font.family"
-						@click="selectFamily(font.family)"
-					>
-						<span
-							v-if="showPreview(font)"
-							class="relative flex h-7 w-full items-center"
-						>
-							<span
-								v-if="!isPreviewLoaded(font.id)"
-								class="absolute inset-y-0 left-0 my-auto h-4 w-32 max-w-[70%] animate-pulse rounded bg-slate-200 dark:bg-zinc-800"
-								aria-hidden="true"
-							/>
-							<img
-								:src="font.previewUrl"
-								:alt="font.family"
-								class="h-7 max-w-full object-contain object-left transition-opacity duration-150 dark:invert"
-								:class="
-									isPreviewLoaded(font.id) ? 'opacity-100' : 'opacity-0'
-								"
-								loading="lazy"
-								decoding="async"
-								@load="markPreviewLoaded(font.id)"
-								@error="onPreviewError(font.id)"
-							/>
-						</span>
-						<span
-							v-else
-							class="truncate text-sm whitespace-nowrap"
-							:style="{ fontFamily: font.family }"
-						>
-							{{ font.family }}
-						</span>
-					</button>
-				</li>
+					:font="font"
+					:selected="font.family === modelValue"
+					:favorite="isFavorite(font.id)"
+					:preview-loaded="isPreviewLoaded(font.id)"
+					:preview-failed="failedPreviewIds.has(font.id)"
+					@select="selectFamily"
+					@toggle-favorite="toggleFavorite"
+					@preview-load="markPreviewLoaded"
+					@preview-error="onPreviewError"
+				/>
 			</ul>
 		</div>
 	</div>

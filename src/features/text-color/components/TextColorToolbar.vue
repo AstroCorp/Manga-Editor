@@ -362,6 +362,7 @@ const boxStrokeRingStyle = computed(() => {
 			<FontFamilySelect
 				:model-value="fontFamily"
 				:dominant-font-family="dominantFontFamily"
+				:used-font-families="usedFontFamilies"
 				@update:model-value="onFontFamilyUpdate"
 			/>
 

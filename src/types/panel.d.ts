@@ -127,6 +127,8 @@ export type TextColorToolbarProps = {
 	dominantFontSize: number;
 	fontFamily: string | null;
 	dominantFontFamily: string;
+	/** Familias usadas en todo el documento (sección "In use" del font picker). */
+	usedFontFamilies: string[];
 	strokeWidth: number | null;
 	dominantStrokeWidth: number;
 	lineHeight: number | null;
