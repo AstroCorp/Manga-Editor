@@ -16,7 +16,13 @@ const { TextboxMock } = vi.hoisted(() => {
 			Object.assign(this, options);
 		}
 
-		set(props: Record<string, unknown>) {
+		set(props: Record<string, unknown> | string, value?: unknown) {
+			if (typeof props === 'string') {
+				this[props] = value;
+
+				return;
+			}
+
 			Object.assign(this, props);
 		}
 
@@ -545,6 +551,48 @@ describe('textFabric', () => {
 				boxedTextTop(outerHeight, textHeight, padding, 'bottom'),
 		);
 		expect(Number(rect.top)).toBeCloseTo(boxedRectOrigin(outerHeight, stroke));
+	});
+
+	it('syncBoxedTextGeometry keeps an established width when the line is wider', () => {
+		const outerWidth = 180;
+		const padding = 12;
+		const fontSize = 48;
+		const rect = new Rect({
+			width: outerWidth,
+			height: 40,
+			strokeWidth: 0,
+		});
+		const textbox = new TextboxMock('Hello world', {
+			width: 400,
+			fontSize,
+			height: 24,
+			strokeWidth: 0,
+		});
+
+		textbox.initDimensions = () => {
+			textbox.width = 400;
+			textbox.height = fontSize;
+		};
+
+		const group = new Group([], { objectCaching: false }) as PageTextObject;
+
+		vi.spyOn(group, 'getObjects').mockReturnValue([rect, textbox as never]);
+
+		syncBoxedTextGeometry(group, {
+			fill: '#ffffff',
+			stroke: '#000000',
+			strokeWidth: 0,
+			cornerRadius: 0,
+			padding,
+			width: outerWidth,
+			height: 40,
+			verticalAlign: 'top',
+		});
+
+		expect(rect.width).toBe(outerWidth);
+		expect(textbox.width).toBe(outerWidth - padding * 2);
+		expect(rect.height).toBe(fontSize + padding * 2);
+		expect(group.get('boxWidth')).toBe(outerWidth);
 	});
 
 	it('resolves boxed outer width from explicit box width', () => {

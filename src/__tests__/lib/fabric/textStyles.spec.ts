@@ -8,7 +8,7 @@ import {
 	collectTextFormat,
 	collectTextStrokeColors,
 	colorSwatchBackground,
-	fitTextboxWidthToContent,
+	reflowTextboxKeepingWidth,
 	hasTextSelectionRange,
 	normalizeFontSize,
 	normalizeFontStyle,
@@ -358,12 +358,37 @@ describe('textStyles', () => {
 		expect(calls).toEqual([
 			{ remove: 'fontSize' },
 			{ key: 'fontSize', value: 36 },
-			{ key: 'width', value: 1_000_000 },
-			'dims',
-			{ key: 'width', value: 200 },
 			'dims',
 			'coords',
 		]);
+		expect(width).toBe(200);
+	});
+
+	it('applyTextFontSize keeps an established width when layout widens it', () => {
+		let width = 160;
+		const textbox = {
+			isEditing: false,
+			text: 'Hello',
+			get width() {
+				return width;
+			},
+			getSelectionStyles: () => [],
+			set: (key: string | Record<string, unknown>, value?: unknown) => {
+				if (key === 'width' && typeof value === 'number') {
+					width = value;
+				}
+			},
+			removeStyle: () => undefined,
+			setSelectionStyles: () => undefined,
+			initDimensions: () => {
+				width = 420;
+			},
+			setCoords: () => undefined,
+		};
+
+		applyTextFontSize(textbox, 72);
+
+		expect(width).toBe(160);
 	});
 
 	it('applyTextFontSize targets the selection range', () => {
@@ -396,9 +421,9 @@ describe('textStyles', () => {
 		]);
 	});
 
-	it('fitTextboxWidthToContent keeps width when content still fits', () => {
-		const widths: number[] = [];
-		let width = 200;
+	it('reflowTextboxKeepingWidth restores width after a layout bump', () => {
+		let width = 180;
+		const calls: string[] = [];
 		const textbox = {
 			text: 'Hello',
 			get width() {
@@ -408,50 +433,23 @@ describe('textStyles', () => {
 			set: (key: string | Record<string, unknown>, value?: unknown) => {
 				if (key === 'width' && typeof value === 'number') {
 					width = value;
-					widths.push(value);
 				}
 			},
 			setSelectionStyles: () => undefined,
 			removeStyle: () => undefined,
-			calcTextWidth: () => {
-				return width >= 1_000_000 ? 120 : width;
+			initDimensions: () => {
+				width = 640;
+				calls.push('dims');
 			},
-			initDimensions: () => undefined,
-			setCoords: () => undefined,
+			setCoords: () => {
+				calls.push('coords');
+			},
 		};
 
-		fitTextboxWidthToContent(textbox);
+		reflowTextboxKeepingWidth(textbox);
 
-		expect(widths).toEqual([1_000_000, 200]);
-	});
-
-	it('fitTextboxWidthToContent expands width when content needs more space', () => {
-		const widths: number[] = [];
-		let width = 50;
-		const textbox = {
-			text: 'Hello',
-			get width() {
-				return width;
-			},
-			getSelectionStyles: () => [],
-			set: (key: string | Record<string, unknown>, value?: unknown) => {
-				if (key === 'width' && typeof value === 'number') {
-					width = value;
-					widths.push(value);
-				}
-			},
-			setSelectionStyles: () => undefined,
-			removeStyle: () => undefined,
-			calcTextWidth: () => {
-				return width >= 1_000_000 ? 144.2 : width;
-			},
-			initDimensions: () => undefined,
-			setCoords: () => undefined,
-		};
-
-		fitTextboxWidthToContent(textbox);
-
-		expect(widths).toEqual([1_000_000, 145]);
+		expect(width).toBe(180);
+		expect(calls).toEqual(['dims', 'coords']);
 	});
 
 	it('applyTextStyle targets selection or whole text', () => {
@@ -520,7 +518,7 @@ describe('textStyles', () => {
 		applyTextStyle(whole, { underline: true, fontSize: 18 });
 		expect(wholeCalls).toEqual([{ underline: true, fontSize: 18 }]);
 		expect(removed).toEqual(['underline', 'fontSize']);
-		expect(layoutCalls).toEqual(['dims', 'dims', 'coords']);
+		expect(layoutCalls).toEqual(['dims', 'coords']);
 		expect(width).toBe(200);
 	});
 

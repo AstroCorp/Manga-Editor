@@ -5,6 +5,7 @@ import {
 	isBoldWeight,
 	measureTextContentWidth,
 	normalizeFontStyle,
+	reflowTextboxKeepingWidth,
 	normalizeLineHeight,
 	normalizeStrokeWidth,
 	normalizeTextAlign,
@@ -220,18 +221,17 @@ export const syncBoxedTextGeometry = (
 		return;
 	}
 
-	textbox.initDimensions?.();
-
 	const padding = box.padding;
 	const verticalAlign = normalizeVerticalAlign(box.verticalAlign);
-	const minTextWidth = measureTextContentWidth(textbox);
-	const outerWidth = resolveBoxedOuterWidth(box.width, minTextWidth, padding);
+	// El ancho de caja ya fijado no se sustituye por el de la línea sin wrap.
+	const outerWidth = Math.max(1, Math.round(box.width));
 	const nextTextWidth = Math.max(1, outerWidth - padding * 2);
 
 	if (Math.round(textbox.width ?? 0) !== nextTextWidth) {
 		textbox.set({ width: nextTextWidth });
-		textbox.initDimensions?.();
 	}
+
+	reflowTextboxKeepingWidth(textbox);
 
 	const textHeight = textbox.height ?? 0;
 	const outerHeight = resolveBoxedOuterHeight(box.height, textHeight, padding);
@@ -690,14 +690,17 @@ export const textBlockToFabric = (
 	});
 	textbox.initDimensions?.();
 
-	const minTextWidth = measureTextContentWidth(textbox);
-	const textHeight = textbox.height ?? text.fontSize;
 	const verticalAlign = normalizeVerticalAlign(box.verticalAlign);
-	const outerWidth = resolveBoxedOuterWidth(
-		box.width,
-		minTextWidth,
-		box.padding,
-	);
+	// width 0: caja nueva, se ajusta al texto. Si ya hay ancho, se conserva.
+	const outerWidth =
+		box.width > 0
+			? Math.max(1, Math.round(box.width))
+			: resolveBoxedOuterWidth(
+					0,
+					measureTextContentWidth(textbox),
+					box.padding,
+				);
+	const textHeight = textbox.height ?? text.fontSize;
 	const outerHeight = resolveBoxedOuterHeight(
 		box.height,
 		textHeight,

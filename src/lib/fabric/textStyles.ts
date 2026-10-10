@@ -837,23 +837,21 @@ const ensureSmoothTextStroke = (textbox: TextStyleMutable) => {
 	});
 };
 /**
- * Amplía el width solo si el contenido (sin soft-wrap) no cabe.
- * Si la caja ya tiene espacio, se respeta el ancho actual.
+ * initDimensions de Textbox sube width a la palabra más larga.
+ * El alto ya queda medido con el ancho anterior; se restaura ese ancho.
  */
-export const fitTextboxWidthToContent = (textbox: TextStyleMutable) => {
-	const currentWidth =
+export const reflowTextboxKeepingWidth = (textbox: TextStyleMutable) => {
+	const width =
 		typeof textbox.width === 'number' && Number.isFinite(textbox.width)
 			? textbox.width
-			: MIN_TEXTBOX_WIDTH;
+			: undefined;
 
-	textbox.set('width', UNBOUNDED_TEXT_WIDTH);
 	textbox.initDimensions?.();
 
-	const measured = Math.ceil(textbox.calcTextWidth?.() ?? 0);
-	const nextWidth = Math.max(currentWidth, measured, MIN_TEXTBOX_WIDTH);
+	if (width !== undefined && textbox.width !== width) {
+		textbox.set('width', width);
+	}
 
-	textbox.set('width', nextWidth);
-	textbox.initDimensions?.();
 	textbox.setCoords?.();
 };
 
@@ -890,15 +888,7 @@ const refreshTextLayout = (
 	(textbox as TextStyleMutable & { _forceClearCache?: boolean })._forceClearCache =
 		true;
 	textbox.dirty = true;
-
-	if (styles.fontSize !== undefined) {
-		fitTextboxWidthToContent(textbox);
-
-		return;
-	}
-
-	textbox.initDimensions?.();
-	textbox.setCoords?.();
+	reflowTextboxKeepingWidth(textbox);
 };
 
 /** Fondo circular con uno o varios colores (conic-gradient). */
