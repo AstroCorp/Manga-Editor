@@ -1,9 +1,7 @@
 import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { toast } from 'vue3-toastify';
 import { createConfirmPayload } from '@/lib/ui/createConfirmPayload';
 import { setDragMoveEffect } from '@/lib/ui/setDragMoveEffect';
-import { normalizeNameKey } from '@/lib/ui/uniqueName';
 import { useMangaStore } from '@/stores/manga';
 
 /** CRUD + reorder + confirmación de borrado del listado de páginas. */
@@ -28,12 +26,15 @@ export const usePageListActions = () => {
 
 	const removeMessage = computed(() => {
 		const id = pendingRemoveId.value;
-		const name =
-			pages.value.find((page) => {
-				return page.id === id;
-			})?.name ?? 'this page';
+		const index = pages.value.findIndex((page) => {
+			return page.id === id;
+		});
 
-		return `Delete '${name}'?`;
+		if (index < 0) {
+			return 'Delete this page?';
+		}
+
+		return `Delete page ${index + 1}?`;
 	});
 
 	const togglePagesVisible = () => {
@@ -97,25 +98,6 @@ export const usePageListActions = () => {
 		mangaStore.reorderPages(from, index);
 	};
 
-	const renamePage = (id: string, name: string) => {
-		const page = pages.value.find((item) => {
-			return item.id === id;
-		});
-		const trimmed = name.trim();
-
-		if (!page || !trimmed) {
-			return;
-		}
-
-		if (normalizeNameKey(trimmed) === normalizeNameKey(page.name)) {
-			return;
-		}
-
-		if (!mangaStore.renamePage(id, name)) {
-			toast.warn('A page with that name already exists.');
-		}
-	};
-
 	return {
 		pages,
 		activePageId,
@@ -130,7 +112,6 @@ export const usePageListActions = () => {
 		addPage: () => {
 			mangaStore.addPage();
 		},
-		renamePage,
 		requestRemove,
 		cancelRemove,
 		confirmRemove,

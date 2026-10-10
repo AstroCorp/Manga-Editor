@@ -482,6 +482,62 @@ describe('manga history', () => {
 		expect(historyStore.entries).toHaveLength(1);
 	});
 
+	it('persists the project title and restores Untitled when cleared or missing', async () => {
+		const mangaStore = useMangaStore();
+
+		expect(mangaStore.title).toBe('Untitled');
+
+		await mangaStore.initialize();
+		await mangaStore.waitForPersistence();
+
+		const firstVisit = JSON.parse(localStorage.getItem(PROJECT_STORAGE_KEY)!) as {
+			document: { title: string };
+		};
+
+		expect(firstVisit.document.title).toBe('Untitled');
+
+		mangaStore.setTitle('  Mi Proyecto  ');
+		await mangaStore.waitForPersistence();
+
+		setActivePinia(createPinia());
+
+		const restored = useMangaStore();
+
+		await restored.initialize();
+
+		expect(restored.title).toBe('Mi Proyecto');
+
+		const raw = localStorage.getItem(PROJECT_STORAGE_KEY)!;
+		const withoutTitle = JSON.parse(raw) as {
+			document: { title?: string };
+			history: { baseline: { title?: string } };
+		};
+
+		delete withoutTitle.document.title;
+		delete withoutTitle.history.baseline.title;
+		localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(withoutTitle));
+
+		setActivePinia(createPinia());
+
+		const legacy = useMangaStore();
+
+		await legacy.initialize();
+
+		expect(legacy.title).toBe('Untitled');
+		expect(legacy.pages.length).toBeGreaterThan(0);
+
+		legacy.setTitle('Mi Proyecto');
+		legacy.resetProject();
+		await legacy.waitForPersistence();
+
+		const cleared = JSON.parse(localStorage.getItem(PROJECT_STORAGE_KEY)!) as {
+			document: { title: string };
+		};
+
+		expect(legacy.title).toBe('Untitled');
+		expect(cleared.document.title).toBe('Untitled');
+	});
+
 	it('uses the first page when the persisted activePageId is missing', async () => {
 		const mangaStore = useMangaStore();
 

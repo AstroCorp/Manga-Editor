@@ -2,34 +2,50 @@ import { exportImageExtension } from '@/lib/editor/editorEnums';
 import type { ExportImageFormat } from '@/types/editor';
 
 const slugifyFilePart = (value: string): string => {
-	return value.replace(/\s+/g, '-').toLowerCase();
+	const slug = value.trim().replace(/\s+/g, '_').toLowerCase();
+
+	return slug.length > 0 ? slug : 'untitled';
 };
 
 export const exportTitleSlug = (title: string): string => {
 	return slugifyFilePart(title);
 };
 
-/** Nombre de archivo seguro a partir del título del cómic y la página. */
+/** Cifras del total: 9 → "1", 10 → "01", 100 → "001". */
+export const exportPageNumberLabel = (
+	pageNumber: number,
+	pageCount: number,
+): string => {
+	const count = Math.max(1, Math.trunc(pageCount));
+	const digits = String(count).length;
+	const number = Math.min(count, Math.max(1, Math.trunc(pageNumber)));
+
+	return String(number).padStart(digits, '0');
+};
+
+/** `mi_proyecto_01` */
 export const exportFileBaseName = (
 	title: string,
-	pageName: string | undefined,
+	pageNumber: number,
+	pageCount: number,
 ): string => {
-	return `${exportTitleSlug(title)}-${slugifyFilePart(pageName ?? 'page')}`;
+	return `${exportTitleSlug(title)}_${exportPageNumberLabel(pageNumber, pageCount)}`;
 };
 
 export const exportImageFilename = (
 	title: string,
-	pageName: string | undefined,
+	pageNumber: number,
+	pageCount: number,
 	format: ExportImageFormat,
 ): string => {
-	return `${exportFileBaseName(title, pageName)}.${exportImageExtension(format)}`;
+	return `${exportFileBaseName(title, pageNumber, pageCount)}.${exportImageExtension(format)}`;
 };
 
 export const exportZipFilename = (
 	title: string,
 	format: ExportImageFormat,
 ): string => {
-	return `${exportTitleSlug(title)}-${exportImageExtension(format)}.zip`;
+	return `${exportTitleSlug(title)}_${exportImageExtension(format)}.zip`;
 };
 
 export const downloadDataUrl = (dataUrl: string, filename: string) => {

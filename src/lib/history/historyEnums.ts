@@ -45,6 +45,7 @@ export const HISTORY_LABEL = {
 	ChangeEdgeColor: 'Change edge color',
 	ApplyLayout: 'Apply layout',
 	ClearPage: 'Clear page',
+	RenameProject: 'Rename project',
 } as const;
 
 /** `Add panel · Page 1`. Sin página si el nombre está vacío. */

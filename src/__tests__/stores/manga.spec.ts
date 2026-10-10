@@ -553,6 +553,24 @@ describe('useMangaStore config layout', () => {
 		expect(store.contentResetEpoch).toBe(epoch + 1);
 	});
 
+	it('setTitle trims the project name and skips blanks', () => {
+		const store = useMangaStore();
+		const history = useHistoryStore();
+
+		store.setTitle('  Mi Proyecto  ');
+
+		expect(store.title).toBe('Mi Proyecto');
+		expect(history.currentLabel).toBe(HISTORY_LABEL.RenameProject);
+
+		const count = history.entries.length;
+
+		store.setTitle('   ');
+		store.setTitle('Mi Proyecto');
+
+		expect(store.title).toBe('Mi Proyecto');
+		expect(history.entries).toHaveLength(count);
+	});
+
 	it('clearActivePage resets to default layer and bumps contentResetEpoch', () => {
 		const store = useMangaStore();
 

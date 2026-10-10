@@ -1,16 +1,23 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
+import { storeToRefs } from 'pinia';
 import ConfirmModal from '@/components/ConfirmModal.vue';
-import { useActivePageLayout } from '@/composables/page/useActivePageLayout';
 import { useClearActivePage } from '@/composables/page/useClearActivePage';
+import { useMangaStore } from '@/stores/manga';
 
-const { activePage } = useActivePageLayout();
+const mangaStore = useMangaStore();
+const { activePage, pages } = storeToRefs(mangaStore);
 const { pendingClear, requestClear, cancelClear, confirmClear } =
 	useClearActivePage();
 
 const clearMessage = computed(() => {
-	return `Clear '${activePage.value.name}'? Layers reset to default and panels are removed.`;
+	const index = pages.value.findIndex((page) => {
+		return page.id === activePage.value.id;
+	});
+	const number = index < 0 ? 1 : index + 1;
+
+	return `Clear page ${number}? Layers reset to default and panels are removed.`;
 });
 </script>
 

@@ -15,6 +15,14 @@ vi.mock('@/composables/fabric/useEditorCanvas', () => {
 					height: '100px',
 					transform: 'scale(0.75)',
 				}),
+				rootStyle: ref({}),
+				pageBackgroundStyle: ref({}),
+				controlPasteboard: ref({
+					left: 0,
+					top: 0,
+					right: 0,
+					bottom: 0,
+				}),
 				overlayViews: computed(() => []),
 				cancelStroke: vi.fn(),
 			};

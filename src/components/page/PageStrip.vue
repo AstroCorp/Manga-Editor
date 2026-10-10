@@ -17,7 +17,6 @@ const {
 	togglePagesVisible,
 	selectPage,
 	addPage,
-	renamePage,
 	requestRemove,
 	cancelRemove,
 	confirmRemove,
@@ -66,8 +65,8 @@ const {
 			<PageThumb
 				v-for="(page, index) in pages"
 				:key="page.id"
-				:name="page.name"
 				:index="index"
+				:page-count="pages.length"
 				:active="page.id === activePageId"
 				:can-remove="canRemove"
 				:width="page.width"
@@ -81,7 +80,6 @@ const {
 				"
 				@select="selectPage(page.id)"
 				@remove="requestRemove(page.id)"
-				@rename="renamePage(page.id, $event)"
 				@dragstart="onDragStart(index, $event)"
 				@dragover="onDragOver(index, $event)"
 				@drop="onDrop(index, $event)"

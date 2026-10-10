@@ -202,13 +202,13 @@ describe('useEditorStore selection and zoom bridge', () => {
 
 		expect(cancelStroke).toHaveBeenCalledOnce();
 		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Png);
-		expect(link.download).toBe('untitled-page-1.png');
+		expect(link.download).toBe('untitled_1.png');
 		expect(click).toHaveBeenCalledOnce();
 
 		store.exportPage(EXPORT_IMAGE_FORMAT.Jpeg);
 
 		expect(exportDataUrl).toHaveBeenCalledWith(EXPORT_IMAGE_FORMAT.Jpeg);
-		expect(link.download).toBe('untitled-page-1.jpg');
+		expect(link.download).toBe('untitled_1.jpg');
 	});
 
 	it('exportPagesZip zips every page and downloads the archive', async () => {
@@ -237,17 +237,17 @@ describe('useEditorStore selection and zoom bridge', () => {
 		);
 		expect(zipDataUrls).toHaveBeenCalledExactlyOnceWith([
 			{
-				filename: 'untitled-page-1.jpg',
+				filename: 'untitled_1.jpg',
 				dataUrl: 'data:image/png;base64,abc',
 			},
 			{
-				filename: 'untitled-page-2.jpg',
+				filename: 'untitled_2.jpg',
 				dataUrl: 'data:image/png;base64,abc',
 			},
 		]);
 		expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
 			expect.any(Blob),
-			'untitled-jpg.zip',
+			'untitled_jpg.zip',
 		);
 	});
 

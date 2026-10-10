@@ -10,7 +10,9 @@ import {
 } from '@/lib/history/documentSnapshot';
 import { HISTORY_LABEL, historyLabelForPage } from '@/lib/history/historyEnums';
 import {
+	DEFAULT_PROJECT_TITLE,
 	loadPersistedProject,
+	normalizeProjectTitle,
 	persistProject,
 } from '@/lib/history/projectStorage';
 import { findUniqueName, isDuplicateName } from '@/lib/ui/uniqueName';
@@ -34,7 +36,7 @@ import type {
 } from '@/types/page';
 
 export const useMangaStore = defineStore('manga', () => {
-	const title = ref('Untitled');
+	const title = ref(DEFAULT_PROJECT_TITLE);
 	const firstPage = Page.createBlank(1);
 	const pages = ref<Page[]>([firstPage]);
 	const activePageId = ref(firstPage.id);
@@ -150,7 +152,7 @@ export const useMangaStore = defineStore('manga', () => {
 		const prevPageId = activePageId.value;
 
 		isRestoringHistory = true;
-		title.value = snapshot.title;
+		title.value = normalizeProjectTitle(snapshot.title);
 		pages.value = pagesFromDocument(snapshot, (assetId) => {
 			return useHistoryStore().resolveImage(assetId);
 		});
@@ -253,7 +255,7 @@ export const useMangaStore = defineStore('manga', () => {
 		const page = Page.createBlank(1);
 
 		isRestoringHistory = true;
-		title.value = 'Untitled';
+		title.value = DEFAULT_PROJECT_TITLE;
 		pages.value = [page];
 		activePageId.value = page.id;
 		isRestoringHistory = false;
@@ -346,6 +348,17 @@ export const useMangaStore = defineStore('manga', () => {
 
 		pages.value.splice(toIndex, 0, page);
 		recordHistory(HISTORY_LABEL.ReorderPages, null);
+	};
+
+	const setTitle = (next: string) => {
+		const trimmed = next.trim().replace(/\s+/g, ' ');
+
+		if (!trimmed || trimmed === title.value) {
+			return;
+		}
+
+		title.value = trimmed;
+		recordHistory(HISTORY_LABEL.RenameProject, null);
 	};
 
 	const renamePage = (pageId: string, name: string): boolean => {
@@ -686,7 +699,7 @@ export const useMangaStore = defineStore('manga', () => {
 			});
 
 			isRestoringHistory = true;
-			title.value = persisted.document.title;
+			title.value = normalizeProjectTitle(persisted.document.title);
 			pages.value = restoredPages;
 			activePageId.value = activeExists
 				? persisted.document.activePageId
@@ -718,6 +731,7 @@ export const useMangaStore = defineStore('manga', () => {
 
 	return {
 		title,
+		setTitle,
 		pages,
 		activePageId,
 		isHydrated,

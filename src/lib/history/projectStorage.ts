@@ -23,6 +23,19 @@ import type {
 
 export const PROJECT_STORAGE_KEY = 'manga-editor-project';
 
+export const DEFAULT_PROJECT_TITLE = 'Untitled';
+
+/** Nombre vacío o ausente (proyecto nuevo o guardado antiguo) → Untitled. */
+export const normalizeProjectTitle = (value: unknown): string => {
+	if (typeof value !== 'string') {
+		return DEFAULT_PROJECT_TITLE;
+	}
+
+	const trimmed = value.trim().replace(/\s+/g, ' ');
+
+	return trimmed.length > 0 ? trimmed : DEFAULT_PROJECT_TITLE;
+};
+
 const isHistoryDocumentJSON = (
 	value: unknown,
 ): value is HistoryDocumentJSON => {
@@ -33,7 +46,7 @@ const isHistoryDocumentJSON = (
 	const data = value as Record<string, unknown>;
 
 	return (
-		typeof data.title === 'string' &&
+		(data.title === undefined || typeof data.title === 'string') &&
 		typeof data.activePageId === 'string' &&
 		Array.isArray(data.pages) &&
 		data.pages.length > 0

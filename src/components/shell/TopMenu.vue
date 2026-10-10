@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ThemeToggle from '@/components/shell/ThemeToggle.vue';
+import ProjectNameField from '@/components/toolbar/ProjectNameField.vue';
 import ExportActions from '@/components/toolbar/ExportActions.vue';
 import GuideToggle from '@/components/toolbar/GuideToggle.vue';
 import HistoryControls from '@/components/toolbar/HistoryControls.vue';
@@ -18,6 +19,7 @@ import PageActions from '@/components/toolbar/PageActions.vue';
 				Manga Editor
 			</p>
 			<ThemeToggle />
+			<ProjectNameField />
 		</div>
 		<div class="flex items-center">
 			<div class="flex items-center">

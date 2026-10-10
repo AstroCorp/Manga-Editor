@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import PageThumb from '@/components/page/PageThumb.vue';
 
-const mountThumb = (canRemove = true) => {
+const mountThumb = (canRemove = true, pageCount = 1) => {
 	return mount(PageThumb, {
 		props: {
-			name: 'Page 1',
 			active: true,
 			index: 0,
+			pageCount,
 			canRemove,
 			width: 1720,
 			height: 2580,
@@ -27,6 +27,9 @@ describe('PageThumb', () => {
 	it('selects and deletes the page', async () => {
 		const wrapper = mountThumb();
 
+		expect(wrapper.text()).toContain('1');
+		expect(wrapper.find('input').exists()).toBe(false);
+
 		await wrapper.get('button[aria-label="Select Page 1"]').trigger('click');
 		await wrapper.get('button[aria-label="Delete Page 1"]').trigger('click');
 
@@ -34,36 +37,20 @@ describe('PageThumb', () => {
 		expect(wrapper.emitted('remove')).toHaveLength(1);
 	});
 
-	it('renames on blur and cancels with Escape', async () => {
+	it('starts a drag from the thumb', async () => {
 		const wrapper = mountThumb(false);
 
-		await wrapper.get('button[title="Page 1"]').trigger('dblclick');
+		await wrapper.get('div').trigger('dragstart');
 
-		const input = wrapper.get('input[aria-label="Name of Page 1"]');
-
-		await input.setValue('Splash');
-		await input.trigger('blur');
-
-		expect(wrapper.emitted('rename')?.at(-1)).toEqual(['Splash']);
-
-		await wrapper.get('button[title="Page 1"]').trigger('dblclick');
-		await wrapper.get('input[aria-label="Name of Page 1"]').trigger('keydown', {
-			key: 'Escape',
-		});
-
-		expect(wrapper.emitted('rename')).toHaveLength(1);
-		expect(wrapper.find('input').exists()).toBe(false);
+		expect(wrapper.emitted('dragstart')).toHaveLength(1);
 	});
 
-	it('does not start a drag while the name is being edited', async () => {
-		const wrapper = mountThumb(false);
+	it('pads the page number to the width of the page count', () => {
+		const wrapper = mountThumb(false, 12);
 
-		await wrapper.get('button[title="Page 1"]').trigger('dblclick');
-
-		const event = new Event('dragstart', { cancelable: true });
-
-		await wrapper.get('div').trigger('dragstart', { event });
-
-		expect(wrapper.emitted('dragstart')).toBeUndefined();
+		expect(wrapper.text()).toContain('01');
+		expect(wrapper.get('button[aria-label="Select Page 01"]').exists()).toBe(
+			true,
+		);
 	});
 });

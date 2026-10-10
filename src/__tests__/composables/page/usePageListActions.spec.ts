@@ -1,15 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePageListActions } from '@/composables/page/usePageListActions';
 import { useMangaStore } from '@/stores/manga';
-
-vi.mock('vue3-toastify', () => {
-	return {
-		toast: {
-			warn: vi.fn(),
-		},
-	};
-});
 
 const dragEvent = (partial: Partial<DragEvent> = {}): DragEvent => {
 	return {
@@ -26,12 +18,10 @@ const dragEvent = (partial: Partial<DragEvent> = {}): DragEvent => {
 describe('usePageListActions', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia());
-		vi.clearAllMocks();
 	});
 
-	it('adds, selects and renames pages', () => {
-		const mangaStore = useMangaStore();
-		const { addPage, selectPage, renamePage, pages, activePageId, canRemove } =
+	it('adds and selects pages', () => {
+		const { addPage, selectPage, pages, activePageId, canRemove } =
 			usePageListActions();
 
 		expect(canRemove.value).toBe(false);
@@ -44,9 +34,6 @@ describe('usePageListActions', () => {
 
 		selectPage(secondId);
 		expect(activePageId.value).toBe(secondId);
-
-		renamePage(secondId, 'Chapter 2');
-		expect(mangaStore.pages[1]?.name).toBe('Chapter 2');
 	});
 
 	it('confirms page removal', () => {
@@ -106,18 +93,4 @@ describe('usePageListActions', () => {
 		expect(pagesVisible.value).toBe(false);
 	});
 
-	it('warns when renaming to a duplicate page name', async () => {
-		const { toast } = await import('vue3-toastify');
-		const mangaStore = useMangaStore();
-		const { addPage, renamePage } = usePageListActions();
-
-		addPage();
-		renamePage(mangaStore.pages[0]!.id, 'Cover');
-		renamePage(mangaStore.pages[1]!.id, 'cover');
-
-		expect(toast.warn).toHaveBeenCalledExactlyOnceWith(
-			'A page with that name already exists.',
-		);
-		expect(mangaStore.pages[1]?.name).not.toBe('cover');
-	});
 });

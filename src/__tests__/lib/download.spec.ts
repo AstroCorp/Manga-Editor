@@ -5,6 +5,7 @@ import {
 	downloadText,
 	exportFileBaseName,
 	exportImageFilename,
+	exportPageNumberLabel,
 	exportTitleSlug,
 	exportZipFilename,
 } from '@/lib/download';
@@ -19,23 +20,23 @@ describe('download helpers', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('exportFileBaseName slugifies title and page name', () => {
-		expect(exportTitleSlug('My Manga')).toBe('my-manga');
-		expect(exportFileBaseName('My Manga', 'Page 1')).toBe(
-			'my-manga-page-1',
-		);
-		expect(exportFileBaseName('Untitled', undefined)).toBe(
-			'untitled-page',
-		);
+	it('export filenames use the project name and padded page numbers', () => {
+		expect(exportTitleSlug('Mi Proyecto')).toBe('mi_proyecto');
+		expect(exportTitleSlug('   ')).toBe('untitled');
+		expect(exportPageNumberLabel(1, 9)).toBe('1');
+		expect(exportPageNumberLabel(9, 9)).toBe('9');
+		expect(exportPageNumberLabel(1, 10)).toBe('01');
+		expect(exportPageNumberLabel(10, 10)).toBe('10');
+		expect(exportPageNumberLabel(2, 100)).toBe('002');
+		expect(exportFileBaseName('Mi Proyecto', 1, 12)).toBe('mi_proyecto_01');
 		expect(
-			exportImageFilename(
-				'My Manga',
-				'Page 1',
-				EXPORT_IMAGE_FORMAT.Jpeg,
-			),
-		).toBe('my-manga-page-1.jpg');
-		expect(exportZipFilename('My Manga', EXPORT_IMAGE_FORMAT.Png)).toBe(
-			'my-manga-png.zip',
+			exportImageFilename('Mi Proyecto', 1, 12, EXPORT_IMAGE_FORMAT.Png),
+		).toBe('mi_proyecto_01.png');
+		expect(
+			exportImageFilename('Mi Proyecto', 4, 9, EXPORT_IMAGE_FORMAT.Jpeg),
+		).toBe('mi_proyecto_4.jpg');
+		expect(exportZipFilename('Mi Proyecto', EXPORT_IMAGE_FORMAT.Png)).toBe(
+			'mi_proyecto_png.zip',
 		);
 	});
 

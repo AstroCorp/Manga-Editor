@@ -119,11 +119,17 @@ export const useEditorStore = defineStore('editor', () => {
 			return;
 		}
 
+		const pageCount = mangaStore.pages.length;
+		const pageIndex = mangaStore.pages.findIndex((page) => {
+			return page.id === mangaStore.activePage.id;
+		});
+
 		downloadDataUrl(
 			dataUrl,
 			exportImageFilename(
 				mangaStore.title,
-				mangaStore.activePage.name,
+				pageIndex < 0 ? 1 : pageIndex + 1,
+				pageCount,
 				format,
 			),
 		);
@@ -139,13 +145,16 @@ export const useEditorStore = defineStore('editor', () => {
 		try {
 			const entries: ZipDataUrlEntry[] = [];
 
-			for (const page of mangaStore.pages) {
+			const pageCount = mangaStore.pages.length;
+
+			for (const [index, page] of mangaStore.pages.entries()) {
 				const dataUrl = await exportPageToDataUrl(page, format);
 
 				entries.push({
 					filename: exportImageFilename(
 						mangaStore.title,
-						page.name,
+						index + 1,
+						pageCount,
 						format,
 					),
 					dataUrl,
@@ -163,9 +172,14 @@ export const useEditorStore = defineStore('editor', () => {
 	const exportPageJson = () => {
 		const mangaStore = useMangaStore();
 		const layout = mangaStore.getActivePageLayout();
+		const pageCount = mangaStore.pages.length;
+		const pageIndex = mangaStore.pages.findIndex((page) => {
+			return page.id === mangaStore.activePage.id;
+		});
 		const baseName = exportFileBaseName(
 			mangaStore.title,
-			mangaStore.activePage.name,
+			pageIndex < 0 ? 1 : pageIndex + 1,
+			pageCount,
 		);
 
 		downloadText(JSON.stringify(layout, null, 2), `${baseName}.json`);
