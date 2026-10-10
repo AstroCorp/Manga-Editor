@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useEditorCanvas } from '@/composables/fabric/useEditorCanvas';
-import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
-
 const rootEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
@@ -10,6 +8,7 @@ const {
 	stageStyle,
 	scaleStyle,
 	rootStyle,
+	controlPasteboard,
 	pageBackgroundStyle,
 	overlayViews,
 	cancelStroke,
@@ -29,7 +28,8 @@ const {
 				class="editor-page-scale relative origin-top-left"
 				:style="{
 					...scaleStyle,
-					'--control-pasteboard': `${CONTROL_PASTEBOARD}px`,
+					'--control-pasteboard-x': `${controlPasteboard.left}px`,
+					'--control-pasteboard-y': `${controlPasteboard.top}px`,
 				}"
 			>
 				<div

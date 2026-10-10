@@ -1,5 +1,6 @@
 import {
 	computed,
+	nextTick,
 	onBeforeUnmount,
 	onMounted,
 	ref,
@@ -17,7 +18,15 @@ import type { FeatureContext, FeatureOverlay } from '@/features/types';
 import { useEditorStore } from '@/stores/editor';
 import { useMangaStore } from '@/stores/manga';
 import { useSelectionStore } from '@/stores/selection';
-import { CONTROL_PASTEBOARD } from '@/lib/fabric/fabricSetup';
+import {
+	applyPageCanvasLayout,
+	growPasteboard,
+	minPagePasteboard,
+	pasteboardForSelection,
+	pasteboardScrollDelta,
+	pasteboardsEqual,
+	type PagePasteboard,
+} from '@/lib/fabric/pageCanvasLayout';
 import type { ApplyActivePageOptions, CanvasActions } from '@/types/editor';
 
 /**
@@ -159,6 +168,122 @@ export const useEditorCanvas = (
 		void applyActivePage({ resetView: true });
 	});
 
+	const controlPasteboard = ref<PagePasteboard>(minPagePasteboard());
+	let pendingScroll = { x: 0, y: 0 };
+	let layoutQueued = false;
+
+	/**
+	 * El viewport y el CSS del canvas tienen que cambiar juntos: si el bitmap
+	 * gana margen antes de mover el elemento, el puntero salta en mitad del gesto.
+	 */
+	const queuePasteboardSync = (mode: 'grow' | 'fit') => {
+		const canvas = fabricCanvas.value;
+		const page = activePage.value;
+
+		if (!canvas || typeof canvas.getActiveObject !== 'function') {
+			return;
+		}
+
+		const needed = pasteboardForSelection(
+			canvas.getActiveObject(),
+			page.width,
+			page.height,
+		);
+		const next =
+			mode === 'grow'
+				? growPasteboard(controlPasteboard.value, needed)
+				: needed;
+
+		if (pasteboardsEqual(controlPasteboard.value, next)) {
+			return;
+		}
+
+		const delta = pasteboardScrollDelta(
+			controlPasteboard.value,
+			next,
+			zoomFactor.value,
+		);
+
+		pendingScroll = {
+			x: pendingScroll.x + delta.x,
+			y: pendingScroll.y + delta.y,
+		};
+		controlPasteboard.value = next;
+
+		if (layoutQueued) {
+			return;
+		}
+
+		layoutQueued = true;
+		void nextTick(() => {
+			layoutQueued = false;
+			const root = rootEl.value;
+			const liveCanvas = fabricCanvas.value;
+			const scroll = pendingScroll;
+
+			pendingScroll = { x: 0, y: 0 };
+
+			if (root) {
+				root.scrollLeft += scroll.x;
+				root.scrollTop += scroll.y;
+			}
+
+			if (!liveCanvas || typeof liveCanvas.getWidth !== 'function') {
+				return;
+			}
+
+			applyPageCanvasLayout(
+				liveCanvas,
+				activePage.value.width,
+				activePage.value.height,
+				controlPasteboard.value,
+			);
+			liveCanvas.getObjects().forEach((object) => {
+				object.setCoords();
+			});
+			liveCanvas.calcOffset();
+			liveCanvas.renderAll();
+		});
+	};
+
+	watch(
+		() => {
+			return fabricCanvas.value;
+		},
+		(canvas, _previous, onCleanup) => {
+		if (!canvas || typeof canvas.on !== 'function') {
+			return;
+		}
+
+		const onGrow = () => {
+			queuePasteboardSync('grow');
+		};
+		const onFit = () => {
+			queuePasteboardSync('fit');
+		};
+
+		canvas.on('object:moving', onGrow);
+		canvas.on('object:scaling', onGrow);
+		canvas.on('object:rotating', onGrow);
+		canvas.on('object:resizing', onGrow);
+		canvas.on('object:skewing', onGrow);
+		canvas.on('object:modified', onFit);
+		canvas.on('selection:created', onFit);
+		canvas.on('selection:updated', onFit);
+		canvas.on('selection:cleared', onFit);
+		onCleanup(() => {
+			canvas.off('object:moving', onGrow);
+			canvas.off('object:scaling', onGrow);
+			canvas.off('object:rotating', onGrow);
+			canvas.off('object:resizing', onGrow);
+			canvas.off('object:skewing', onGrow);
+			canvas.off('object:modified', onFit);
+			canvas.off('selection:created', onFit);
+			canvas.off('selection:updated', onFit);
+			canvas.off('selection:cleared', onFit);
+		});
+	});
+
 	// Cambio de fondo (config, undo/redo): repinta sin rehidratar la página.
 	watch(pageBackground, (color) => {
 		const canvas = fabricCanvas.value;
@@ -172,10 +297,19 @@ export const useEditorCanvas = (
 	});
 
 	const rootStyle = computed(() => {
-		const padding = CONTROL_PASTEBOARD * zoomFactor.value;
+		const zoom = zoomFactor.value;
+		const pad = controlPasteboard.value;
+		const top = pad.top * zoom;
+		const right = pad.right * zoom;
+		const bottom = pad.bottom * zoom;
+		const left = pad.left * zoom;
+		const padding =
+			top === right && right === bottom && bottom === left
+				? `${top}px`
+				: `${top}px ${right}px ${bottom}px ${left}px`;
 
 		return {
-			padding: `${padding}px`,
+			padding,
 		};
 	});
 
@@ -190,6 +324,7 @@ export const useEditorCanvas = (
 		stageStyle,
 		scaleStyle,
 		rootStyle,
+		controlPasteboard,
 		pageBackgroundStyle,
 		overlayViews,
 		cancelStroke: () => {
