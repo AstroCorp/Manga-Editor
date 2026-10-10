@@ -9,7 +9,7 @@ import PageActions from '@/components/toolbar/PageActions.vue';
 
 <template>
 	<header
-		class="relative z-30 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/90"
+		class="relative z-40 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/90"
 	>
 		<div class="flex items-center gap-3">
 			<p
