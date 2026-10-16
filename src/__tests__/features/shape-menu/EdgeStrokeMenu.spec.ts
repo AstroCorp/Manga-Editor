@@ -30,6 +30,10 @@ describe('EdgeStrokeMenu', () => {
 			wrapper.get('input[aria-label="Edge 2 color"]').attributes('value'),
 		).toBe('#ff0000');
 		expect(
+			wrapper.get('input[aria-label="Edge 1 width"]').element.parentElement
+				?.classList,
+		).toContain('border');
+		expect(
 			wrapper.get('button[aria-label="Edge strokes"]').attributes('aria-expanded'),
 		).toBe('true');
 	});
@@ -45,6 +49,10 @@ describe('EdgeStrokeMenu', () => {
 		expect(wrapper.get('[data-testid="edge-stroke-list"]').findAll('li')).toHaveLength(
 			3,
 		);
+		expect(
+			wrapper.get('input[aria-label="Edge 1 width"]').element.parentElement
+				?.classList,
+		).toContain('border');
 	});
 
 	it('opens downward from the toolbar button', async () => {

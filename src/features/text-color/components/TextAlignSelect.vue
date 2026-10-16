@@ -9,9 +9,19 @@ import {
 import type { TextTextAlign } from '@/types/page';
 import type { CustomSelectOption } from '@/types/ui';
 
-const props = defineProps<{
-	modelValue: TextTextAlign;
-}>();
+const props = withDefaults(
+	defineProps<{
+		modelValue: TextTextAlign;
+		menuAlign?: 'left' | 'right';
+		hideTriggerLabel?: boolean;
+		variant?: 'field' | 'toolbar';
+	}>(),
+	{
+		menuAlign: 'left',
+		hideTriggerLabel: false,
+		variant: 'toolbar',
+	},
+);
 
 const emit = defineEmits<{
 	'update:modelValue': [value: TextTextAlign];
@@ -42,7 +52,9 @@ const onUpdate = (value: string) => {
 		:options="options"
 		label="Text align"
 		title="Text align"
-		hide-trigger-label
+		:hide-trigger-label="props.hideTriggerLabel"
+		:menu-align="props.menuAlign"
+		:variant="props.variant"
 		@update:model-value="onUpdate"
 	/>
 </template>

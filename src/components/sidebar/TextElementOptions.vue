@@ -207,6 +207,7 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Font</span>
 				<FontFamilySelect
+					variant="field"
 					:model-value="fontFamily"
 					:dominant-font-family="dominantFontFamily"
 					:used-font-families="usedFontFamilies"
@@ -301,6 +302,8 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 			>
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Align</span>
 				<TextAlignSelect
+					variant="field"
+					menu-align="right"
 					:model-value="textAlign"
 					@update:model-value="textApi?.setTextAlign($event)"
 				/>
@@ -378,7 +381,10 @@ const setVerticalAlign = (align: TextBoxVerticalAlign) => {
 
 			<div class="flex min-h-9 items-center justify-between gap-3 text-sm">
 				<span class="pr-2 text-slate-500 dark:text-slate-400">Page</span>
-				<PageAlignSelect @align="textApi?.alignToPage($event)" />
+				<PageAlignSelect
+					variant="field"
+					@align="textApi?.alignToPage($event)"
+				/>
 			</div>
 		</section>
 

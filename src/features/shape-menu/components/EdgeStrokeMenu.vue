@@ -146,7 +146,6 @@ const onWidthUpdate = (index: number, width: number) => {
 						{{ edgeLabel(index) }}
 					</span>
 					<NumberInput
-						variant="toolbar"
 						:model-value="stroke.width"
 						:min="MIN_STROKE_WIDTH"
 						:max="MAX_STROKE_WIDTH"

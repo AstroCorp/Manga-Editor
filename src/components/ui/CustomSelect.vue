@@ -13,11 +13,17 @@ const props = withDefaults(
 		listLabel?: string;
 		/** Solo icono en el disparador; las opciones mantienen su texto. */
 		hideTriggerLabel?: boolean;
+		/** `right` mantiene el menú dentro del panel cuando el botón está al borde. */
+		menuAlign?: 'left' | 'right';
+		/** `field` usa el borde de los inputs; `toolbar` queda sin borde. */
+		variant?: 'field' | 'toolbar';
 	}>(),
 	{
 		title: undefined,
 		listLabel: undefined,
 		hideTriggerLabel: false,
+		menuAlign: 'left',
+		variant: 'toolbar',
 	},
 );
 
@@ -130,7 +136,12 @@ const onListKeydown = (event: KeyboardEvent) => {
 		<button
 			ref="trigger"
 			type="button"
-			class="inline-flex h-9 items-center gap-1 rounded-md px-1.5 text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+			class="inline-flex h-9 items-center gap-1 rounded-md transition"
+			:class="
+				variant === 'field'
+					? 'border border-slate-200 bg-white px-2.5 text-sm text-slate-900 hover:border-blue-600/50 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-500/25'
+					: 'px-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+			"
 			:title="title ?? label"
 			:aria-label="label"
 			aria-haspopup="listbox"
@@ -145,9 +156,11 @@ const onListKeydown = (event: KeyboardEvent) => {
 					class="size-5 shrink-0"
 					aria-hidden="true"
 				/>
-				<span v-if="!hideTriggerLabel" class="text-xs whitespace-nowrap">{{
-					selectedOption?.label
-				}}</span>
+				<span
+					v-if="!hideTriggerLabel"
+					class="whitespace-nowrap"
+					:class="variant === 'field' ? 'text-sm' : 'text-xs'"
+				>{{ selectedOption?.label }}</span>
 				<Icon
 					icon="fluent:chevron-down-16-regular"
 					class="size-3.5 shrink-0 opacity-70"
@@ -159,7 +172,8 @@ const onListKeydown = (event: KeyboardEvent) => {
 		<ul
 			v-if="open"
 			ref="listbox"
-			class="absolute top-full left-0 z-40 mt-1 min-w-full overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+			class="absolute top-full z-40 mt-1 min-w-full overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+			:class="menuAlign === 'right' ? 'right-0' : 'left-0'"
 			role="listbox"
 			tabindex="-1"
 			:aria-label="resolvedListLabel"

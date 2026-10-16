@@ -19,9 +19,11 @@ const props = withDefaults(
 		dominantFontFamily: string;
 		/** Familias usadas en el documento (todas las páginas); sección "In use". */
 		usedFontFamilies?: readonly string[];
+		variant?: 'field' | 'toolbar';
 	}>(),
 	{
 		usedFontFamilies: () => [],
+		variant: 'toolbar',
 	},
 );
 
@@ -156,7 +158,12 @@ const onPreviewError = (fontId: string) => {
 		<button
 			ref="trigger"
 			type="button"
-			class="inline-flex h-9 max-w-28 items-center gap-1 rounded-md px-1.5 text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+			class="inline-flex h-9 items-center gap-1 rounded-md transition"
+			:class="
+				variant === 'field'
+					? 'max-w-40 border border-slate-200 bg-white px-2.5 text-sm text-slate-900 hover:border-blue-600/50 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-500/25'
+					: 'max-w-28 px-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950 dark:hover:text-blue-400'
+			"
 			title="Font family"
 			aria-label="Font family"
 			aria-haspopup="listbox"
@@ -164,7 +171,8 @@ const onPreviewError = (fontId: string) => {
 			@click="toggleOpen"
 		>
 			<span
-				class="truncate text-xs whitespace-nowrap"
+				class="truncate whitespace-nowrap"
+				:class="variant === 'field' ? 'text-sm' : 'text-xs'"
 				:style="
 					modelValue
 						? { fontFamily: modelValue }

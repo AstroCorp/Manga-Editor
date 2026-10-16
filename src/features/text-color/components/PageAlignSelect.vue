@@ -12,6 +12,15 @@ import type { CustomSelectOption } from '@/types/ui';
 /** Valor que no coincide con ningún ancla: el select es solo de acción. */
 const ACTION_SELECT_VALUE = '';
 
+const props = withDefaults(
+	defineProps<{
+		variant?: 'field' | 'toolbar';
+	}>(),
+	{
+		variant: 'toolbar',
+	},
+);
+
 const emit = defineEmits<{
 	align: [anchor: PageTextAnchor];
 }>();
@@ -40,6 +49,7 @@ const onUpdate = (value: string) => {
 		:options="options"
 		label="Align to page"
 		title="Align to page"
+		:variant="props.variant"
 		@update:model-value="onUpdate"
 	>
 		<template #trigger>
@@ -48,7 +58,10 @@ const onUpdate = (value: string) => {
 				class="size-5 shrink-0"
 				aria-hidden="true"
 			/>
-			<span class="text-xs whitespace-nowrap">Page align</span>
+			<span
+				class="whitespace-nowrap"
+				:class="props.variant === 'field' ? 'text-sm' : 'text-xs'"
+			>Page align</span>
 			<Icon
 				icon="fluent:chevron-down-16-regular"
 				class="size-3.5 shrink-0 opacity-70"

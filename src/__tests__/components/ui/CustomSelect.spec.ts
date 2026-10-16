@@ -84,6 +84,50 @@ describe('CustomSelect', () => {
 		expect(options[1]?.text()).toBe('Beta');
 	});
 
+	it('aligns the menu to the right edge when requested', async () => {
+		const wrapper = mount(CustomSelect, {
+			props: {
+				modelValue: 'a',
+				options: [...OPTIONS],
+				label: 'Pick letter',
+				menuAlign: 'right',
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		await wrapper.get('button[aria-label="Pick letter"]').trigger('click');
+
+		const menu = wrapper.get('ul[role="listbox"]');
+
+		expect(menu.classes()).toContain('right-0');
+		expect(menu.classes()).not.toContain('left-0');
+	});
+
+	it('gives the field trigger the same border as inputs', async () => {
+		const wrapper = mount(CustomSelect, {
+			props: {
+				modelValue: 'a',
+				options: [...OPTIONS],
+				label: 'Pick letter',
+				variant: 'field',
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+		const trigger = wrapper.get('button[aria-label="Pick letter"]');
+
+		expect(trigger.classes()).toContain('border');
+		expect(trigger.classes()).toContain('border-slate-200');
+		expect(trigger.classes()).not.toContain('hover:bg-blue-50');
+	});
+
 	it('closes on Escape', async () => {
 		const wrapper = mount(CustomSelect, {
 			props: {

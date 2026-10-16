@@ -64,6 +64,39 @@ describe('FontFamilySelect', () => {
 		useFavoriteFonts().favoriteFontIds.value = [];
 	});
 
+	it('keeps the toolbar trigger borderless and borders the field variant', () => {
+		const toolbar = mount(FontFamilySelect, {
+			props: {
+				modelValue: 'Inter',
+				dominantFontFamily: 'Inter',
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+		const field = mount(FontFamilySelect, {
+			props: {
+				modelValue: 'Inter',
+				dominantFontFamily: 'Inter',
+				variant: 'field',
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+
+		expect(
+			toolbar.get('button[aria-label="Font family"]').classes(),
+		).not.toContain('border-slate-200');
+		expect(field.get('button[aria-label="Font family"]').classes()).toContain(
+			'border-slate-200',
+		);
+	});
+
 	it('pins favorites above the list and keeps them in the main list', async () => {
 		const wrapper = await mountOpen();
 

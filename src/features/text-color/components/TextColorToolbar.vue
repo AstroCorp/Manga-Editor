@@ -473,6 +473,7 @@ const boxStrokeRingStyle = computed(() => {
 			</button>
 
 			<TextAlignSelect
+				hide-trigger-label
 				:model-value="textAlign"
 				@update:model-value="onTextAlignUpdate"
 			/>
