@@ -1,4 +1,5 @@
 import { Control, Group, Rect, Textbox, controlsUtils } from 'fabric';
+import { BoxedTextbox } from '@/lib/fabric/boxedTextbox';
 import type { TPointerEvent, Transform } from 'fabric';
 import { FABRIC_OBJECT_TYPE } from '@/lib/fabric/fabricObjectType';
 import {
@@ -97,14 +98,29 @@ export const resolveBoxedOuterWidth = (
 	return Math.max(minOuter, Math.max(0, Math.round(boxWidth)));
 };
 
+/** Durante resize manda la caja; el texto se recompone dentro de ella. */
+export const resolveBoxedResizeWidth = (
+	requestedWidth: number,
+	padding: number,
+): number => {
+	return Math.max(
+		1 + Math.max(0, Math.round(padding)) * 2,
+		Math.round(requestedWidth),
+	);
+};
+
 const createInnerTextbox = (
 	text: TextBlock,
-	options: { left: number; top: number; interactive: boolean },
+	options: {
+		left: number;
+		top: number;
+		interactive: boolean;
+		boxed?: boolean;
+	},
 ): Textbox => {
 	const fabricStyles = stylesToFabric(text.styles);
 	const stroke = text.stroke;
-
-	return new Textbox(text.content, {
+	const textOptions = {
 		left: options.left,
 		top: options.top,
 		width: text.width,
@@ -116,9 +132,9 @@ const createInnerTextbox = (
 		linethrough: text.linethrough,
 		stroke: stroke ?? undefined,
 		strokeWidth: text.strokeWidth,
-		paintFirst: 'stroke',
-		strokeLineJoin: 'round',
-		strokeLineCap: 'round',
+		paintFirst: 'stroke' as const,
+		strokeLineJoin: 'round' as const,
+		strokeLineCap: 'round' as const,
 		lineHeight: text.lineHeight,
 		textAlign: text.textAlign,
 		fontFamily: text.fontFamily,
@@ -133,10 +149,16 @@ const createInnerTextbox = (
 		hasControls: options.interactive,
 		objectCaching: false,
 		splitByGrapheme: false,
-		originX: 'left',
-		originY: 'top',
+		originX: 'left' as const,
+		originY: 'top' as const,
 		...(fabricStyles ? { styles: fabricStyles } : {}),
-	});
+	};
+
+	if (options.boxed) {
+		return new BoxedTextbox(text.content, textOptions);
+	}
+
+	return new Textbox(text.content, textOptions);
 };
 
 export const getPageTextbox = (object: PageTextObject): Textbox | null => {
@@ -227,9 +249,10 @@ export const syncBoxedTextGeometry = (
 	const outerWidth = Math.max(1, Math.round(box.width));
 	const nextTextWidth = Math.max(1, outerWidth - padding * 2);
 
-	if (Math.round(textbox.width ?? 0) !== nextTextWidth) {
-		textbox.set({ width: nextTextWidth });
-	}
+	textbox.set({
+		splitByGrapheme: false,
+		width: nextTextWidth,
+	});
 
 	reflowTextboxKeepingWidth(textbox);
 
@@ -328,11 +351,9 @@ const resizeBoxedTextWidth = (
 	const centered =
 		transform.originX === 'center' && transform.originY === 'center';
 	const multiplier = centered ? 2 : 1;
-	const minTextWidth = measureTextContentWidth(textbox);
-	const nextWidth = resolveBoxedOuterWidth(
+	const nextWidth = resolveBoxedResizeWidth(
 		Math.abs((localPoint.x * multiplier) / (target.scaleX || 1)) -
 			strokePadding,
-		minTextWidth,
 		box.padding,
 	);
 	const prevWidth = Math.round(box.width);
@@ -475,10 +496,8 @@ const resizeBoxedTextCorner = (
 	const centered =
 		transform.originX === 'center' && transform.originY === 'center';
 	const multiplier = centered ? 2 : 1;
-	const minTextWidth = measureTextContentWidth(textbox);
-	const nextWidth = resolveBoxedOuterWidth(
+	const nextWidth = resolveBoxedResizeWidth(
 		Math.abs((localPoint.x * multiplier) / (target.scaleX || 1)) - strokePadX,
-		minTextWidth,
 		box.padding,
 	);
 	const nextHeight = resolveBoxedOuterHeight(
@@ -687,6 +706,7 @@ export const textBlockToFabric = (
 		left: box.padding,
 		top: box.padding,
 		interactive: false,
+		boxed: true,
 	});
 	textbox.initDimensions?.();
 

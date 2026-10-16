@@ -107,6 +107,7 @@ const {
 	installBoxedTextControls,
 	resolveBoxedOuterHeight,
 	resolveBoxedOuterWidth,
+	resolveBoxedResizeWidth,
 	syncBoxedTextGeometry,
 	textBlockFromFabric,
 	textBlockToFabric,
@@ -121,6 +122,7 @@ describe('textFabric', () => {
 		});
 
 		expect(textBlockFromFabric(fabricText).box).toBeNull();
+		expect(fabricText.splitByGrapheme).toBe(false);
 	});
 
 	it('maps TextBlock to a fabric text object', () => {
@@ -591,6 +593,7 @@ describe('textFabric', () => {
 
 		expect(rect.width).toBe(outerWidth);
 		expect(textbox.width).toBe(outerWidth - padding * 2);
+		expect(textbox.splitByGrapheme).toBe(false);
 		expect(rect.height).toBe(fontSize + padding * 2);
 		expect(group.get('boxWidth')).toBe(outerWidth);
 	});
@@ -600,5 +603,10 @@ describe('textFabric', () => {
 		expect(resolveBoxedOuterWidth(300, 200, 12)).toBe(300);
 		// No puede quedar por debajo del texto + padding.
 		expect(resolveBoxedOuterWidth(10, 200, 12)).toBe(224);
+	});
+
+	it('prioritizes the requested box width while resizing', () => {
+		expect(resolveBoxedResizeWidth(180, 12)).toBe(180);
+		expect(resolveBoxedResizeWidth(10, 12)).toBe(25);
 	});
 });
