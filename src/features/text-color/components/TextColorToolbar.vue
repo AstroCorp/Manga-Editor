@@ -354,7 +354,7 @@ const boxStrokeRingStyle = computed(() => {
 		</div>
 
 		<div
-			class="flex w-max max-w-[min(100vw-2rem,52rem)] flex-wrap items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
+			class="flex w-max max-w-[min(100vw-2rem,52rem)] flex-nowrap items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-lg shadow-slate-900/15 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/40"
 			role="toolbar"
 			aria-label="Text format"
 			@pointerdown.stop

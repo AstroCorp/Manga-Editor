@@ -509,6 +509,21 @@ describe('TextColorToolbar', () => {
 		expect(wrapper.get('[aria-label="Text format"]').exists()).toBe(true);
 	});
 
+	it('keeps the text toolbar on a single row', () => {
+		const wrapper = mount(TextColorToolbar, {
+			props: baseProps,
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+		const toolbar = wrapper.get('[role="toolbar"][aria-label="Text format"]');
+
+		expect(toolbar.classes()).toContain('flex-nowrap');
+		expect(toolbar.classes()).not.toContain('flex-wrap');
+	});
+
 	it('emits showOptions from the element options button', async () => {
 		const wrapper = mount(TextColorToolbar, {
 			props: baseProps,

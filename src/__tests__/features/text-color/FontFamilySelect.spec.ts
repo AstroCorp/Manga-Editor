@@ -97,6 +97,26 @@ describe('FontFamilySelect', () => {
 		);
 	});
 
+	it('truncates long font names with the full name as tooltip', () => {
+		const family = 'Very Long Display Font Family Name';
+		const wrapper = mount(FontFamilySelect, {
+			props: {
+				modelValue: family,
+				dominantFontFamily: family,
+			},
+			global: {
+				stubs: {
+					Icon: true,
+				},
+			},
+		});
+		const label = wrapper.get('button[aria-label="Font family"] span');
+
+		expect(label.classes()).toContain('truncate');
+		expect(label.classes()).toContain('min-w-0');
+		expect(label.attributes('title')).toBe(family);
+	});
+
 	it('pins favorites above the list and keeps them in the main list', async () => {
 		const wrapper = await mountOpen();
 

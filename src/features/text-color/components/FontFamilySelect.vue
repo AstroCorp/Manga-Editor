@@ -154,11 +154,11 @@ const onPreviewError = (fontId: string) => {
 </script>
 
 <template>
-	<div ref="root" class="relative">
+	<div ref="root" class="relative min-w-0">
 		<button
 			ref="trigger"
 			type="button"
-			class="inline-flex h-9 items-center gap-1 rounded-md transition"
+			class="inline-flex h-9 w-full min-w-0 items-center gap-1 rounded-md transition"
 			:class="
 				variant === 'field'
 					? 'max-w-40 border border-slate-200 bg-white px-2.5 text-sm text-slate-900 hover:border-blue-600/50 focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/25 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-100 dark:hover:border-blue-500/50 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-500/25'
@@ -171,8 +171,9 @@ const onPreviewError = (fontId: string) => {
 			@click="toggleOpen"
 		>
 			<span
-				class="truncate whitespace-nowrap"
+				class="min-w-0 truncate whitespace-nowrap"
 				:class="variant === 'field' ? 'text-sm' : 'text-xs'"
+				:title="displayLabel"
 				:style="
 					modelValue
 						? { fontFamily: modelValue }
