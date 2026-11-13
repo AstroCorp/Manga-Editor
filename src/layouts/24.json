@@ -1,0 +1,61 @@
+{
+  "width": 2580,
+  "height": 1720,
+  "backgroundColor": "#ffffff",
+  "layers": [
+    {
+      "name": "Layer 1",
+      "visible": true,
+      "shapes": [
+        {
+          "id": "fcd785b1-5c4b-4e6e-882a-105419d5da36",
+          "points": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 1720
+            },
+            {
+              "x": 2580,
+              "y": 1720
+            },
+            {
+              "x": 2580,
+              "y": 0
+            }
+          ],
+          "strokes": [
+            {
+              "width": 0,
+              "color": "#111111"
+            },
+            {
+              "width": 0,
+              "color": "#111111"
+            },
+            {
+              "width": 0,
+              "color": "#111111"
+            },
+            {
+              "width": 0,
+              "color": "#111111"
+            }
+          ],
+          "image": null
+        }
+      ],
+      "gridCols": 129,
+      "gridRows": 86,
+      "marginTop": 0,
+      "marginRight": 0,
+      "marginBottom": 0,
+      "marginLeft": 0,
+      "strokeWidth": 5,
+      "strokeColor": "#111111"
+    }
+  ]
+}
